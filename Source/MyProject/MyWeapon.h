@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyCollectable.h"
 
 #include "../../Intermediate/ProjectFiles/Utilities.hpp"
 
@@ -10,7 +11,7 @@
 #include "MyWeapon.generated.h"
 
 UCLASS()
-class MYPROJECT_API AMyWeapon : public AActor
+class MYPROJECT_API AMyWeapon : public AMyCollectable
 {
 	GENERATED_BODY()
 	
@@ -24,14 +25,10 @@ protected:
 
 	virtual void PostInitializeComponents() override;
 
-private:
-	UFUNCTION()
-	void OnCharacterOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
-
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* Mesh;
-
-	UPROPERTY(VisibleAnywhere)
-	class UBoxComponent* Collider;
+	virtual bool OnCharacterOverlap(
+		UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+		int32                OtherBodyIndex,
+		bool                 bFromSweep, AMyCharacter* Character, const FHitResult& SweepResult
+	) override;
 
 };
