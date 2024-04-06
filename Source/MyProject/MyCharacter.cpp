@@ -13,6 +13,9 @@
 #include "GameFramework/SpringArmComponent.h"
 
 #include "DrawDebugHelpers.h"
+#include "MyWeapon.h"
+
+const FName AMyCharacter::WeaponSocketName(TEXT("hand_l_socket"));
 
 // Sets default values
 AMyCharacter::AMyCharacter()
@@ -47,12 +50,15 @@ AMyCharacter::AMyCharacter()
 	bUseControllerRotationPitch = false;
 
 	AttackIndex = 0;
+
+	Weapon = nullptr;
 }
 
 // Called when the game starts or when spawned
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
 }
 
 void AMyCharacter::PostInitializeComponents()
@@ -88,6 +94,20 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAxis(TEXT("Pitch"), this, &AMyCharacter::Pitch);
 	PlayerInputComponent->BindAxis(TEXT("Yaw"), this, &AMyCharacter::Yaw);
 
+}
+
+void AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
+{
+	if (IsValid(Weapon))
+	{
+		return;
+	}
+
+	if (IsValid(NewWeapon))
+	{
+		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocketName);
+		Weapon = NewWeapon;
+	}
 }
 
 void AMyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
