@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
+class UMyStatComponent;
 class AMyWeapon;
 
 UCLASS()
@@ -28,6 +29,9 @@ protected:
 
 	virtual void PostInitializeComponents() override;
 
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -49,7 +53,8 @@ private:
 
 	void Attack();
 
-	void OnHit() const;
+	int32 GetDamage() const;
+	void OnAttackAnimNotify();
 
 	void Yaw(const float Value);
 	void Pitch(const float Value);
@@ -78,5 +83,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class AMyWeapon* Weapon;
+
+	UPROPERTY(VisibleAnywhere)
+	class UMyStatComponent* StatComponent;
 
 };

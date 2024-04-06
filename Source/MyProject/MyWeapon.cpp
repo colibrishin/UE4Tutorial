@@ -4,6 +4,7 @@
 #include "MyWeapon.h"
 
 #include "MyCharacter.h"
+#include "MyWeaponStatComponent.h"
 
 #include "Components/BoxComponent.h"
 
@@ -19,6 +20,8 @@ AMyWeapon::AMyWeapon()
 	{
 		GetMesh()->SetStaticMesh(SM_Spline.Object);
 	}
+
+	WeaponStatComponent = CreateDefaultSubobject<UMyWeaponStatComponent>(TEXT("WeaponStatComponent"));
 }
 
 // Called when the game starts or when spawned
