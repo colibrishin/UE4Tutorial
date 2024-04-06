@@ -96,18 +96,21 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 }
 
-void AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
+bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 {
 	if (IsValid(Weapon))
 	{
-		return;
+		return false;
 	}
 
 	if (IsValid(NewWeapon))
 	{
-		NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocketName);
 		Weapon = NewWeapon;
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocketName);
+		return true;
 	}
+
+	return false;
 }
 
 void AMyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)

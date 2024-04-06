@@ -17,6 +17,8 @@ class MYPROJECT_API AMyCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
+	static const FName WeaponSocketName;
+
 	// Sets default values for this character's properties
 	AMyCharacter();
 
@@ -36,11 +38,9 @@ public:
 	float GetForwardInput() const { return ForwardInput; }
 	float GetRightInput() const { return RightInput; }
 
-	void TryPickWeapon(AMyWeapon* NewWeapon);
+	bool TryPickWeapon(AMyWeapon* NewWeapon);
 
 private:
-	static const FName WeaponSocketName;
-
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
