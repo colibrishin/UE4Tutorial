@@ -1,0 +1,182 @@
+// Fill out your copyright notice in the Description page of Project Settings.
+
+
+#include "MyCharacter.h"
+
+#include "MyAnimInstance.h"
+
+#include "Camera/CameraComponent.h"
+
+#include "Components/CapsuleComponent.h"
+
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+
+#include "DrawDebugHelpers.h"
+
+// Sets default values
+AMyCharacter::AMyCharacter()
+{
+ 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	// 리소스를 불러오는 방법
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Mesh(TEXT("SkeletalMesh'/Game/ParagonBoris/Characters/Heroes/Boris/Meshes/Boris.Boris'"));
+
+	if (SK_Mesh.Succeeded())
+	{
+		GetMesh()->SetSkeletalMesh(SK_Mesh.Object);
+	}
+
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+
+	SpringArm->SetupAttachment(GetCapsuleComponent());
+	Camera->SetupAttachment(SpringArm);
+
+	SpringArm->TargetArmLength = 600.0f;
+	SpringArm->SetRelativeRotation(FRotator(-45.0f, 0.0f, 0.0f));
+
+	// 기본 캡슐 사이즈, 매쉬가 붕 뜨지 않게 하도록
+	// Character 구현부 52번 라인 참조
+	// 캐릭터의 바닥을 맞추기 위해 사용할 수도 있음
+	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
+
+	bUseControllerRotationYaw = true;
+	bUseControllerRotationPitch = false;
+
+	AttackIndex = 0;
+}
+
+// Called when the game starts or when spawned
+void AMyCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
+void AMyCharacter::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+
+	const auto& Anim = GetMesh()->GetAnimInstance();
+
+	if (IsValid(Anim))
+	{
+		AnimInstance = Cast<UMyAnimInstance>(Anim);
+		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnAttackMontageEnded);
+		AnimInstance->ListenForAttackHit(this, &AMyCharacter::OnHit);
+	}
+}
+
+// Called every frame
+void AMyCharacter::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+}
+
+// Called to bind functionality to input
+void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+{
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AMyCharacter::Jump);
+	PlayerInputComponent->BindAction(TEXT("Attack"), IE_Pressed, this, &AMyCharacter::Attack);
+	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
+	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AMyCharacter::LeftRight);
+	PlayerInputComponent->BindAxis(TEXT("Pitch"), this, &AMyCharacter::Pitch);
+	PlayerInputComponent->BindAxis(TEXT("Yaw"), this, &AMyCharacter::Yaw);
+
+}
+
+void AMyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+{
+	IsAttacking = false;
+}
+
+void AMyCharacter::UpDown(const float Value)
+{
+	// == Vector3{1, 0, 0} * acceleration
+	GetCharacterMovement()->AddInputVector(GetActorForwardVector() * Value);
+	ForwardInput = Value;
+}
+void AMyCharacter::LeftRight(const float Value)
+{
+	// == Vector3{1, 0, 0} * acceleration
+	GetCharacterMovement()->AddInputVector(GetActorRightVector() * Value);
+	RightInput = Value;
+}
+
+void AMyCharacter::Attack()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Attack"));
+
+	if (IsAttacking)
+	{
+		return;
+	}
+
+	constexpr int32 MaxAttackIndex = 3;
+
+	AttackIndex = (AttackIndex + 1) % MaxAttackIndex;
+	AnimInstance->PlayAttackMontage(AttackIndex);
+	IsAttacking = true;
+}
+
+void AMyCharacter::OnHit() const
+{
+	FHitResult HitResult;
+	// 포인터를 직접 비교하기보단 세번째 인자 InIgnoreActors로 본인을 제외할 수 있음
+	FCollisionQueryParams Params(NAME_None, false, this);
+
+	constexpr float AttackRange = 100.f;
+	constexpr float AttackRadius = 50.f;
+
+	FVector AttackEndVec = GetActorForwardVector() * AttackRange;
+	FVector UpCompensation = FVector(0.f, 0.f, 50.f);
+	FVector ForwardCompensation = FVector(0.f, 0.f, 25.f);
+	FVector Center = GetActorLocation() + ForwardCompensation + (AttackEndVec * 0.5f) + (UpCompensation * 0.5f);
+	float HalfHeight = AttackRange * 0.5f + AttackRadius;
+
+	bool Result = GetWorld()->SweepSingleByChannel
+	(
+		OUT HitResult, 
+		Center,
+		GetActorLocation() + AttackEndVec,
+		FQuat::Identity,
+		ECollisionChannel::ECC_EngineTraceChannel2, // DefaultEngine.ini 참조
+		FCollisionShape::MakeSphere(AttackRadius),
+		Params // 까먹지 않도록 조심, 기본인자가 있음
+	);
+
+	bool ActualHit = Result && HitResult.Actor.IsValid();
+
+	if (ActualHit)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.Actor->GetName());
+	}
+
+	DrawDebugSphere
+	(
+		GetWorld(), 
+		Center,
+		HalfHeight,
+		32,
+		ActualHit ? FColor::Green : FColor::Red,
+		false,
+		1.f
+	);
+}
+
+void AMyCharacter::Yaw(const float Value)
+{
+	// 폰의 설정에서 Rotation Yaw가 true여야 함
+	AddControllerYawInput(Value);
+}
+
+void AMyCharacter::Pitch(const float Value)
+{
+	// 폰의 설정에서 Rotation Pitch가 true여야 함
+	//AddControllerPitchInput(Value);	
+}
