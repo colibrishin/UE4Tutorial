@@ -6,6 +6,8 @@
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
+class AMyWeapon;
+
 UCLASS()
 class MYPROJECT_API AMyCharacter : public ACharacter
 {
@@ -34,7 +36,11 @@ public:
 	float GetForwardInput() const { return ForwardInput; }
 	float GetRightInput() const { return RightInput; }
 
+	void TryPickWeapon(AMyWeapon* NewWeapon);
+
 private:
+	static const FName WeaponSocketName;
+
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
@@ -69,5 +75,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* AnimInstance;
+
+	UPROPERTY(VisibleAnywhere)
+	class AMyWeapon* Weapon;
 
 };
