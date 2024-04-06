@@ -4,8 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "MyCollectable.h"
+#include "MyWeaponStatComponent.h"
 
 #include "../../Intermediate/ProjectFiles/Utilities.hpp"
+
+#include "Engine/DataTable.h"
 
 #include "GameFramework/Actor.h"
 #include "MyWeapon.generated.h"
@@ -19,6 +22,8 @@ public:
 	// Sets default values for this actor's properties
 	AMyWeapon();
 
+	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -30,5 +35,9 @@ protected:
 		int32                OtherBodyIndex,
 		bool                 bFromSweep, AMyCharacter* Character, const FHitResult& SweepResult
 	) override;
+
+private:
+	UPROPERTY(EditAnywhere, Category = "Weapon")
+	class UMyWeaponStatComponent* WeaponStatComponent;
 
 };
