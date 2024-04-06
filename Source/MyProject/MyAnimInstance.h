@@ -22,6 +22,12 @@ public:
 	void PlayAttackMontage(uint32 Index);
 
 	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
+	void ListenForAttackHit(T* Obj, void (T::*Func)())
+	{
+		OnAttackHit.AddUObject(Obj, Func);
+	}
+
+	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
 	void ListenForAttackHit(const T* Obj, void (T::*Func)() const)
 	{
 		OnAttackHit.AddUObject(Obj, Func);

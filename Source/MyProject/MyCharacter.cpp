@@ -13,6 +13,7 @@
 #include "GameFramework/SpringArmComponent.h"
 
 #include "DrawDebugHelpers.h"
+#include "MyStatComponent.h"
 #include "MyWeapon.h"
 
 const FName AMyCharacter::WeaponSocketName(TEXT("hand_l_socket"));
@@ -32,8 +33,8 @@ AMyCharacter::AMyCharacter()
 	}
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -71,8 +72,17 @@ void AMyCharacter::PostInitializeComponents()
 	{
 		AnimInstance = Cast<UMyAnimInstance>(Anim);
 		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnAttackMontageEnded);
-		AnimInstance->ListenForAttackHit(this, &AMyCharacter::OnHit);
+		AnimInstance->ListenForAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
 	}
+}
+
+float AMyCharacter::TakeDamage(
+	float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser
+)
+{
+	StatComponent->OnDamage(Damage);
+	UE_LOG(LogTemp, Warning, TEXT("Damage: %f"), Damage);
+	return Damage;
 }
 
 // Called every frame
@@ -147,7 +157,17 @@ void AMyCharacter::Attack()
 	IsAttacking = true;
 }
 
-void AMyCharacter::OnHit() const
+int32 AMyCharacter::GetDamage() const
+{
+	if (IsValid(Weapon))
+	{
+		return StatComponent->GetDamage() + Weapon->GetDamage();
+	}
+
+	return StatComponent->GetDamage();
+}
+
+void AMyCharacter::OnAttackAnimNotify()
 {
 	FHitResult HitResult;
 	// 포인터를 직접 비교하기보단 세번째 인자 InIgnoreActors로 본인을 제외할 수 있음
@@ -178,6 +198,15 @@ void AMyCharacter::OnHit() const
 	if (ActualHit)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.Actor->GetName());
+
+		FDamageEvent DamageEvent;
+		HitResult.Actor->TakeDamage
+		(
+			GetDamage(), 
+			DamageEvent, 
+			GetController(),
+			this
+		);
 	}
 
 	DrawDebugSphere
