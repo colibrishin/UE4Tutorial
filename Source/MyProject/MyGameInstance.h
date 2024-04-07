@@ -50,7 +50,7 @@ public:
 	virtual void Init() override;
 
 	FORCEINLINE FMyStat*       GetValue(const int32 Level) const;
-	FORCEINLINE FMyWeaponStat* GetWeaponValue(const int32& ID) const;
+	FORCEINLINE FMyWeaponStat* GetWeaponValue(const int32 ID) const;
 
 private:
 
