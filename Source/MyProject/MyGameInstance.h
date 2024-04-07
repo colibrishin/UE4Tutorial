@@ -29,6 +29,9 @@ struct FMyWeaponStat : public FTableRowBase
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Damage;
 
 };
@@ -46,8 +49,8 @@ public:
 
 	virtual void Init() override;
 
-	FMyStat*       GetValue(const int32 Level) const;
-	FMyWeaponStat* GetWeaponValue(const int32& Name) const;
+	FORCEINLINE FMyStat*       GetValue(const int32 Level) const;
+	FORCEINLINE FMyWeaponStat* GetWeaponValue(const int32& ID) const;
 
 private:
 
