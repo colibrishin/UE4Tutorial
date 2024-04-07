@@ -18,7 +18,7 @@ class MYPROJECT_API AMyCharacter : public ACharacter
 	GENERATED_BODY()
 
 public:
-	static const FName WeaponSocketName;
+	static const FName LeftHandSocketName;
 
 	// Sets default values for this character's properties
 	AMyCharacter();
@@ -52,6 +52,7 @@ private:
 	void LeftRight(const float Value);
 
 	void Attack();
+	void Interactive();
 
 	int32 GetDamage() const;
 	void OnAttackAnimNotify();

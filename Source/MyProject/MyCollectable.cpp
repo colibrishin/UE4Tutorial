@@ -49,6 +49,16 @@ bool AMyCollectable::OnCharacterOverlap(
 	return false;
 }
 
+bool AMyCollectable::Interact(class AMyCharacter* Character)
+{
+	if (IsBelongToCharacter())
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool AMyCollectable::IsBelongToCharacter() const
 {
 	return IsValid(ItemOwner);
@@ -75,10 +85,7 @@ void AMyCollectable::OnCharacterOverlapImpl(
 
 	if (IsValid(Character))
 	{
-		if (OnCharacterOverlap(OverlappedComponent , OtherActor , OtherComp , OtherBodyIndex , bFromSweep , Character, SweepResult))
-		{
-			ItemOwner = Character;
-		}
+		OnCharacterOverlap(OverlappedComponent , OtherActor , OtherComp , OtherBodyIndex , bFromSweep , Character, SweepResult);
 	}
 }
 
