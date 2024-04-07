@@ -7,7 +7,7 @@
 #include "MyWeaponStatComponent.generated.h"
 
 
-UCLASS()
+UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYPROJECT_API UMyWeaponStatComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -16,6 +16,7 @@ public:
 	// Sets default values for this component's properties
 	UMyWeaponStatComponent();
 	int32 GetDamage() const { return Damage; }
+	int32 GetID() const { return ID; }
 
 protected:
 	// Called when the game starts
@@ -24,10 +25,10 @@ protected:
 	virtual void InitializeComponent() override;
 
 private:
-	UPROPERTY(EditAnywhere, Category="Stats")
+	UPROPERTY(EditAnywhere, Category=Stats, Meta=(AllowPrivateAccess))
 	int32 ID;
 
-	UPROPERTY(EditAnywhere, Category="Stats")
+	UPROPERTY(VisibleAnywhere, Category=Stats)
 	int32 Damage;
 
 };

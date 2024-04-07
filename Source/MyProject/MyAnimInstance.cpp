@@ -15,7 +15,10 @@ UMyAnimInstance::UMyAnimInstance()
 {
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> AM(TEXT("AnimMontage'/Game/Blueprints/BPAnimationMontage.BPAnimationMontage'"));
 
-	if (AM.Succeeded()) { AttackMontage = AM.Object; }
+	if (AM.Succeeded())
+	{
+		AttackMontage = AM.Object;
+	}
 }
 
 void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
@@ -43,12 +46,12 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Horizontal = Character->GetRightInput();
 }
 
-FName UMyAnimInstance::GetAttackMontageSectionName(int32 NewIndex)
+FName UMyAnimInstance::GetAttackMontageSectionName(const int32 NewIndex)
 {
 	return FName(*FString::Printf(TEXT("Attack%d"), NewIndex));
 }
 
-void UMyAnimInstance::SetAttackSection(int32 NewIndex)
+void UMyAnimInstance::SetAttackSection(const int32 NewIndex)
 {
 	const auto& Section = GetAttackMontageSectionName(NewIndex);
 	UE_LOG(LogTemp, Warning, TEXT("Section: %s"), *Section.ToString());
