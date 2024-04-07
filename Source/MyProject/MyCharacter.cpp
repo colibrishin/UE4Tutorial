@@ -16,7 +16,7 @@
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
 
-const FName AMyCharacter::WeaponSocketName(TEXT("hand_l_socket"));
+const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 
 // Sets default values
 AMyCharacter::AMyCharacter()
@@ -99,6 +99,8 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AMyCharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Attack"), IE_Pressed, this, &AMyCharacter::Attack);
+	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Pressed, this, &AMyCharacter::Interactive);
+
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AMyCharacter::LeftRight);
 	PlayerInputComponent->BindAxis(TEXT("Pitch"), this, &AMyCharacter::Pitch);
@@ -116,7 +118,7 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	if (IsValid(NewWeapon))
 	{
 		Weapon = NewWeapon;
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, WeaponSocketName);
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
 		return true;
 	}
 
@@ -155,6 +157,40 @@ void AMyCharacter::Attack()
 	AttackIndex = (AttackIndex + 1) % MaxAttackIndex;
 	AnimInstance->PlayAttackMontage(AttackIndex);
 	IsAttacking = true;
+}
+
+void AMyCharacter::Interactive()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Interactive"));
+	FHitResult HitResult;
+	const FCollisionQueryParams Params(NAME_None, false, this);
+	TArray<FOverlapResult> HitResults;
+
+	const bool Result = GetWorld()->OverlapMultiByChannel
+	(
+		OUT HitResults,
+		GetActorLocation(),
+		FQuat::Identity,
+		ECC_EngineTraceChannel3,
+		FCollisionShape::MakeSphere(100.f),
+		Params
+	);
+
+	if (Result)
+	{
+		for (const auto& Hit : HitResults)
+		{
+			const auto& Collectable = Cast<AMyInteractiveActor>(Hit.GetActor());
+
+			if (IsValid(Collectable))
+			{
+				if (Collectable->Interact(this))
+				{
+					break;
+				}
+			}
+		}
+	}
 }
 
 int32 AMyCharacter::GetDamage() const
