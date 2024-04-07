@@ -18,9 +18,9 @@ public:
 	// Sets default values for this component's properties
 	UMyStatComponent();
 
-	FORCEINLINE uint32 GetLevel() const { return Level; }
-	FORCEINLINE uint32 GetDamage() const { return Damage; }
-	FORCEINLINE uint32 GetMaxHealth() const { return Health; }
+	uint32 GetLevel() const { return Level; }
+	uint32 GetDamage() const { return Damage; }
+	uint32 GetMaxHealth() const { return Health; }
 
 	FORCEINLINE void OnDamage(int32 DamageAmount);
 
@@ -34,9 +34,9 @@ private:
 	UPROPERTY(EditAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Level;
 
-	UPROPERTY(EditAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Damage;
 
-	UPROPERTY(EditAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Health;
 };
