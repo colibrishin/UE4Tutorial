@@ -20,12 +20,6 @@ UMyStatComponent::UMyStatComponent()
 	bWantsInitializeComponent = true;
 }
 
-
-void UMyStatComponent::OnDamage(const int32 DamageAmount)
-{
-	Health = FMath::Clamp(Health - DamageAmount, 0, Health);
-}
-
 // Called when the game starts
 void UMyStatComponent::BeginPlay()
 {

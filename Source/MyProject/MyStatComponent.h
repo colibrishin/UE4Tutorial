@@ -22,7 +22,10 @@ public:
 	uint32 GetDamage() const { return Damage; }
 	uint32 GetMaxHealth() const { return Health; }
 
-	FORCEINLINE void OnDamage(int32 DamageAmount);
+	FORCEINLINE void OnDamage(int32 DamageAmount)
+	{
+		Health = FMath::Clamp(Health - DamageAmount, 0, Health);
+	}
 
 protected:
 	// Called when the game starts
