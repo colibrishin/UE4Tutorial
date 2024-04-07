@@ -30,11 +30,7 @@ protected:
 
 	virtual void PostInitializeComponents() override;
 
-	virtual bool OnCharacterOverlap(
-		UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-		int32                OtherBodyIndex,
-		bool                 bFromSweep, AMyCharacter* Character, const FHitResult& SweepResult
-	) override;
+	virtual bool Interact(class AMyCharacter* Character) override;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Weapon")

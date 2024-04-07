@@ -3,11 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyInteractiveActor.h"
+
 #include "GameFramework/Actor.h"
 #include "MyCollectable.generated.h"
 
 UCLASS()
-class MYPROJECT_API AMyCollectable : public AActor
+class MYPROJECT_API AMyCollectable : public AMyInteractiveActor
 {
 	GENERATED_BODY()
 	
@@ -17,6 +19,8 @@ public:
 
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 	class UBoxComponent* GetCollider() const { return Collider; }
+
+	virtual bool Interact(class AMyCharacter* Character) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -30,6 +34,8 @@ protected:
 	);
 
 	bool IsBelongToCharacter() const;
+
+	void SetItemOwner(const class AMyCharacter* FutureOwner) { ItemOwner = FutureOwner; }
 
 public:	
 	// Called every frame

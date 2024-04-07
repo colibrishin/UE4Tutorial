@@ -25,8 +25,10 @@ void UMyWeaponStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
+	if (ID == 0)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Weapon ID is not set in %s"), *GetOwner()->GetName());
+	}
 }
 
 void UMyWeaponStatComponent::InitializeComponent()
