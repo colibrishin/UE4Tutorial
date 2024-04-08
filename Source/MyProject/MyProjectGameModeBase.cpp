@@ -4,12 +4,13 @@
 #include "MyProjectGameModeBase.h"
 
 #include "MyCharacter.h"
-#include "MyPawn.h"
+#include "MyInGameHUD.h"
+#include "MyPlayerController.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
 {
-	// StaticClass, ÄÄÆÄÀÏ Å¸ÀÓ Å¸ÀÔ
-	// GetClass, ·±Å¸ÀÓ Å¸ÀÔ (Base class Æ÷ÀÎÅÍ)
+	// StaticClass, ì»´íŒŒì¼ íƒ€ì„ íƒ€ì…
+	// GetClass, ëŸ°íƒ€ì„ íƒ€ì… (Base class í¬ì¸í„°)
 	// DefaultPawnClass = AMyCharacter::StaticClass();
 
     static ConstructorHelpers::FClassFinder<AMyCharacter> BP_Char(TEXT("Blueprint'/Game/Blueprints/BPMyCharacter.BPMyCharacter_C'"));
@@ -17,5 +18,19 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 	if (BP_Char.Succeeded())
 	{
 		DefaultPawnClass = BP_Char.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<AMyInGameHUD> BP_HUD(TEXT("Class'/Script/MyProject.MyInGameHUD'"));
+
+	if (BP_HUD.Succeeded())
+	{
+		HUDClass = BP_HUD.Class;
+	}
+
+	static ConstructorHelpers::FClassFinder<AMyPlayerController> BP_PC(TEXT("Blueprint'/Game/Blueprints/BPMyPlayerController.BPMyPlayerController_C'"));
+
+	if (BP_PC.Succeeded())
+	{
+		PlayerControllerClass = BP_PC.Class;
 	}
 }
