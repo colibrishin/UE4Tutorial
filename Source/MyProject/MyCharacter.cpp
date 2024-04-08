@@ -160,6 +160,7 @@ void AMyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted
 {
 	IsAttacking = false;
 	OnAttackEnded.Broadcast();
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 void AMyCharacter::UpDown(const float Value)
@@ -189,6 +190,7 @@ void AMyCharacter::Attack()
 	AttackIndex = (AttackIndex + 1) % MaxAttackIndex;
 	AnimInstance->PlayAttackMontage(AttackIndex);
 	IsAttacking = true;
+	GetCharacterMovement()->MaxWalkSpeed = 150.f;
 }
 
 void AMyCharacter::Interactive()
