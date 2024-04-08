@@ -88,4 +88,6 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UMyStatComponent* StatComponent;
 
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* Widgets;
 };
