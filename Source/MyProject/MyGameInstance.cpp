@@ -16,14 +16,3 @@ void UMyGameInstance::Init()
 {
 	Super::Init();
 }
-
-FMyStat* UMyGameInstance::GetValue(const int32 Level) const
-{
-	// FName은 대소문자를 구별하지 않는다.
-	return StatTable->FindRow<FMyStat>(*FString::FromInt(Level), TEXT(""));
-}
-
-FMyWeaponStat* UMyGameInstance::GetWeaponValue(const int32 ID) const
-{
-	return WeaponStatTable->FindRow<FMyWeaponStat>(*FString::FromInt(ID), TEXT(""));
-}
