@@ -33,11 +33,6 @@ EBTNodeResult::Type UMyBTAttackNode::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 		return EBTNodeResult::Failed;
 	}
 
-	AIOwner->BindOnAttackEnded(this , [this]()
-	{
-		bIsAttacking = false;
-	});
-
 	AIOwner->Attack();
 	bIsAttacking = true;
 
@@ -52,4 +47,18 @@ void UMyBTAttackNode::TickTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMem
 	{
 		FinishLatentTask(OwnerComp , EBTNodeResult::Succeeded);
 	}
+}
+
+void UMyBTAttackNode::OnInstanceCreated(UBehaviorTreeComponent& OwnerComp)
+{
+	Super::OnInstanceCreated(OwnerComp);
+
+	const auto& AIOwner = Cast<AMyCharacter>(OwnerComp.GetAIOwner()->GetPawn());
+
+	if (!IsValid(AIOwner)) { return; }
+
+	AIOwner->BindOnAttackEnded([this]()
+	{
+		bIsAttacking = false;
+	});
 }
