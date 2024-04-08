@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Utilities.hpp"
+
 #include "Animation/AnimInstance.h"
 #include "MyAnimInstance.generated.h"
 
@@ -21,17 +23,7 @@ public:
 
 	void PlayAttackMontage(uint32 Index);
 
-	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
-	void ListenForAttackHit(T* Obj, void (T::*Func)())
-	{
-		OnAttackHit.AddUObject(Obj, Func);
-	}
-
-	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
-	void ListenForAttackHit(const T* Obj, void (T::*Func)() const)
-	{
-		OnAttackHit.AddUObject(Obj, Func);
-	}
+	DECL_BINDON(OnAttackHit)
 
 protected:
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;

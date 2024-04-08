@@ -95,7 +95,7 @@ void AMyCharacter::PostInitializeComponents()
 	{
 		AnimInstance = Cast<UMyAnimInstance>(Anim);
 		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnAttackMontageEnded);
-		AnimInstance->ListenForAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
+		AnimInstance->BindOnAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
 	}
 
 	Widgets->InitWidget();
