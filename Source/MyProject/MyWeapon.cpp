@@ -34,15 +34,12 @@ void AMyWeapon::PostInitializeComponents()
   }
 }
 
-bool AMyWeapon::Interact(AMyCharacter* Character)
+bool AMyWeapon::InteractImpl(AMyCharacter* Character)
 {
-	if (Super::Interact(Character))
+	if (Character->TryPickWeapon(this))
 	{
-		if (Character->TryPickWeapon(this))
-		{
-			SetItemOwner(Character);
-			return true;
-		}
+		SetItemOwner(Character);
+		return true;
 	}
 
 	return false;
