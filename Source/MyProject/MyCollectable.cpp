@@ -103,7 +103,7 @@ void AMyCollectable::ShowOnly() const
 
 bool AMyCollectable::IsBelongToCharacter() const
 {
-	return IsValid(ItemOwner);
+	return ItemOwner.IsValid();
 }
 
 // Called every frame
