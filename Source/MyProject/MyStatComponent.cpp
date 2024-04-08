@@ -11,7 +11,8 @@
 UMyStatComponent::UMyStatComponent()
 	: Level(1),
 	  Damage(0),
-	  Health(0)
+	  Health(0),
+	  MaxHealth(0)
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -43,7 +44,8 @@ void UMyStatComponent::InitializeComponent()
 
 		Level     = Data->Level;
 		Damage    = Data->Damage;
-		Health = Data->MaxHealth;
+		MaxHealth = Data->MaxHealth;
+		SetHP(Data->MaxHealth);
 	}
 
 }
