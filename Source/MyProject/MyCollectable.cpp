@@ -106,6 +106,11 @@ bool AMyCollectable::IsBelongToCharacter() const
 	return ItemOwner.IsValid();
 }
 
+void AMyCollectable::SetItemOwner(AMyCharacter* FutureOwner)
+{
+	ItemOwner = FutureOwner;
+}
+
 // Called every frame
 void AMyCollectable::Tick(float DeltaTime)
 {
