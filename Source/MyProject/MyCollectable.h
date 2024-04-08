@@ -5,8 +5,6 @@
 #include "CoreMinimal.h"
 #include "MyInteractiveActor.h"
 
-#include "MyCharacter.h"
-
 #include "GameFramework/Actor.h"
 #include "MyCollectable.generated.h"
 
@@ -22,7 +20,7 @@ public:
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 	class UBoxComponent* GetCollider() const { return Collider; }
 
-	virtual bool Interact(AMyCharacter* Character) override final;
+	virtual bool Interact(class AMyCharacter* Character) override final;
 	virtual bool Drop();
 
 	void Hide() const;
@@ -35,16 +33,16 @@ protected:
 
 	virtual void PostInitializeComponents() override;
 
-	virtual bool InteractImpl(AMyCharacter* Character) PURE_VIRTUAL(AMyCollectable::InteractImpl, return false;);
+	virtual bool InteractImpl(class AMyCharacter* Character) PURE_VIRTUAL(AMyCollectable::InteractImpl, return false;);
 
 	virtual bool OnCharacterOverlap(
 		UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-		int32 OtherBodyIndex, bool bFromSweep, AMyCharacter* Character, const FHitResult& SweepResult
+		int32 OtherBodyIndex, bool bFromSweep, class AMyCharacter* Character, const FHitResult& SweepResult
 	);
 
 	bool IsBelongToCharacter() const;
 
-	void SetItemOwner(AMyCharacter* FutureOwner) { ItemOwner = FutureOwner; }
+	void SetItemOwner(class AMyCharacter* FutureOwner);
 
 public:	
 	// Called every frame
@@ -61,6 +59,6 @@ private:
 	class UBoxComponent* Collider;
 
 	UPROPERTY(VisibleAnywhere)
-	TWeakObjectPtr<AMyCharacter> ItemOwner;
+	TWeakObjectPtr<class AMyCharacter> ItemOwner;
 
 };
