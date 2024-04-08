@@ -42,7 +42,7 @@ protected:
 
 	bool IsBelongToCharacter() const;
 
-	void SetItemOwner(const class AMyCharacter* FutureOwner) { ItemOwner = FutureOwner; }
+	void SetItemOwner(AMyCharacter* FutureOwner) { ItemOwner = FutureOwner; }
 
 public:	
 	// Called every frame
@@ -59,6 +59,6 @@ private:
 	class UBoxComponent* Collider;
 
 	UPROPERTY(VisibleAnywhere)
-	const class AMyCharacter* ItemOwner;
+	TWeakObjectPtr<class AMyCharacter> ItemOwner;
 
 };
