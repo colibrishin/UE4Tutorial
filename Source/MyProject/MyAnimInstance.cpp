@@ -42,8 +42,11 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	}
 
 	IsFalling = Character->GetMovementComponent()->IsFalling();
-	Vertical = Character->GetForwardInput();
-	Horizontal = Character->GetRightInput();
+
+	const auto& Velocity = Character->GetVelocity();
+
+	Vertical = FVector::DotProduct(Velocity, Character->GetActorForwardVector());
+	Horizontal = FVector::DotProduct(Velocity, Character->GetActorRightVector());
 }
 
 FName UMyAnimInstance::GetAttackMontageSectionName(const int32 NewIndex)
