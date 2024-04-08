@@ -6,8 +6,6 @@
 #include "MyCollectable.h"
 #include "MyWeaponStatComponent.h"
 
-#include "../../Intermediate/ProjectFiles/Utilities.hpp"
-
 #include "Engine/DataTable.h"
 
 #include "GameFramework/Actor.h"
