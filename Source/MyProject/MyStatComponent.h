@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Utilities.hpp"
+
 #include "Components/ActorComponent.h"
 #include "MyStatComponent.generated.h"
 
@@ -20,17 +22,7 @@ public:
 	// Sets default values for this component's properties
 	UMyStatComponent();
 
-	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
-	void BindOnHPChanged(T* Object, void (T::*Func)(float))
-	{
-		OnHPChanged.AddUObject(Object, Func);
-	}
-
-	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
-	void BindOnHPChanged(const T* Object, void (T::*Func)(float) const)
-	{
-		OnHPChanged.AddUObject(Object, Func);
-	}
+	DECL_BINDON(OnHPChanged, float)
 
 	FORCEINLINE uint32 GetLevel() const { return Level; }
 	FORCEINLINE uint32 GetDamage() const { return Damage; }
@@ -40,7 +32,6 @@ public:
 	{
 		return FMath::Clamp((float)Health / (float)MaxHealth, 0.f, 1.f);
 	}
-
 
 	FORCEINLINE void SetHP(const int32 NewHP)
 	{

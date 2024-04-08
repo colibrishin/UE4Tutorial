@@ -18,6 +18,7 @@
 #include "ConstantFVector.hpp"
 #include "MyAIController.h"
 #include "MyCharacterWidget.h"
+#include "MyInventoryComponent.h"
 
 #include "Components/WidgetComponent.h"
 
@@ -41,6 +42,7 @@ AMyCharacter::AMyCharacter()
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
+	Inventory = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("Inventory"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -95,7 +97,7 @@ void AMyCharacter::PostInitializeComponents()
 	{
 		AnimInstance = Cast<UMyAnimInstance>(Anim);
 		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnAttackMontageEnded);
-		AnimInstance->ListenForAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
+		AnimInstance->BindOnAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
 	}
 
 	Widgets->InitWidget();
@@ -149,7 +151,10 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	if (IsValid(NewWeapon))
 	{
 		Weapon = NewWeapon;
+
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
+		Weapon->ShowOnly();
+
 		return true;
 	}
 
@@ -160,6 +165,7 @@ void AMyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted
 {
 	IsAttacking = false;
 	OnAttackEnded.Broadcast();
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 void AMyCharacter::UpDown(const float Value)
@@ -189,6 +195,7 @@ void AMyCharacter::Attack()
 	AttackIndex = (AttackIndex + 1) % MaxAttackIndex;
 	AnimInstance->PlayAttackMontage(AttackIndex);
 	IsAttacking = true;
+	GetCharacterMovement()->MaxWalkSpeed = 150.f;
 }
 
 void AMyCharacter::Interactive()
