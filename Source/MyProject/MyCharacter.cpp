@@ -18,6 +18,7 @@
 #include "ConstantFVector.hpp"
 #include "MyAIController.h"
 #include "MyCharacterWidget.h"
+#include "MyInventoryComponent.h"
 
 #include "Components/WidgetComponent.h"
 
@@ -41,6 +42,7 @@ AMyCharacter::AMyCharacter()
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
+	Inventory = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("Inventory"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -149,7 +151,10 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	if (IsValid(NewWeapon))
 	{
 		Weapon = NewWeapon;
+
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
+		Weapon->ShowOnly();
+
 		return true;
 	}
 

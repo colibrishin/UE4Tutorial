@@ -29,6 +29,7 @@ public:
 	AMyCharacter();
 
 	DECL_BINDON(OnAttackEnded)
+	class UMyInventoryComponent* GetInventory() const { return Inventory; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -98,6 +99,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UWidgetComponent* Widgets;
+
+	UPROPERTY(VisibleAnywhere)
+	class UMyInventoryComponent* Inventory;
 
 	FOnAttackEnded OnAttackEnded;
 };
