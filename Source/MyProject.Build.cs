@@ -17,6 +17,9 @@ public class MyProject: ModuleRules
 			"Engine",
 			"InputCore",
 			"UMG",
+			"NavigationSystem",
+			"AIModule",
+			"GameplayTasks"
 		});
 	}
 }
