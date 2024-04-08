@@ -28,7 +28,7 @@ protected:
 
 	virtual void PostInitializeComponents() override;
 
-	virtual bool Interact(class AMyCharacter* Character) override;
+	virtual bool InteractImpl(class AMyCharacter* Character) override;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Weapon")
