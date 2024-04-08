@@ -15,7 +15,8 @@ public class MyProject: ModuleRules
 			"Core",
 			"CoreUObject",
 			"Engine",
-			"InputCore"
+			"InputCore",
+			"UMG",
 		});
 	}
 }
