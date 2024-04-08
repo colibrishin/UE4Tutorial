@@ -22,6 +22,7 @@
 #include "Components/WidgetComponent.h"
 
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
+const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
 
 // Sets default values
 AMyCharacter::AMyCharacter()
@@ -44,13 +45,13 @@ AMyCharacter::AMyCharacter()
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
 
-	SpringArm->TargetArmLength = 600.0f;
-	SpringArm->SetRelativeRotation(FRotator(-45.0f, 0.0f, 0.0f));
-
 	// 기본 캡슐 사이즈, 매쉬가 붕 뜨지 않게 하도록
 	// Character 구현부 52번 라인 참조
 	// 캐릭터의 바닥을 맞추기 위해 사용할 수도 있음
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
+
+	SpringArm->TargetArmLength = 100.0f;
+	SpringArm->SetRelativeLocation({93.f, 41.f, 84.f});
 
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
@@ -80,6 +81,7 @@ AMyCharacter::AMyCharacter()
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	GetMesh()->SetOwnerNoSee(true);
 
 }
 
