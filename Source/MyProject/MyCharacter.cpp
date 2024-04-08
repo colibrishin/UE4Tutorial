@@ -16,6 +16,7 @@
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
 #include "ConstantFVector.hpp"
+#include "MyAIController.h"
 #include "MyCharacterWidget.h"
 
 #include "Components/WidgetComponent.h"
@@ -70,6 +71,9 @@ AMyCharacter::AMyCharacter()
 		Widgets->SetWidgetClass(UI_Widget.Class);
 		Widgets->SetDrawSize(FVector2D(100.f, 50.f));
 	}
+
+	AIControllerClass = AMyAIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 // Called when the game starts or when spawned
