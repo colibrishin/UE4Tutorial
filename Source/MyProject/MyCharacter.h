@@ -36,13 +36,13 @@ public:
 	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
 	void BindOnAttackEnded(T* Object, void(T::* Function)())
 	{
-		OnAttackEnded.Add(T::Create(Object, Function));
+		OnAttackEnded.Add(Object, Function);
 	}
 
 	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
 	void BindOnAttackEnded(const T* Object, void(T::* Function)() const)
 	{
-		OnAttackEnded.Add(T::Create(Object, Function));
+		OnAttackEnded.Add(Object, Function);
 	}
 
 protected:
