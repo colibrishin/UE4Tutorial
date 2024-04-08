@@ -42,7 +42,7 @@ AMyCharacter::AMyCharacter()
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
 
-	SpringArm->SetupAttachment(GetMesh(), HeadSocketName);
+	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
 
 	// 기본 캡슐 사이즈, 매쉬가 붕 뜨지 않게 하도록
@@ -50,8 +50,8 @@ AMyCharacter::AMyCharacter()
 	// 캐릭터의 바닥을 맞추기 위해 사용할 수도 있음
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
 
-	SpringArm->TargetArmLength = 0.0f;
-	SpringArm->SetWorldRotation(FRotator(0.f, 70.f, -90.f));
+	SpringArm->TargetArmLength = 100.0f;
+	SpringArm->SetRelativeLocation({93.f, 41.f, 84.f});
 
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
@@ -81,6 +81,7 @@ AMyCharacter::AMyCharacter()
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+	GetMesh()->SetOwnerNoSee(true);
 
 }
 
