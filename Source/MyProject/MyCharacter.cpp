@@ -62,19 +62,6 @@ AMyCharacter::AMyCharacter()
 
 	Weapon = nullptr;
 
-	Widgets = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widgets"));
-	Widgets->SetupAttachment(GetMesh());
-	Widgets->SetWidgetSpace(EWidgetSpace::Screen);
-	Widgets->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
-
-	static ConstructorHelpers::FClassFinder<UUserWidget> UI_Widget(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyCharacterWidget.BPMyCharacterWidget_C'"));
-	if (UI_Widget.Succeeded())
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UI_HPBar: %s"), *UI_Widget.Class->GetName());
-		Widgets->SetWidgetClass(UI_Widget.Class);
-		Widgets->SetDrawSize(FVector2D(100.f, 50.f));
-	}
-
 	AIControllerClass = AMyAIController::StaticClass();
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
@@ -98,14 +85,6 @@ void AMyCharacter::PostInitializeComponents()
 		AnimInstance = Cast<UMyAnimInstance>(Anim);
 		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnAttackMontageEnded);
 		AnimInstance->BindOnAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
-	}
-
-	Widgets->InitWidget();
-
-	const auto& Widget = Cast<UMyCharacterWidget>(Widgets->GetUserWidgetObject());
-	if (IsValid(Widget) && IsValid(StatComponent))
-	{
-		Widget->BindHp(StatComponent);
 	}
 }
 

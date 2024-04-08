@@ -30,6 +30,7 @@ public:
 
 	DECL_BINDON(OnAttackEnded)
 	class UMyInventoryComponent* GetInventory() const { return Inventory; }
+	class UMyStatComponent*      GetStatComponent() const { return StatComponent; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -96,9 +97,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UMyStatComponent* StatComponent;
-
-	UPROPERTY(VisibleAnywhere)
-	class UWidgetComponent* Widgets;
 
 	UPROPERTY(VisibleAnywhere)
 	class UMyInventoryComponent* Inventory;
