@@ -6,6 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "MyStatComponent.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnHPChanged, float)
+
 
 struct FMyStat;
 
@@ -18,13 +20,37 @@ public:
 	// Sets default values for this component's properties
 	UMyStatComponent();
 
-	uint32 GetLevel() const { return Level; }
-	uint32 GetDamage() const { return Damage; }
-	uint32 GetMaxHealth() const { return Health; }
-
-	FORCEINLINE void OnDamage(int32 DamageAmount)
+	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
+	void BindOnHPChanged(T* Object, void (T::*Func)(float))
 	{
-		Health = FMath::Clamp(Health - DamageAmount, 0, Health);
+		OnHPChanged.AddUObject(Object, Func);
+	}
+
+	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
+	void BindOnHPChanged(const T* Object, void (T::*Func)(float) const)
+	{
+		OnHPChanged.AddUObject(Object, Func);
+	}
+
+	FORCEINLINE uint32 GetLevel() const { return Level; }
+	FORCEINLINE uint32 GetDamage() const { return Damage; }
+	FORCEINLINE uint32 GetHealth() const { return Health; }
+	FORCEINLINE uint32 GetMaxHealth() const { return MaxHealth; }
+	FORCEINLINE float GetHPRatio() const
+	{
+		return FMath::Clamp((float)Health / (float)MaxHealth, 0.f, 1.f);
+	}
+
+
+	FORCEINLINE void SetHP(const int32 NewHP)
+	{
+		Health = FMath::Clamp(NewHP, 0, MaxHealth);
+		OnHPChanged.Broadcast(GetHPRatio());
+	}
+
+	FORCEINLINE void OnDamage(const int32 DamageAmount)
+	{
+		SetHP(Health - DamageAmount);
 	}
 
 protected:
@@ -42,4 +68,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Health;
+
+	UPROPERTY(VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
+	int32 MaxHealth;
+
+	FOnHPChanged OnHPChanged;
 };
