@@ -15,6 +15,7 @@
 #include "DrawDebugHelpers.h"
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
+#include "ConstantFVector.hpp"
 
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 
@@ -213,8 +214,8 @@ void AMyCharacter::OnAttackAnimNotify()
 	constexpr float AttackRadius = 50.f;
 
 	FVector AttackEndVec = GetActorForwardVector() * AttackRange;
-	FVector UpCompensation = FVector(0.f, 0.f, 50.f);
-	FVector ForwardCompensation = FVector(0.f, 0.f, 25.f);
+	constexpr FConstantFVector UpCompensation = FConstantFVector::UpVector * 50.f;
+	constexpr FConstantFVector ForwardCompensation = FConstantFVector::ForwardVector * 25.f;
 	FVector Center = GetActorLocation() + ForwardCompensation + (AttackEndVec * 0.5f) + (UpCompensation * 0.5f);
 	float HalfHeight = AttackRange * 0.5f + AttackRadius;
 
