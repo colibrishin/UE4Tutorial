@@ -56,7 +56,49 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		return false;
 	}
 
-	return true;
+	if (InteractImpl(Character))
+	{
+		GetMesh()->AttachToComponent(
+		Character->GetMesh(), 
+		FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+		Hide();
+	}
+
+	return false;
+}
+
+bool AMyCollectable::Drop()
+{
+	if (IsBelongToCharacter())
+	{
+		Show();
+		ItemOwner = nullptr;
+		return true;
+	}
+
+	return false;
+}
+
+void AMyCollectable::Hide() const
+{
+	GetMesh()->SetSimulatePhysics(false);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetMesh()->SetVisibility(false);
+}
+
+void AMyCollectable::Show() const
+{
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetMesh()->SetVisibility(true);
+}
+
+void AMyCollectable::ShowOnly() const
+{
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetMesh()->SetVisibility(true);
 }
 
 bool AMyCollectable::IsBelongToCharacter() const
