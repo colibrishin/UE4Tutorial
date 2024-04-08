@@ -2,9 +2,13 @@
 
 #pragma once
 
+#include <functional>
+
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
+
+DECLARE_MULTICAST_DELEGATE(FOnAttackEnded)
 
 class UMyStatComponent;
 class AMyWeapon;
@@ -22,6 +26,24 @@ public:
 
 	// Sets default values for this character's properties
 	AMyCharacter();
+
+	template <typename T>
+	void BindOnAttackEnded(T* Object , const std::function<void()>& Func)
+	{
+		OnAttackEnded.AddLambda(Func);
+	}
+
+	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
+	void BindOnAttackEnded(T* Object, void(T::* Function)())
+	{
+		OnAttackEnded.Add(T::Create(Object, Function));
+	}
+
+	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>>
+	void BindOnAttackEnded(const T* Object, void(T::* Function)() const)
+	{
+		OnAttackEnded.Add(T::Create(Object, Function));
+	}
 
 protected:
 	// Called when the game starts or when spawned
@@ -44,6 +66,8 @@ public:
 
 	bool TryPickWeapon(AMyWeapon* NewWeapon);
 
+	void Attack();
+
 private:
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -51,7 +75,6 @@ private:
 	void UpDown(const float Value);
 	void LeftRight(const float Value);
 
-	void Attack();
 	void Interactive();
 
 	int32 GetDamage() const;
@@ -90,4 +113,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UWidgetComponent* Widgets;
+
+	FOnAttackEnded OnAttackEnded;
 };
