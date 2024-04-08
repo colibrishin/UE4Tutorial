@@ -15,14 +15,19 @@ class MYPROJECT_API AMyAIController : public AAIController
 	GENERATED_BODY()
 
 public:
-	AMyAIController() = default;
+	AMyAIController();
 
 protected:
 	virtual void OnPossess(APawn* InPawn) override;
 	virtual void OnUnPossess() override;
 
 private:
-	void MoveRandomly();
-	FTimerHandle TimerHandle_MoveRandomly;
+	//FTimerHandle TimerHandle_MoveRandomly;
+
+	UPROPERTY()
+	class UBehaviorTree* BehaviorTree;
+
+	UPROPERTY()
+	class UBlackboardData* BlackboardData;
 	
 };
