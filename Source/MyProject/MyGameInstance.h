@@ -49,8 +49,15 @@ public:
 
 	virtual void Init() override;
 
-	FORCEINLINE FMyStat*       GetValue(const int32 Level) const;
-	FORCEINLINE FMyWeaponStat* GetWeaponValue(const int32 ID) const;
+	FORCEINLINE FMyStat*       GetValue(const int32 Level) const
+	{
+		return StatTable->FindRow<FMyStat>(*FString::FromInt(Level), TEXT(""));
+	}
+
+	FORCEINLINE FMyWeaponStat* GetWeaponValue(const int32 ID) const
+	{
+		return WeaponStatTable->FindRow<FMyWeaponStat>(*FString::FromInt(ID), TEXT(""));
+	}
 
 private:
 

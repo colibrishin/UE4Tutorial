@@ -15,6 +15,10 @@
 #include "DrawDebugHelpers.h"
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
+#include "ConstantFVector.hpp"
+#include "MyCharacterWidget.h"
+
+#include "Components/WidgetComponent.h"
 
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 
@@ -53,6 +57,19 @@ AMyCharacter::AMyCharacter()
 	AttackIndex = 0;
 
 	Weapon = nullptr;
+
+	Widgets = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widgets"));
+	Widgets->SetupAttachment(GetMesh());
+	Widgets->SetWidgetSpace(EWidgetSpace::Screen);
+	Widgets->SetRelativeLocation(FVector(0.f, 0.f, 200.f));
+
+	static ConstructorHelpers::FClassFinder<UUserWidget> UI_Widget(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyCharacterWidget.BPMyCharacterWidget_C'"));
+	if (UI_Widget.Succeeded())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("UI_HPBar: %s"), *UI_Widget.Class->GetName());
+		Widgets->SetWidgetClass(UI_Widget.Class);
+		Widgets->SetDrawSize(FVector2D(100.f, 50.f));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -73,6 +90,14 @@ void AMyCharacter::PostInitializeComponents()
 		AnimInstance = Cast<UMyAnimInstance>(Anim);
 		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnAttackMontageEnded);
 		AnimInstance->ListenForAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
+	}
+
+	Widgets->InitWidget();
+
+	const auto& Widget = Cast<UMyCharacterWidget>(Widgets->GetUserWidgetObject());
+	if (IsValid(Widget) && IsValid(StatComponent))
+	{
+		Widget->BindHp(StatComponent);
 	}
 }
 
@@ -213,8 +238,8 @@ void AMyCharacter::OnAttackAnimNotify()
 	constexpr float AttackRadius = 50.f;
 
 	FVector AttackEndVec = GetActorForwardVector() * AttackRange;
-	FVector UpCompensation = FVector(0.f, 0.f, 50.f);
-	FVector ForwardCompensation = FVector(0.f, 0.f, 25.f);
+	constexpr FConstantFVector UpCompensation = FConstantFVector::UpVector * 50.f;
+	constexpr FConstantFVector ForwardCompensation = FConstantFVector::ForwardVector * 25.f;
 	FVector Center = GetActorLocation() + ForwardCompensation + (AttackEndVec * 0.5f) + (UpCompensation * 0.5f);
 	float HalfHeight = AttackRange * 0.5f + AttackRadius;
 
