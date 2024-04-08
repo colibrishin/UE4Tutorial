@@ -17,6 +17,7 @@ class MYPROJECT_API UMyBTPatrolVectorNode : public UBTTaskNode
 public:
 	UMyBTPatrolVectorNode();
 
+protected:
 	virtual EBTNodeResult::Type ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory) override;
 	
 };
