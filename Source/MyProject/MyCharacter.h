@@ -44,6 +44,8 @@ public:
 
 	bool TryPickWeapon(AMyWeapon* NewWeapon);
 
+	void Attack();
+
 private:
 	UFUNCTION()
 	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
@@ -51,7 +53,6 @@ private:
 	void UpDown(const float Value);
 	void LeftRight(const float Value);
 
-	void Attack();
 	void Interactive();
 
 	int32 GetDamage() const;
