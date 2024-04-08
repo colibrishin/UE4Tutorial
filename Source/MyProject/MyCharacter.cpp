@@ -157,6 +157,7 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 void AMyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	IsAttacking = false;
+	OnAttackEnded.Broadcast();
 }
 
 void AMyCharacter::UpDown(const float Value)
