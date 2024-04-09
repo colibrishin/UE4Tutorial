@@ -63,6 +63,20 @@ void AMyAimableWeapon::Fire()
 			0,
 			2.f
 		);
+
+		const auto& Target = Cast<AMyCharacter>(HitResult.GetActor());
+
+		if (IsValid(Target))
+		{
+			// todo: refactoring
+			Target->TakeDamage
+			(
+				GetDamage(),
+				FDamageEvent{},
+				GetInstigatorController(),
+				Character
+			);
+		}
 	}
 	else
 	{
@@ -70,7 +84,7 @@ void AMyAimableWeapon::Fire()
 			GetWorld(),
 			Camera->GetComponentLocation(),
 			EndVector,
-			FColor::Green,
+			FColor::Red,
 			false,
 			1.f,
 			0,
