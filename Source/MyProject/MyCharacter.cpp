@@ -65,6 +65,7 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	Weapon = nullptr;
 
 	AIControllerClass = AMyAIController::StaticClass();
+
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -146,10 +147,14 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 
 			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
 			AimableWeapon->Show();
-			AimableWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, RightHandSocketName);
+			AimableWeapon->AttachToComponent(
+				GetMesh(), 
+				FAttachmentTransformRules::SnapToTargetIncludingScale, 
+				RightHandSocketName);
+
 			AimableWeapon->BindOnFireReady([this]()
 			{
-				CanAttack = true;
+				ResetAttack();
 			});
 
 			return true;
@@ -168,10 +173,82 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == AnimInstance->GetAttackMontage())
 	{
-		CanAttack = true;
-		OnAttackEnded.Broadcast();
-		GetCharacterMovement()->MaxWalkSpeed = 600.f;
+		ResetAttack();
 	}
+}
+
+void AMyCharacter::HitscanAttack()
+{
+	if (!CanAttack)
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Hitscan Fire!"));
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params{NAME_None, false, this};
+
+	FVector EndVector = 
+		Camera->GetComponentLocation() + 
+		Camera->GetForwardVector() * 
+		Weapon->GetWeaponStatComponent()->GetRange();
+
+	const auto& Result = GetWorld()->LineTraceSingleByChannel
+		(
+		 OUT HitResult ,
+		 Camera->GetComponentLocation() ,
+		 EndVector ,
+		 ECollisionChannel::ECC_Visibility ,
+		 Params
+		);
+
+	if (Result)
+	{
+		DrawDebugLine
+			(
+			 GetWorld(),
+			 Camera->GetComponentLocation(),
+			 HitResult.ImpactPoint,
+			 FColor::Green,
+			 false,
+			 1.f,
+			 0,
+			 2.f
+			);
+
+		const auto& Target = Cast<AMyCharacter>(HitResult.GetActor());
+
+		if (IsValid(Target))
+		{
+			UE_LOG(LogTemp, Warning , TEXT("Hit Actor: %s"), *Target->GetName());
+			FDamageEvent DamageEvent;
+			Target->TakeDamage(GetDamage(), DamageEvent, GetController(), this);
+		}
+	}
+	else
+	{
+		DrawDebugLine
+			(
+			 GetWorld(),
+			 Camera->GetComponentLocation(),
+			 EndVector,
+			 FColor::Red,
+			 false,
+			 1.f,
+			 0,
+			 2.f
+			);
+	}
+}
+
+void AMyCharacter::MeleeAttack()
+{
+	constexpr int32 MaxAttackSection = 3;
+
+	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
+	AttackIndex = (AttackIndex + 1) % MaxAttackSection;
+	AnimInstance->PlayAttackMontage(AttackIndex);
 }
 
 void AMyCharacter::UpDown(const float Value)
@@ -189,6 +266,11 @@ void AMyCharacter::LeftRight(const float Value)
 
 void AMyCharacter::Aim()
 {
+	if (!IsValid(Weapon))
+	{
+		return;
+	}
+
 	if (!Weapon->IsA<AMyAimableWeapon>())
 	{
 		return;
@@ -198,6 +280,8 @@ void AMyCharacter::Aim()
 	{
 		return;
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Aim"));
 
 	IsAiming = true;
 	OnAiming.Broadcast(IsAiming);
@@ -221,30 +305,43 @@ void AMyCharacter::Attack()
 		return;
 	}
 
-	if (IsValid(Weapon))
-	{
-		if (Weapon->IsA<AMyAimableWeapon>())
-		{
-			UE_LOG(LogTemp , Warning , TEXT("AimableWeapon Attack"));
-			const auto& AimableWeapon = Cast<AMyAimableWeapon>(Weapon);
-
-			if (IsValid(Weapon))
-			{
-				AimableWeapon->Fire();
-				CanAttack = false;
-				return;
-			}
-		}
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
-
 	constexpr int32 MaxAttackIndex = 3;
 
-	AttackIndex = (AttackIndex + 1) % MaxAttackIndex;
-	AnimInstance->PlayAttackMontage(AttackIndex);
+	if (IsValid(Weapon))
+	{
+		Weapon->Attack();
+
+		switch (Weapon->GetWeaponStatComponent()->GetWeaponType())
+		{
+		case EMyWeaponType::Range:
+			if (Weapon->GetWeaponStatComponent()->IsHitscan())
+			{
+				HitscanAttack();
+			}
+			break;
+		case EMyWeaponType::Melee:
+			MeleeAttack();
+			break;
+		default:
+		case EMyWeaponType::Unknown: 
+			UE_LOG(LogTemp, Error, TEXT("Unknown Weapon Type"));
+			return;
+		}
+	}
+	else
+	{
+		MeleeAttack();
+	}
+
 	CanAttack = false;
 	GetCharacterMovement()->MaxWalkSpeed = 150.f;
+}
+
+void AMyCharacter::ResetAttack()
+{
+	CanAttack = true;
+	OnAttackEnded.Broadcast();
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 void AMyCharacter::Interactive()
