@@ -11,14 +11,31 @@ UMyAnimInstance::UMyAnimInstance()
 	: Speed(0),
 	  Horizontal(0),
 	  Vertical(0),
-	  IsFalling(false)
+	  IsFalling(false),
+	  bIsAttacking(false),
+	  bIsAiming(false)
 {
-	static ConstructorHelpers::FObjectFinder<UAnimMontage> AM(TEXT("AnimMontage'/Game/Blueprints/BPAnimationMontage.BPAnimationMontage'"));
+	static ConstructorHelpers::FObjectFinder<UAnimMontage> AM
+		(TEXT("AnimMontage'/Game/Blueprints/BPAnimationMontage.BPAnimationMontage'"));
 
-	if (AM.Succeeded())
+	if (AM.Succeeded()) { AttackMontage = AM.Object; }
+}
+
+void UMyAnimInstance::NativeBeginPlay()
+{
+	Super::NativeBeginPlay();
+
+	const auto& Pawn = Cast<AMyCharacter>(TryGetPawnOwner());
+
+	if (!IsValid(Pawn))
 	{
-		AttackMontage = AM.Object;
+		return;
 	}
+
+	Pawn->BindOnAiming([this](const bool NewAiming)
+	{
+		bIsAiming = NewAiming;
+	});
 }
 
 void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)

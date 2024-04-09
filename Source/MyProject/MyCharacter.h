@@ -9,6 +9,7 @@
 #include "MyCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackEnded)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnAiming, bool)
 
 class UMyStatComponent;
 class AMyWeapon;
@@ -23,12 +24,15 @@ class MYPROJECT_API AMyCharacter : public ACharacter
 
 public:
 	static const FName LeftHandSocketName;
+	static const FName RightHandSocketName;
 	static const FName HeadSocketName;
 
 	// Sets default values for this character's properties
 	AMyCharacter();
 
 	DECL_BINDON(OnAttackEnded)
+	DECL_BINDON(OnAiming, bool)
+
 	class UMyInventoryComponent* GetInventory() const { return Inventory; }
 	class UMyStatComponent*      GetStatComponent() const { return StatComponent; }
 
@@ -57,10 +61,13 @@ public:
 
 private:
 	UFUNCTION()
-	void OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
 	void UpDown(const float Value);
 	void LeftRight(const float Value);
+
+	void Aim();
+	void UnAim();
 
 	void Interactive();
 
@@ -78,6 +85,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool IsAttacking;
+
+	UPROPERTY(VisibleAnywhere)
+	bool IsAiming;
 
 	UPROPERTY(VisibleAnywhere)
 	int32 AttackIndex;
@@ -102,4 +112,6 @@ private:
 	class UMyInventoryComponent* Inventory;
 
 	FOnAttackEnded OnAttackEnded;
+
+	FOnAiming OnAiming;
 };
