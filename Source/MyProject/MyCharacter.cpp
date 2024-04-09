@@ -85,7 +85,7 @@ void AMyCharacter::PostInitializeComponents()
 	if (IsValid(Anim))
 	{
 		AnimInstance = Cast<UMyAnimInstance>(Anim);
-		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnAttackMontageEnded);
+		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnMontageEnded);
 		AnimInstance->BindOnAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
 	}
 }
@@ -114,6 +114,8 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AMyCharacter::Jump);
 	PlayerInputComponent->BindAction(TEXT("Attack"), IE_Pressed, this, &AMyCharacter::Attack);
 	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Pressed, this, &AMyCharacter::Interactive);
+	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Pressed, this, &AMyCharacter::Aim);
+	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Released, this, &AMyCharacter::UnAim);
 
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AMyCharacter::LeftRight);
@@ -149,11 +151,14 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	return false;
 }
 
-void AMyCharacter::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
+void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	IsAttacking = false;
-	OnAttackEnded.Broadcast();
-	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	if (Montage == AnimInstance->GetAttackMontage())
+	{
+		IsAttacking = false;
+		OnAttackEnded.Broadcast();
+		GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	}
 }
 
 void AMyCharacter::UpDown(const float Value)
@@ -167,6 +172,28 @@ void AMyCharacter::LeftRight(const float Value)
 	// == Vector3{1, 0, 0} * acceleration
 	GetCharacterMovement()->AddInputVector(GetActorRightVector() * Value);
 	RightInput = Value;
+}
+
+void AMyCharacter::Aim()
+{
+	if (IsAiming)
+	{
+		return;
+	}
+
+	IsAiming = true;
+	OnAiming.Broadcast(IsAiming);
+}
+
+void AMyCharacter::UnAim()
+{
+	if (!IsAiming)
+	{
+		return;
+	}
+
+	IsAiming = false;
+	OnAiming.Broadcast(IsAiming);
 }
 
 void AMyCharacter::Attack()
