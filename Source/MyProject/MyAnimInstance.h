@@ -25,7 +25,11 @@ public:
 
 	DECL_BINDON(OnAttackHit)
 
+	const UAnimMontage* GetAttackMontage() const { return AttackMontage; }
+
 protected:
+	virtual void NativeBeginPlay() override;
+	
 	virtual void NativeUpdateAnimation(float DeltaSeconds) override;
 
 private:
@@ -46,6 +50,12 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Pawn, Meta=(AllowPrivateAccess))
 	bool IsFalling;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Pawn, Meta=(AllowPrivateAccess))
+	bool bIsAttacking;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Pawn, Meta=(AllowPrivateAccess))
+	bool bIsAiming;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Pawn, Meta=(AllowPrivateAccess))
 	UAnimMontage* AttackMontage;
