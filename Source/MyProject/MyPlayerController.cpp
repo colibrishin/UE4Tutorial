@@ -3,8 +3,14 @@
 
 #include "MyProject/MyPlayerController.h"
 
+#include "MyCameraManager.h"
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
+
+AMyPlayerController::AMyPlayerController()
+{
+	PlayerCameraManagerClass = AMyCameraManager::StaticClass();
+}
 
 void AMyPlayerController::BeginPlay()
 {
