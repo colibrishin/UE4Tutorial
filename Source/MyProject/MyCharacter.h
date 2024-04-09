@@ -36,13 +36,13 @@ public:
 	class UMyInventoryComponent* GetInventory() const { return Inventory; }
 	class UMyStatComponent*      GetStatComponent() const { return StatComponent; }
 
-	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void PostInitializeComponents() override;
+
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 public:	
 	// Called every frame
@@ -59,8 +59,12 @@ public:
 	void Attack();
 
 private:
+	void ResetAttack();
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void HitscanAttack();
+	void MeleeAttack();
 
 	void UpDown(const float Value);
 	void LeftRight(const float Value);
