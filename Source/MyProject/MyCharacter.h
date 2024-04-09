@@ -90,6 +90,9 @@ private:
 	bool IsAiming;
 
 	UPROPERTY(VisibleAnywhere)
+	bool CanAttack;
+
+	UPROPERTY(VisibleAnywhere)
 	int32 AttackIndex;
 
 	// Pawn에서 직접 추가했던 무브먼트 컴포넌트는 필요없음
