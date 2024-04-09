@@ -56,13 +56,17 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		return false;
 	}
 
-	if (InteractImpl(Character))
-	{
-		GetMesh()->AttachToComponent(
+	GetMesh()->AttachToComponent(
 		Character->GetMesh(), 
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale);
 
-		Hide();
+	Hide();
+
+	if (!InteractImpl(Character))
+	{
+		GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+		Show();
+		return false;
 	}
 
 	return false;
@@ -96,8 +100,8 @@ void AMyCollectable::Show() const
 
 void AMyCollectable::ShowOnly() const
 {
-	GetMesh()->SetSimulatePhysics(true);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetMesh()->SetSimulatePhysics(false);
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetVisibility(true);
 }
 
