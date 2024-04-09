@@ -15,6 +15,7 @@ class MYPROJECT_API AMyPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	AMyPlayerController();
 
 protected:
 	virtual void BeginPlay() override;

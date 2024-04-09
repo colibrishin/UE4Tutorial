@@ -3,9 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-#include "MyWeaponStatComponent.generated.h"
+#include "Enum.h"
 
+#include "Components/ActorComponent.h"
+
+#include "MyWeaponStatComponent.generated.h"
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYPROJECT_API UMyWeaponStatComponent : public UActorComponent
@@ -15,8 +17,13 @@ class MYPROJECT_API UMyWeaponStatComponent : public UActorComponent
 public:
 	// Sets default values for this component's properties
 	UMyWeaponStatComponent();
-	int32 GetDamage() const { return Damage; }
-	int32 GetID() const { return ID; }
+
+	int32         GetID() const { return ID; }
+	int32         GetDamage() const;
+	float         GetRange() const;
+	bool          IsHitscan() const;
+	EMyWeaponType GetWeaponType() const { return WeaponType; }
+	float         GetFireRate() const;
 
 protected:
 	// Called when the game starts
@@ -25,10 +32,21 @@ protected:
 	virtual void InitializeComponent() override;
 
 private:
-	UPROPERTY(EditAnywhere, Category=Stats, Meta=(AllowPrivateAccess))
+	FORCEINLINE const struct FMyRangeWeaponStat* GetRangeStat() const;
+	FORCEINLINE const struct FMyMeleeWeaponStat* GetMeleeStat() const;
+
+	UPROPERTY(EditAnywhere, Category=Stats)
 	int32 ID;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)
+	FString Name;
+
+	UPROPERTY(VisibleAnywhere, Category=Stats)
 	int32 Damage;
+
+	UPROPERTY(VisibleAnywhere, Category=Stats)
+	TEnumAsByte<EMyWeaponType> WeaponType;
+
+	const struct FMyWeaponStatBase* WeaponStat;
 
 };
