@@ -38,7 +38,6 @@ bool AMyWeapon::InteractImpl(AMyCharacter* Character)
 {
 	if (Character->TryPickWeapon(this))
 	{
-		SetItemOwner(Character);
 		return true;
 	}
 
