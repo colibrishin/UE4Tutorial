@@ -69,7 +69,8 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		return false;
 	}
 
-	return false;
+	SetItemOwner(Character);
+	return true;
 }
 
 bool AMyCollectable::Drop()
@@ -77,7 +78,6 @@ bool AMyCollectable::Drop()
 	if (IsBelongToCharacter())
 	{
 		Show();
-		ItemOwner = nullptr;
 		return true;
 	}
 
@@ -86,22 +86,11 @@ bool AMyCollectable::Drop()
 
 void AMyCollectable::Hide() const
 {
-	GetMesh()->SetSimulatePhysics(false);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetVisibility(false);
 }
 
 void AMyCollectable::Show() const
 {
-	GetMesh()->SetSimulatePhysics(true);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	GetMesh()->SetVisibility(true);
-}
-
-void AMyCollectable::ShowOnly() const
-{
-	GetMesh()->SetSimulatePhysics(false);
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetVisibility(true);
 }
 
@@ -110,9 +99,9 @@ bool AMyCollectable::IsBelongToCharacter() const
 	return ItemOwner.IsValid();
 }
 
-void AMyCollectable::SetItemOwner(AMyCharacter* FutureOwner)
+void AMyCollectable::SetItemOwner(AMyCharacter* NewOwner)
 {
-	ItemOwner = FutureOwner;
+	ItemOwner = NewOwner;
 }
 
 // Called every frame
