@@ -176,6 +176,11 @@ void AMyCharacter::LeftRight(const float Value)
 
 void AMyCharacter::Aim()
 {
+	if (!IsValid(Cast<AMyAimableWeapon>(Weapon)))
+	{
+		return;
+	}
+
 	if (IsAiming)
 	{
 		return;
