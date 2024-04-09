@@ -17,12 +17,14 @@
 #include "MyWeapon.h"
 #include "ConstantFVector.hpp"
 #include "MyAIController.h"
+#include "MyAimableWeapon.h"
 #include "MyCharacterWidget.h"
 #include "MyInventoryComponent.h"
 
 #include "Components/WidgetComponent.h"
 
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
+const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
 const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
 
 // Sets default values
@@ -131,9 +133,16 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	{
 		Weapon = NewWeapon;
 
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
-		Weapon->ShowOnly();
 
+		if (IsValid(Cast<AMyAimableWeapon>(NewWeapon)))
+		{
+			NewWeapon->ShowOnly();
+			NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, RightHandSocketName);
+			return true;
+		}
+
+		Weapon->ShowOnly();
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
 		return true;
 	}
 
