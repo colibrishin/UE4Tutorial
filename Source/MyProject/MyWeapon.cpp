@@ -43,3 +43,8 @@ bool AMyWeapon::InteractImpl(AMyCharacter* Character)
 
 	return false;
 }
+
+void AMyWeapon::Attack()
+{
+	
+}
