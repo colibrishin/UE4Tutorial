@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyCharacter.h"
 #include "MyInteractiveActor.h"
 
 #include "GameFramework/Actor.h"
@@ -19,13 +20,13 @@ public:
 
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 	class UBoxComponent* GetCollider() const { return Collider; }
+	class AMyCharacter* GetItemOwner() const { return ItemOwner.Get(); }
 
 	virtual bool Interact(class AMyCharacter* Character) override final;
 	virtual bool Drop();
 
 	void Hide() const;
 	void Show() const;
-	void ShowOnly() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -42,7 +43,8 @@ protected:
 
 	bool IsBelongToCharacter() const;
 
-	void SetItemOwner(class AMyCharacter* FutureOwner);
+	void SetItemOwner(class AMyCharacter* NewOwner);
+
 
 public:	
 	// Called every frame
