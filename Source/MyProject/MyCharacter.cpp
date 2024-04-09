@@ -28,7 +28,7 @@ const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
 const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
 
 // Sets default values
-AMyCharacter::AMyCharacter()
+AMyCharacter::AMyCharacter() : CanAttack(true)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -135,15 +135,28 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	{
 		Weapon = NewWeapon;
 
-
-		if (IsValid(Cast<AMyAimableWeapon>(NewWeapon)))
+		if (Weapon->IsA<AMyAimableWeapon>())
 		{
-			NewWeapon->ShowOnly();
-			NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, RightHandSocketName);
+			const auto& AimableWeapon = Cast<AMyAimableWeapon>(Weapon);
+
+			if (!IsValid(AimableWeapon))
+			{
+				return false;
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
+			AimableWeapon->Show();
+			AimableWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, RightHandSocketName);
+			AimableWeapon->BindOnFireReady([this]()
+			{
+				CanAttack = true;
+			});
+
 			return true;
 		}
 
-		Weapon->ShowOnly();
+		UE_LOG(LogTemp, Warning, TEXT("Weapon: %s"), *Weapon->GetName());
+		Weapon->Show();
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
 		return true;
 	}
@@ -155,7 +168,7 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == AnimInstance->GetAttackMontage())
 	{
-		IsAttacking = false;
+		CanAttack = true;
 		OnAttackEnded.Broadcast();
 		GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	}
@@ -176,7 +189,7 @@ void AMyCharacter::LeftRight(const float Value)
 
 void AMyCharacter::Aim()
 {
-	if (!IsValid(Cast<AMyAimableWeapon>(Weapon)))
+	if (!Weapon->IsA<AMyAimableWeapon>())
 	{
 		return;
 	}
@@ -203,18 +216,34 @@ void AMyCharacter::UnAim()
 
 void AMyCharacter::Attack()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Attack"));
-
-	if (IsAttacking)
+	if (!CanAttack)
 	{
 		return;
 	}
+
+	if (IsValid(Weapon))
+	{
+		if (Weapon->IsA<AMyAimableWeapon>())
+		{
+			UE_LOG(LogTemp , Warning , TEXT("AimableWeapon Attack"));
+			const auto& AimableWeapon = Cast<AMyAimableWeapon>(Weapon);
+
+			if (IsValid(Weapon))
+			{
+				AimableWeapon->Fire();
+				CanAttack = false;
+				return;
+			}
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
 
 	constexpr int32 MaxAttackIndex = 3;
 
 	AttackIndex = (AttackIndex + 1) % MaxAttackIndex;
 	AnimInstance->PlayAttackMontage(AttackIndex);
-	IsAttacking = true;
+	CanAttack = false;
 	GetCharacterMovement()->MaxWalkSpeed = 150.f;
 }
 
