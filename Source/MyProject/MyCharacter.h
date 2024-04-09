@@ -23,6 +23,7 @@ class MYPROJECT_API AMyCharacter : public ACharacter
 
 public:
 	static const FName LeftHandSocketName;
+	static const FName RightHandSocketName;
 	static const FName HeadSocketName;
 
 	// Sets default values for this character's properties
