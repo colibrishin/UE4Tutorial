@@ -21,30 +21,14 @@ class MYPROJECT_API AMyAimableWeapon : public AMyWeapon
 public:
 	AMyAimableWeapon();
 
-	void Fire();
-
 	DECL_BINDON(OnFireReady)
+
+	virtual void Attack() override;
 
 private:
 	void ResetFire();
 
 	UPROPERTY(VisibleAnywhere)
-	float Range = 1000.0f;
-
-	UPROPERTY(VisibleAnywhere)
-	int32 Ammo = 100;
-
-	UPROPERTY(VisibleAnywhere)
-	int32 MaxAmmo = 100;
-
-	UPROPERTY(VisibleAnywhere)
-	int32 Magazine = 10;
-
-	UPROPERTY(VisibleAnywhere)
-	float FireRate = 0.1f;
-
-	UPROPERTY(VisibleAnywhere)
-	bool bCanFire;
 
 	FTimerHandle FireRateTimerHandle;
 
