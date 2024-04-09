@@ -21,6 +21,8 @@ public:
 	AMyWeapon();
 
 	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
+	const UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
+	virtual void Attack();
 
 protected:
 	// Called when the game starts or when spawned

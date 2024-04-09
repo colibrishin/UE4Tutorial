@@ -44,7 +44,6 @@ protected:
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
-
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -60,8 +59,12 @@ public:
 	void Attack();
 
 private:
+	void ResetAttack();
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	void HitscanAttack();
+	void MeleeAttack();
 
 	void UpDown(const float Value);
 	void LeftRight(const float Value);
@@ -88,6 +91,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool IsAiming;
+
+	UPROPERTY(VisibleAnywhere)
+	bool CanAttack;
 
 	UPROPERTY(VisibleAnywhere)
 	int32 AttackIndex;

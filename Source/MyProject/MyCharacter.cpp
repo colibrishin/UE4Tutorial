@@ -28,7 +28,7 @@ const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
 const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
 
 // Sets default values
-AMyCharacter::AMyCharacter()
+AMyCharacter::AMyCharacter() : CanAttack(true)
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -65,6 +65,7 @@ AMyCharacter::AMyCharacter()
 	Weapon = nullptr;
 
 	AIControllerClass = AMyAIController::StaticClass();
+
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
@@ -135,15 +136,32 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	{
 		Weapon = NewWeapon;
 
-
-		if (IsValid(Cast<AMyAimableWeapon>(NewWeapon)))
+		if (Weapon->IsA<AMyAimableWeapon>())
 		{
-			NewWeapon->ShowOnly();
-			NewWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, RightHandSocketName);
+			const auto& AimableWeapon = Cast<AMyAimableWeapon>(Weapon);
+
+			if (!IsValid(AimableWeapon))
+			{
+				return false;
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
+			AimableWeapon->Show();
+			AimableWeapon->AttachToComponent(
+				GetMesh(), 
+				FAttachmentTransformRules::SnapToTargetIncludingScale, 
+				RightHandSocketName);
+
+			AimableWeapon->BindOnFireReady([this]()
+			{
+				ResetAttack();
+			});
+
 			return true;
 		}
 
-		Weapon->ShowOnly();
+		UE_LOG(LogTemp, Warning, TEXT("Weapon: %s"), *Weapon->GetName());
+		Weapon->Show();
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
 		return true;
 	}
@@ -155,10 +173,82 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == AnimInstance->GetAttackMontage())
 	{
-		IsAttacking = false;
-		OnAttackEnded.Broadcast();
-		GetCharacterMovement()->MaxWalkSpeed = 600.f;
+		ResetAttack();
 	}
+}
+
+void AMyCharacter::HitscanAttack()
+{
+	if (!CanAttack)
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Hitscan Fire!"));
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params{NAME_None, false, this};
+
+	FVector EndVector = 
+		Camera->GetComponentLocation() + 
+		Camera->GetForwardVector() * 
+		Weapon->GetWeaponStatComponent()->GetRange();
+
+	const auto& Result = GetWorld()->LineTraceSingleByChannel
+		(
+		 OUT HitResult ,
+		 Camera->GetComponentLocation() ,
+		 EndVector ,
+		 ECollisionChannel::ECC_Visibility ,
+		 Params
+		);
+
+	if (Result)
+	{
+		DrawDebugLine
+			(
+			 GetWorld(),
+			 Camera->GetComponentLocation(),
+			 HitResult.ImpactPoint,
+			 FColor::Green,
+			 false,
+			 1.f,
+			 0,
+			 2.f
+			);
+
+		const auto& Target = Cast<AMyCharacter>(HitResult.GetActor());
+
+		if (IsValid(Target))
+		{
+			UE_LOG(LogTemp, Warning , TEXT("Hit Actor: %s"), *Target->GetName());
+			FDamageEvent DamageEvent;
+			Target->TakeDamage(GetDamage(), DamageEvent, GetController(), this);
+		}
+	}
+	else
+	{
+		DrawDebugLine
+			(
+			 GetWorld(),
+			 Camera->GetComponentLocation(),
+			 EndVector,
+			 FColor::Red,
+			 false,
+			 1.f,
+			 0,
+			 2.f
+			);
+	}
+}
+
+void AMyCharacter::MeleeAttack()
+{
+	constexpr int32 MaxAttackSection = 3;
+
+	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
+	AttackIndex = (AttackIndex + 1) % MaxAttackSection;
+	AnimInstance->PlayAttackMontage(AttackIndex);
 }
 
 void AMyCharacter::UpDown(const float Value)
@@ -176,7 +266,12 @@ void AMyCharacter::LeftRight(const float Value)
 
 void AMyCharacter::Aim()
 {
-	if (!IsValid(Cast<AMyAimableWeapon>(Weapon)))
+	if (!IsValid(Weapon))
+	{
+		return;
+	}
+
+	if (!Weapon->IsA<AMyAimableWeapon>())
 	{
 		return;
 	}
@@ -185,6 +280,8 @@ void AMyCharacter::Aim()
 	{
 		return;
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Aim"));
 
 	IsAiming = true;
 	OnAiming.Broadcast(IsAiming);
@@ -203,19 +300,48 @@ void AMyCharacter::UnAim()
 
 void AMyCharacter::Attack()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Attack"));
-
-	if (IsAttacking)
+	if (!CanAttack)
 	{
 		return;
 	}
 
 	constexpr int32 MaxAttackIndex = 3;
 
-	AttackIndex = (AttackIndex + 1) % MaxAttackIndex;
-	AnimInstance->PlayAttackMontage(AttackIndex);
-	IsAttacking = true;
+	if (IsValid(Weapon))
+	{
+		Weapon->Attack();
+
+		switch (Weapon->GetWeaponStatComponent()->GetWeaponType())
+		{
+		case EMyWeaponType::Range:
+			if (Weapon->GetWeaponStatComponent()->IsHitscan())
+			{
+				HitscanAttack();
+			}
+			break;
+		case EMyWeaponType::Melee:
+			MeleeAttack();
+			break;
+		default:
+		case EMyWeaponType::Unknown: 
+			UE_LOG(LogTemp, Error, TEXT("Unknown Weapon Type"));
+			return;
+		}
+	}
+	else
+	{
+		MeleeAttack();
+	}
+
+	CanAttack = false;
 	GetCharacterMovement()->MaxWalkSpeed = 150.f;
+}
+
+void AMyCharacter::ResetAttack()
+{
+	CanAttack = true;
+	OnAttackEnded.Broadcast();
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
 void AMyCharacter::Interactive()
