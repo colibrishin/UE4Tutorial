@@ -25,3 +25,11 @@
 	DECL_BINDON_LAMBDA(Delegate, __VA_ARGS__) \
 	DECL_BINDON_LOCAL(Delegate, __VA_ARGS__) \
 	DECL_BINDON_LOCAL_CONST(Delegate, __VA_ARGS__)
+
+
+template <typename T>
+FORCEINLINE T PrintErrorAndReturnDefault(const FString& Message, const UObject* Object)
+{
+	UE_LOG(LogTemp, Error, TEXT("%s: %s"), *Object->GetName(), *Message);
+	return T();
+}
