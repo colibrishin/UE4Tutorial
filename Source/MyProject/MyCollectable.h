@@ -23,6 +23,7 @@ public:
 	class AMyCharacter* GetItemOwner() const { return ItemOwner.Get(); }
 
 	virtual bool Interact(class AMyCharacter* Character) override final;
+	virtual bool Use(class AMyCharacter* Character) override final;
 	virtual bool Drop();
 
 	void Hide() const;
@@ -35,6 +36,7 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual bool InteractImpl(class AMyCharacter* Character) PURE_VIRTUAL(AMyCollectable::InteractImpl, return false;);
+	virtual bool UseImpl(class AMyCharacter* Character) PURE_VIRTUAL(AMyCollectable::UseImpl, return false;);
 
 	virtual bool OnCharacterOverlap(
 		UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
