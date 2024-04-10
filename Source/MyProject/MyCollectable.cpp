@@ -60,28 +60,19 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 
 	if (GetMesh()->AttachToComponent
 		(
-		 Character->GetMesh() ,
-		 FAttachmentTransformRules::SnapToTargetNotIncludingScale ,
+		 Character->GetMesh(),
+		 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		 AMyCharacter::ChestSocketName
 		))
 	{
-		UE_LOG(LogTemp , Warning , TEXT("AttachToComponent success"));
+		UE_LOG(LogTemp, Warning, TEXT("AttachToComponent success"));
 	}
 	else
 	{
-		UE_LOG(LogTemp , Warning , TEXT("AttachToComponent failed"));
+		UE_LOG(LogTemp, Warning, TEXT("AttachToComponent failed"));
 		return false;
 	}
 	Hide();
-
-	if (!InteractImpl(Character))
-	{
-		UE_LOG(LogTemp, Warning, TEXT("InteractImpl failed"));
-
-		GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		SetActorLocation(PreviousLocation);
-		return false;
-	}
 
 	SetItemOwner(Character);
 	return true;
@@ -89,8 +80,13 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 
 bool AMyCollectable::Use(AMyCharacter* Character)
 {
+	Character->BindOnUseInterrupted(this, &AMyCollectable::Recycle);
 	UE_LOG(LogTemp, Warning, TEXT("Use"));
-	return UseImpl(Character);
+	return true;
+}
+
+void AMyCollectable::Recycle()
+{
 }
 
 bool AMyCollectable::Drop()
@@ -130,6 +126,7 @@ bool AMyCollectable::Drop()
 		}
 
 		Show();
+		SetItemOwner(nullptr);
 		return true;
 	}
 
@@ -166,7 +163,24 @@ bool AMyCollectable::IsBelongToCharacter() const
 
 void AMyCollectable::SetItemOwner(AMyCharacter* NewOwner)
 {
+	if (ItemOwner == NewOwner)
+	{
+		return;
+	}
+
+	if (ItemOwner != NewOwner && ItemOwner != nullptr)
+	{
+		ItemOwner->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
+		ItemOwner->UnbindOnUseInterrupted(OnUseInterruptedHandle);
+	}
+
 	ItemOwner = NewOwner;
+
+	if (ItemOwner != nullptr)
+	{
+		OnInteractInterruptedHandle = ItemOwner->BindOnInteractInterrupted(this, &AMyCollectable::Recycle);
+		OnUseInterruptedHandle = ItemOwner->BindOnUseInterrupted(this, &AMyCollectable::Recycle);
+	}
 }
 
 // Called every frame
