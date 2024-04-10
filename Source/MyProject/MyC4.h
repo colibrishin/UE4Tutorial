@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyCollectable.h"
+#include "MyItem.h"
 
 #include "GameFramework/Actor.h"
 #include "MyC4.generated.h"
@@ -11,7 +11,7 @@
 DECLARE_MULTICAST_DELEGATE(FOnBombPlanted)
 
 UCLASS()
-class MYPROJECT_API AMyC4 : public AMyCollectable
+class MYPROJECT_API AMyC4 : public AMyItem
 {
 	GENERATED_BODY()
 	
@@ -33,6 +33,8 @@ protected:
 	void         OnBombTickingImpl();
 	void         OnBombPlantedImpl();
 	void         OnBombDefusedImpl();
+
+	virtual bool InteractImpl(AMyCharacter* Character) override;
 	virtual bool UseImpl(class AMyCharacter* Character) override;
 
 	virtual void Tick(float DeltaSeconds) override;
