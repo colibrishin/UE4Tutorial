@@ -438,7 +438,7 @@ void AMyCharacter::OnAttackAnimNotify()
 		Center,
 		GetActorLocation() + AttackEndVec,
 		FQuat::Identity,
-		ECollisionChannel::ECC_EngineTraceChannel2, // DefaultEngine.ini 참조
+		ECollisionChannel::ECC_GameTraceChannel2, // DefaultEngine.ini 참조
 		FCollisionShape::MakeSphere(AttackRadius),
 		Params // 까먹지 않도록 조심, 기본인자가 있음
 	);
