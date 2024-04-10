@@ -75,6 +75,7 @@ private:
 	void UnAim();
 
 	void Interactive();
+	void Use();
 
 	int32 GetDamage() const;
 	void OnAttackAnimNotify();
@@ -121,6 +122,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UMyInventoryComponent* Inventory;
+
+	UPROPERTY(VisibleAnywhere)
+	class AMyCollectable* CurrentItem;
 
 	FOnAttackEnded OnAttackEnded;
 
