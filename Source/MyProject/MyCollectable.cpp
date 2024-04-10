@@ -73,6 +73,11 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 	return true;
 }
 
+bool AMyCollectable::Use(AMyCharacter* Character)
+{
+	return UseImpl(Character);
+}
+
 bool AMyCollectable::Drop()
 {
 	if (IsBelongToCharacter())
