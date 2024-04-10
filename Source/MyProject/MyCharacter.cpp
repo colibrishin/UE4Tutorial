@@ -54,7 +54,7 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	// 캐릭터의 바닥을 맞추기 위해 사용할 수도 있음
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
 
-	SpringArm->TargetArmLength = 100.0f;
+	SpringArm->TargetArmLength = 0.f;
 	SpringArm->SetRelativeLocation({93.f, 41.f, 84.f});
 
 	bUseControllerRotationYaw = true;
