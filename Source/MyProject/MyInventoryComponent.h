@@ -22,6 +22,8 @@ public:
 
 	bool TryAddItem(class AMyCollectable* Item);
 
+	class AMyCollectable* Use(const int32 Index);
+
 private:
 
 	UPROPERTY(VisibleAnywhere)
