@@ -11,6 +11,8 @@
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackEnded)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAiming, bool)
+DECLARE_MULTICAST_DELEGATE(FOnUseInterrupted)
+DECLARE_MULTICAST_DELEGATE(FOnInteractInterrupted)
 
 class UMyStatComponent;
 class AMyWeapon;
@@ -34,10 +36,11 @@ public:
 
 	DECL_BINDON(OnAttackEnded)
 	DECL_BINDON(OnAiming, bool)
+	DECL_BINDON(OnUseInterrupted)
+	DECL_BINDON(OnInteractInterrupted)
 
 	class UMyInventoryComponent* GetInventory() const { return Inventory; }
 	class UMyStatComponent*      GetStatComponent() const { return StatComponent; }
-	EMyCharacterState            GetState() const { return State; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -76,7 +79,10 @@ private:
 	void UnAim();
 
 	void Interactive();
+	void InteractInterrupted();
+
 	void Use();
+	void UseInterrupt();
 
 	int32 GetDamage() const;
 	void OnAttackAnimNotify();
@@ -101,9 +107,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	int32 AttackIndex;
-
-	UPROPERTY(VisibleAnywhere)
-	TEnumAsByte<EMyCharacterState> State;
 
 	// Pawn에서 직접 추가했던 무브먼트 컴포넌트는 필요없음
 	UPROPERTY(VisibleAnywhere)
@@ -130,4 +133,8 @@ private:
 	FOnAttackEnded OnAttackEnded;
 
 	FOnAiming OnAiming;
+
+	FOnUseInterrupted OnUseInterrupted;
+
+	FOnInteractInterrupted OnInteractInterrupted;
 };
