@@ -75,6 +75,7 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 
 bool AMyCollectable::Use(AMyCharacter* Character)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Use"));
 	return UseImpl(Character);
 }
 
