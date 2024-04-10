@@ -14,7 +14,8 @@ AMyC4::AMyC4()
 	  IsPlanting(false),
 	  IsDefusing(false),
 	  IsExploded(false),
-	  PlantingTime(0)
+	  PlantingTime(0),
+      DefusingTime(0)
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -62,14 +63,28 @@ bool AMyC4::IsPlantable(OUT FHitResult& OutResult) const
 		1.f
 	);
 
-	return GroundResult && OverlapResult;
+	return !IsPlanted && !IsExploded && GroundResult && OverlapResult;
+}
+
+bool AMyC4::IsDefusable() const
+{
+	return !IsDefusing && IsPlanted && !IsExploded;
+}
+
+bool AMyC4::Interact(AMyCharacter* Character)
+{
+	if (!IsDefusable())
+	{
+		return Super::Interact(Character);
+	}
+
+	return TryDefuse(Character);
 }
 
 // Called when the game starts or when spawned
 void AMyC4::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void AMyC4::OnBombTickingImpl()
@@ -89,19 +104,7 @@ void AMyC4::OnBombPlantedImpl()
 		return;
 	}
 
-	if (GetItemOwner()->GetState() != Planting)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Owner is not planting"));
-		return;
-	}
-
 	UE_LOG(LogTemp, Warning, TEXT("Bomb planted"));
-
-	IsPlanting   = false;
-	IsPlanted    = true;
-	PlantingTime = 0.f;
-
-	OnBombPlantedDelegate.Broadcast();
 
 	FHitResult  HitResult;
 	const auto& GroundResult = IsPlantable(OUT HitResult);
@@ -111,6 +114,14 @@ void AMyC4::OnBombPlantedImpl()
 		UE_LOG(LogTemp, Warning, TEXT("Bomb is not on the ground"));
 		return;
 	}
+
+	IsPlanting   = false;
+	IsPlanted    = true;
+	PlantingTime = 0.f;
+
+	OnBombPlantedDelegate.Broadcast();
+
+	Drop();
 
 	GetWorldTimerManager().ClearTimer(OnBombPlanted);
 
@@ -129,11 +140,6 @@ void AMyC4::OnBombDefusedImpl()
 		return;
 	}
 
-	if (DefusingCharacter->GetState() != Defusing)
-	{
-		return;
-	}
-
 	IsDefusing = false;
 	IsPlanted  = false;
 
@@ -143,58 +149,76 @@ void AMyC4::OnBombDefusedImpl()
 	GetWorldTimerManager().ClearTimer(OnBombDefusing);
 }
 
-bool AMyC4::InteractImpl(AMyCharacter* Character)
+bool AMyC4::TryDefuse(AMyCharacter* Character)
 {
-	return Super::InteractImpl(Character);
-}
-
-bool AMyC4::UseImpl(AMyCharacter* Character)
-{
-	FHitResult HitResult;
-	if (!IsPlantable(OUT HitResult))
+	if (IsDefusable())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Bomb is not plantable"));
-		return false;
-	}
-
-	if (IsPlanting || IsExploded)
-	{
-		return false;
-	}
-
-	// todo: need to know character is defusable
-	if (IsPlanted && !IsDefusing)
-	{
-		IsDefusing = true;
+		// todo: need to know character is defusable
+		SetDefusing(true, Character);
 
 		UE_LOG(LogTemp, Warning, TEXT("Bomb defusing"));
 
-		GetWorldTimerManager().SetTimer(
-		OnBombDefusing,
-			this,
-			&AMyC4::OnBombDefusedImpl,
-			FullDefusingTime,
-			false);
-
-		return true;
-	}
-	else
-	{
-		IsPlanting = true;
-
-		UE_LOG(LogTemp, Warning, TEXT("Bomb planting"));
-
-		GetWorldTimerManager().SetTimer(
-			OnBombPlanted, 
-			this,
-			&AMyC4::OnBombPlantedImpl,
-			FullPlantingTime,
-			false);
+		GetWorldTimerManager().SetTimer
+			(
+			 OnBombDefusing,
+			 this,
+			 &AMyC4::OnBombDefusedImpl,
+			 FullDefusingTime,
+			 false
+			);
 
 		return true;
 	}
 
 	return false;
+}
+
+bool AMyC4::Use(AMyCharacter* Character)
+{
+	if (!IsPlanted)
+	{
+		FHitResult HitResult;
+		if (!IsPlantable(OUT HitResult))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Bomb is not plantable"));
+			return false;
+		}
+
+		SetPlanting(true);
+
+		UE_LOG(LogTemp, Warning, TEXT("Bomb planting"));
+
+		if (!OnBombPlanted.IsValid())
+		{
+			GetWorldTimerManager().SetTimer(
+				OnBombPlanted, 
+				this,
+				&AMyC4::OnBombPlantedImpl,
+				FullPlantingTime,
+				false);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
+void AMyC4::Recycle()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Interrupt caught"));
+
+	if (IsPlanting && GetPlantingRatio() < 1.f)
+	{
+		GetWorldTimerManager().ClearTimer(OnBombPlanted);
+		SetPlanting(false);
+	}
+
+	if (IsDefusing && GetDefusingRatio() < 1.f)
+	{
+		GetWorldTimerManager().ClearTimer(OnBombDefusing);
+		SetDefusing(false, nullptr);
+	}
 }
 
 void AMyC4::Tick(float DeltaSeconds)
@@ -207,9 +231,23 @@ void AMyC4::Tick(float DeltaSeconds)
 	}
 }
 
-void AMyC4::SetDefusingCharacter(AMyCharacter* Character)
+void AMyC4::SetDefusing(const bool NewDefusing, AMyCharacter* Character)
 {
+	IsDefusing = NewDefusing;
 	DefusingCharacter = Character;
+
+	if (!IsDefusing)
+	{
+		DefusingTime = 0.f;
+	}
 }
 
+void AMyC4::SetPlanting(const bool NewPlanting)
+{
+	IsPlanting = NewPlanting;
 
+	if (!IsPlanting)
+	{
+		PlantingTime = 0.f;
+	}
+}
