@@ -13,6 +13,8 @@ AMyItem::AMyItem()
 
 bool AMyItem::InteractImpl(AMyCharacter* Character)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Interacting with item %s"), *GetName());
+
 	const auto& Inventory = Character->GetInventory();
 	return Inventory->TryAddItem(this);
 }
