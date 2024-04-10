@@ -115,10 +115,16 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AMyCharacter::Jump);
-	PlayerInputComponent->BindAction(TEXT("Attack"), IE_Pressed, this, &AMyCharacter::Attack);
+	PlayerInputComponent->BindAction(TEXT("Attack"), IE_Repeat, this, &AMyCharacter::Attack);
+
 	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Pressed, this, &AMyCharacter::Interactive);
-	PlayerInputComponent->BindAction(TEXT("Use"), IE_Pressed, this, &AMyCharacter::Use);
-	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Pressed, this, &AMyCharacter::Aim);
+	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Repeat, this, &AMyCharacter::Interactive);
+	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Released, this, &AMyCharacter::InteractInterrupted);
+
+	PlayerInputComponent->BindAction(TEXT("Use"), IE_Repeat, this, &AMyCharacter::Use);
+	PlayerInputComponent->BindAction(TEXT("Use"), IE_Released, this, &AMyCharacter::UseInterrupt);
+
+	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Repeat, this, &AMyCharacter::Aim);
 	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Released, this, &AMyCharacter::UnAim);
 
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
@@ -199,10 +205,10 @@ void AMyCharacter::HitscanAttack()
 
 	const auto& Result = GetWorld()->LineTraceSingleByChannel
 		(
-		 OUT HitResult ,
+		 OUT HitResult,
 		 Camera->GetComponentLocation() ,
-		 EndVector ,
-		 ECollisionChannel::ECC_Visibility ,
+		 EndVector,
+		 ECollisionChannel::ECC_Visibility,
 		 Params
 		);
 
@@ -368,11 +374,11 @@ void AMyCharacter::Interactive()
 	{
 		for (const auto& Hit : HitResults)
 		{
-			const auto& Interactive = Cast<AMyInteractiveActor>(Hit.GetActor());
+			const auto& Interactive = Cast<AMyCollectable>(Hit.GetActor());
 
 			if (IsValid(Interactive))
 			{
-				if (Interactive->Interact(this))
+				if (Interactive->GetItemOwner() != this && Interactive->Interact(this))
 				{
 					break;
 				}
@@ -381,41 +387,26 @@ void AMyCharacter::Interactive()
 	}
 }
 
+void AMyCharacter::InteractInterrupted()
+{
+	OnInteractInterrupted.Broadcast();
+}
+
 void AMyCharacter::Use()
 {
-	CurrentItem = Inventory->Use(0);
-
 	if (IsValid(CurrentItem))
 	{
 		CurrentItem->Use(this);
-
-		if (CurrentItem->IsA<AMyC4>())
-		{
-			const auto& C4 = Cast<AMyC4>(CurrentItem);
-
-			FHitResult HitResult;
-
-			if (!C4->IsPlantable(HitResult))
-			{
-				UE_LOG(LogTemp, Warning, TEXT("Cannot Plant"));
-				return;
-			}
-
-			State = EMyCharacterState::Planting;
-
-			GetCharacterMovement()->StopMovementImmediately();
-			GetCharacterMovement()->MaxWalkSpeed = 0.f;
-
-			C4->BindOnBombPlantedDelegate([this]()
-			{
-				CurrentItem->Drop();
-				CurrentItem = nullptr;
-
-				GetCharacterMovement()->MaxWalkSpeed = 600.f;
-				State = EMyCharacterState::Idle;
-			});
-		}
 	}
+	else
+	{
+		CurrentItem = Inventory->Use(0);
+	}
+}
+
+void AMyCharacter::UseInterrupt()
+{
+	OnUseInterrupted.Broadcast();
 }
 
 int32 AMyCharacter::GetDamage() const
