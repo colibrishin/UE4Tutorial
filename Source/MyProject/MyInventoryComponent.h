@@ -24,6 +24,37 @@ public:
 
 	class AMyCollectable* Use(const int32 Index);
 
+	template <typename T, typename CollectableLock = std::enable_if_t<std::is_base_of_v<AMyCollectable, T>>>
+	T* Get() const
+	{
+		for (const auto& Item : Inventory)
+		{
+			T* TypeCheck = Cast<T>(Item);
+
+			if (TypeCheck)
+			{
+				return TypeCheck;
+			}
+		}
+
+		return nullptr;
+	}
+
+	template <typename T , typename CollectableLock = std::enable_if_t<std::is_base_of_v<AMyCollectable , T>>>
+	void Remove()
+	{
+		for (int32 i = 0; i < Inventory.Num(); ++i)
+		{
+			const T* TypeCheck = Cast<T>(Inventory[i]);
+
+			if (TypeCheck)
+			{
+				Inventory.RemoveAt(i);
+				return;
+			}
+		}
+	}
+
 private:
 
 	UPROPERTY(VisibleAnywhere)
