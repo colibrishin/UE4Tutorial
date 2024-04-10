@@ -27,6 +27,7 @@
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
 const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
+const FName AMyCharacter::ChestSocketName(TEXT("Chest"));
 
 // Sets default values
 AMyCharacter::AMyCharacter() : CanAttack(true)
@@ -148,10 +149,10 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 			}
 
 			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
-			AimableWeapon->Show();
+			AimableWeapon->ShowOnly();
 			AimableWeapon->AttachToComponent(
 				GetMesh(), 
-				FAttachmentTransformRules::SnapToTargetIncludingScale, 
+				FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
 				RightHandSocketName);
 
 			AimableWeapon->BindOnFireReady([this]()
@@ -163,8 +164,8 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Weapon: %s"), *Weapon->GetName());
-		Weapon->Show();
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
+		Weapon->ShowOnly();
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocketName);
 		return true;
 	}
 
@@ -367,11 +368,11 @@ void AMyCharacter::Interactive()
 	{
 		for (const auto& Hit : HitResults)
 		{
-			const auto& Collectable = Cast<AMyInteractiveActor>(Hit.GetActor());
+			const auto& Interactive = Cast<AMyInteractiveActor>(Hit.GetActor());
 
-			if (IsValid(Collectable))
+			if (IsValid(Interactive))
 			{
-				if (Collectable->Interact(this))
+				if (Interactive->Interact(this))
 				{
 					break;
 				}
@@ -382,15 +383,23 @@ void AMyCharacter::Interactive()
 
 void AMyCharacter::Use()
 {
-	const auto& Item = Inventory->Use(0);
+	CurrentItem = Inventory->Use(0);
 
-	if (IsValid(Item))
+	if (IsValid(CurrentItem))
 	{
-		Item->Use(this);
+		CurrentItem->Use(this);
 
-		if (Item->IsA<AMyC4>())
+		if (CurrentItem->IsA<AMyC4>())
 		{
-			const auto& C4 = Cast<AMyC4>(Item);
+			const auto& C4 = Cast<AMyC4>(CurrentItem);
+
+			FHitResult HitResult;
+
+			if (!C4->IsPlantable(HitResult))
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Cannot Plant"));
+				return;
+			}
 
 			State = EMyCharacterState::Planting;
 
@@ -399,7 +408,9 @@ void AMyCharacter::Use()
 
 			C4->BindOnBombPlantedDelegate([this]()
 			{
+				CurrentItem->Drop();
 				CurrentItem = nullptr;
+
 				GetCharacterMovement()->MaxWalkSpeed = 600.f;
 				State = EMyCharacterState::Idle;
 			});
