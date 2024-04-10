@@ -25,6 +25,8 @@ public:
 
 	float GetPlantingRatio() const { return PlantingTime / FullPlantingTime; }
 
+	bool  IsPlantable(OUT FHitResult& OutResult) const;
+
 	DECL_BINDON(OnBombPlantedDelegate)
 
 protected:
