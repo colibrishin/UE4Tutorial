@@ -56,16 +56,30 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		return false;
 	}
 
-	GetMesh()->AttachToComponent(
-		Character->GetMesh(), 
-		FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	const FVector PreviousLocation = GetActorLocation();
 
+	if (GetMesh()->AttachToComponent
+		(
+		 Character->GetMesh() ,
+		 FAttachmentTransformRules::SnapToTargetNotIncludingScale ,
+		 AMyCharacter::ChestSocketName
+		))
+	{
+		UE_LOG(LogTemp , Warning , TEXT("AttachToComponent success"));
+	}
+	else
+	{
+		UE_LOG(LogTemp , Warning , TEXT("AttachToComponent failed"));
+		return false;
+	}
 	Hide();
 
 	if (!InteractImpl(Character))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("InteractImpl failed"));
+
 		GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		Show();
+		SetActorLocation(PreviousLocation);
 		return false;
 	}
 
@@ -83,6 +97,38 @@ bool AMyCollectable::Drop()
 {
 	if (IsBelongToCharacter())
 	{
+		FVector PreviousLocation = GetActorLocation();
+
+		FHitResult HitResult;
+		FCollisionQueryParams Params {NAME_None, false, this};
+
+		const auto& Result = GetWorld()->LineTraceSingleByProfile
+		(
+			HitResult,
+			PreviousLocation,
+			PreviousLocation - FVector::UpVector * 1000.f,
+			TEXT("IgnoreOnlyPawn"),
+			Params
+		);
+
+		GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+		if (Result)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Drop success"));
+			UE_LOG(LogTemp, Warning, TEXT("HitResult.Location: %s"), *HitResult.ImpactPoint.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
+			SetActorLocation(HitResult.Location);
+			SetActorRotation(FRotator::ZeroRotator);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Drop Fallbacked"));
+			UE_LOG(LogTemp, Warning, TEXT("PreviousLocation: %s"), *PreviousLocation.ToString());
+			SetActorLocation(PreviousLocation);
+			SetActorRotation(FRotator::ZeroRotator);
+		}
+
 		Show();
 		return true;
 	}
@@ -93,11 +139,24 @@ bool AMyCollectable::Drop()
 void AMyCollectable::Hide() const
 {
 	GetMesh()->SetVisibility(false);
+	GetCollider()->SetSimulatePhysics(false);
+	GetCollider()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
 }
 
 void AMyCollectable::Show() const
 {
 	GetMesh()->SetVisibility(true);
+	GetCollider()->SetSimulatePhysics(true);
+	GetCollider()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_Yes;
+}
+
+void AMyCollectable::ShowOnly() const
+{
+	GetMesh()->SetVisibility(true);
+	GetCollider()->SetSimulatePhysics(false);
+	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
 }
 
 bool AMyCollectable::IsBelongToCharacter() const
