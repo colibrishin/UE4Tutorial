@@ -9,3 +9,14 @@ enum EMyWeaponType
 	Range,
 	Melee
 };
+
+UENUM()
+enum EMyCharacterState
+{
+	Idle,
+	Running,
+	Attacking,
+	Planting,
+	Defusing,
+	Dead
+};

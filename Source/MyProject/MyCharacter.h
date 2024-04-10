@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Utilities.hpp"
+#include "Enum.h"
 
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
@@ -35,6 +36,7 @@ public:
 
 	class UMyInventoryComponent* GetInventory() const { return Inventory; }
 	class UMyStatComponent*      GetStatComponent() const { return StatComponent; }
+	EMyCharacterState            GetState() const { return State; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -97,6 +99,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	int32 AttackIndex;
+
+	UPROPERTY(VisibleAnywhere)
+	TEnumAsByte<EMyCharacterState> State;
 
 	// Pawn에서 직접 추가했던 무브먼트 컴포넌트는 필요없음
 	UPROPERTY(VisibleAnywhere)
