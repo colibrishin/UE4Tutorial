@@ -42,13 +42,17 @@ void AMyC4::OnBombPlantedImpl()
 {
 	if (!IsValid(GetItemOwner()))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Owner is not valid"));
 		return;
 	}
 
 	if (GetItemOwner()->GetState() != Planting)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Owner is not planting"));
 		return;
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Bomb planted"));
 
 	IsPlanting   = false;
 	IsPlanted    = true;
@@ -87,8 +91,32 @@ void AMyC4::OnBombDefusedImpl()
 	GetWorldTimerManager().ClearTimer(OnBombDefusing);
 }
 
+bool AMyC4::InteractImpl(AMyCharacter* Character)
+{
+	return Super::InteractImpl(Character);
+}
+
 bool AMyC4::UseImpl(AMyCharacter* Character)
 {
+	FHitResult                  HitResult;
+	const FCollisionQueryParams Params{NAME_None, false, this};
+
+	const auto& Result = GetWorld()->OverlapAnyTestByChannel
+	(
+		GetActorLocation(),
+		FQuat::Identity,
+		ECollisionChannel::ECC_EngineTraceChannel6,
+		FCollisionShape::MakeSphere(100.f),
+		Params
+	);
+
+	if (!Result)
+	{
+		return false;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Bomb plant check passed"));
+
 	if (IsPlanting || IsExploded)
 	{
 		return false;
@@ -99,7 +127,8 @@ bool AMyC4::UseImpl(AMyCharacter* Character)
 	{
 		IsDefusing = true;
 
-		SetDefusingCharacter(Character);
+		UE_LOG(LogTemp, Warning, TEXT("Bomb defusing"));
+
 		GetWorldTimerManager().SetTimer(
 		OnBombDefusing,
 			this,
@@ -112,6 +141,8 @@ bool AMyC4::UseImpl(AMyCharacter* Character)
 	else
 	{
 		IsPlanting = true;
+
+		UE_LOG(LogTemp, Warning, TEXT("Bomb planting"));
 
 		GetWorldTimerManager().SetTimer(
 			OnBombPlanted, 
