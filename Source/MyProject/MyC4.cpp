@@ -3,6 +3,11 @@
 
 #include "MyProject/MyC4.h"
 
+#include "ConstantFVector.hpp"
+#include "DrawDebugHelpers.h"
+
+#include "Components/BoxComponent.h"
+
 // Sets default values
 AMyC4::AMyC4()
 	: IsPlanted(false),
@@ -20,6 +25,44 @@ AMyC4::AMyC4()
 	{
 		GetMesh()->SetStaticMesh(SM_C4.Object);
 	}
+}
+
+bool AMyC4::IsPlantable(OUT FHitResult& OutResult) const
+{
+	FHitResult            HitResult;
+	FCollisionQueryParams Params{NAME_None , false , this};
+
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *GetActorLocation().ToString());
+
+	const auto& GroundResult = GetWorld()->LineTraceSingleByProfile
+	(
+		OUT HitResult,
+		GetActorLocation(),
+		GetActorLocation() + (FConstantFVector::DownVector * 1000.f),
+		TEXT("IgnoreOnlyPawn"),
+		Params
+	);
+
+	const auto& OverlapResult = GetWorld()->OverlapAnyTestByChannel
+	(
+		GetActorLocation(),
+		FQuat::Identity,
+		ECollisionChannel::ECC_GameTraceChannel6,
+		FCollisionShape::MakeSphere(100.f),
+		Params
+	);
+
+	DrawDebugLine
+	(
+		GetWorld(),
+		GetActorLocation(),
+		HitResult.Location,
+		GroundResult ? FColor::Green : FColor::Red,
+		false,
+		1.f
+	);
+
+	return GroundResult && OverlapResult;
 }
 
 // Called when the game starts or when spawned
@@ -60,6 +103,15 @@ void AMyC4::OnBombPlantedImpl()
 
 	OnBombPlantedDelegate.Broadcast();
 
+	FHitResult  HitResult;
+	const auto& GroundResult = IsPlantable(OUT HitResult);
+
+	if (!GroundResult)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Bomb is not on the ground"));
+		return;
+	}
+
 	GetWorldTimerManager().ClearTimer(OnBombPlanted);
 
 	GetWorldTimerManager().SetTimer(
@@ -98,24 +150,12 @@ bool AMyC4::InteractImpl(AMyCharacter* Character)
 
 bool AMyC4::UseImpl(AMyCharacter* Character)
 {
-	FHitResult                  HitResult;
-	const FCollisionQueryParams Params{NAME_None, false, this};
-
-	const auto& Result = GetWorld()->OverlapAnyTestByChannel
-	(
-		GetActorLocation(),
-		FQuat::Identity,
-		ECollisionChannel::ECC_EngineTraceChannel6,
-		FCollisionShape::MakeSphere(100.f),
-		Params
-	);
-
-	if (!Result)
+	FHitResult HitResult;
+	if (!IsPlantable(OUT HitResult))
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Bomb is not plantable"));
 		return false;
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Bomb plant check passed"));
 
 	if (IsPlanting || IsExploded)
 	{
