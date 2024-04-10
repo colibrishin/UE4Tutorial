@@ -24,8 +24,14 @@ public:
 	AMyC4();
 
 	float GetPlantingRatio() const { return PlantingTime / FullPlantingTime; }
+	float GetDefusingRatio() const { return DefusingTime / FullDefusingTime; }
 
 	bool  IsPlantable(OUT FHitResult& OutResult) const;
+	bool  IsDefusable() const;
+
+	virtual bool Interact(class AMyCharacter* Character) override;
+	virtual bool Use(class AMyCharacter* Character) override;
+	virtual void Recycle() override;
 
 	DECL_BINDON(OnBombPlantedDelegate)
 
@@ -36,13 +42,12 @@ protected:
 	void         OnBombPlantedImpl();
 	void         OnBombDefusedImpl();
 
-	virtual bool InteractImpl(AMyCharacter* Character) override;
-	virtual bool UseImpl(class AMyCharacter* Character) override;
-
 	virtual void Tick(float DeltaSeconds) override;
 
 private:
-	void SetDefusingCharacter(class AMyCharacter* Character);
+	void SetDefusing(const bool NewDefusing, class AMyCharacter* Character);
+	void SetPlanting(const bool NewPlanting);
+	bool TryDefuse(class AMyCharacter* Character);
 
 	UPROPERTY(VisibleAnywhere)
 	bool IsPlanted;
@@ -58,6 +63,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	float PlantingTime;
+
+	UPROPERTY(VisibleAnywhere)
+	float DefusingTime;
 
 	UPROPERTY(VisibleAnywhere)
 	TWeakObjectPtr<class AMyCharacter> DefusingCharacter;
