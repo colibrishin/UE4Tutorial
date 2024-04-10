@@ -28,6 +28,7 @@ public:
 
 	void Hide() const;
 	void Show() const;
+	void ShowOnly() const;
 
 protected:
 	// Called when the game starts or when spawned
