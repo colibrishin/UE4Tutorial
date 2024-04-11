@@ -24,6 +24,8 @@
 
 #include "Components/WidgetComponent.h"
 
+#include "Net/UnrealNetwork.h"
+
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
 const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
@@ -102,6 +104,12 @@ float AMyCharacter::TakeDamage(
 	return Damage;
 }
 
+void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyCharacter, Weapon);
+}
+
 // Called every frame
 void AMyCharacter::Tick(float DeltaTime)
 {
@@ -175,6 +183,12 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 
 	return false;
 }
+
+void AMyCharacter::Server_Attack_Implementation(const float Value)
+{
+	AttackStart(Value);
+}
+
 
 void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
@@ -315,6 +329,28 @@ void AMyCharacter::UnAim()
 }
 
 void AMyCharacter::Attack(const float Value)
+{
+	if (Value == 0.f)
+	{
+		return;
+	}
+
+	if (!HasAuthority())
+	{
+		Server_Attack(Value);
+	}
+	else
+	{
+		Multi_Attack(Value);
+	}
+}
+
+void AMyCharacter::Multi_Attack_Implementation(const float Value)
+{
+	AttackStart(Value);
+}
+
+void AMyCharacter::AttackStart(const float Value)
 {
 	if (Value == 0.f)
 	{
