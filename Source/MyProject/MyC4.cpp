@@ -68,13 +68,19 @@ bool AMyC4::IsPlantable(OUT FHitResult& OutResult) const
 
 bool AMyC4::IsDefusable() const
 {
-	return !IsDefusing && IsPlanted && !IsExploded;
+	return IsPlanted && !IsExploded && !IsDefused;
 }
 
 bool AMyC4::Interact(AMyCharacter* Character)
 {
 	if (!IsDefusable())
 	{
+		if (IsExploded || IsDefused)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Bomb is exploded or defused"));
+			return false;
+		}
+
 		return Super::Interact(Character);
 	}
 
@@ -142,15 +148,22 @@ void AMyC4::OnBombDefusedImpl()
 
 	IsDefusing = false;
 	IsPlanted  = false;
+	IsDefused  = true;
 
 	DefusingCharacter = nullptr;
 
+	UE_LOG(LogTemp, Warning, TEXT("Bomb defused"));
 	GetWorldTimerManager().ClearTimer(OnBombTicking);
 	GetWorldTimerManager().ClearTimer(OnBombDefusing);
 }
 
 bool AMyC4::TryDefuse(AMyCharacter* Character)
 {
+	if (IsDefused || IsExploded)
+	{
+		return false;
+	}
+
 	if (IsDefusable())
 	{
 		// todo: need to know character is defusable
@@ -158,7 +171,9 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 
 		UE_LOG(LogTemp, Warning, TEXT("Bomb defusing"));
 
-		GetWorldTimerManager().SetTimer
+		if (!OnBombDefusing.IsValid())
+		{
+			GetWorldTimerManager().SetTimer
 			(
 			 OnBombDefusing,
 			 this,
@@ -166,6 +181,7 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 			 FullDefusingTime,
 			 false
 			);
+		}
 
 		return true;
 	}
