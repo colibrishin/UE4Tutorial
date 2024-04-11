@@ -34,17 +34,21 @@ void AMyWeapon::PostInitializeComponents()
   }
 }
 
-bool AMyWeapon::InteractImpl(AMyCharacter* Character)
-{
-	if (Character->TryPickWeapon(this))
-	{
-		return true;
-	}
-
-	return false;
-}
-
 void AMyWeapon::Attack()
 {
 	
+}
+
+bool AMyWeapon::Interact(AMyCharacter* Character)
+{
+	if (Super::Interact(Character))
+	{
+		if (Character->TryPickWeapon(this))
+		{
+			return true;
+		}
+	}
+
+	Drop();
+	return false;
 }

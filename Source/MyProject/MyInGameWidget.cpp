@@ -3,6 +3,8 @@
 
 #include "MyProject/MyInGameWidget.h"
 
+#include "MyBombProgressWidget.h"
+#include "MyC4.h"
 #include "MyCharacter.h"
 #include "MyCharacterWidget.h"
 
@@ -13,6 +15,17 @@ void UMyInGameWidget::BindPlayer(const AMyCharacter* Player) const
 		if (CharacterWidget)
 		{
 			CharacterWidget->BindHp(Player->GetStatComponent());
+		}
+	}
+}
+
+void UMyInGameWidget::BindBomb(AMyC4* Bomb) const
+{
+	if (IsValid(Bomb))
+	{
+		if (BombProgressWidget)
+		{
+			BombProgressWidget->BindBomb(Bomb);
 		}
 	}
 }

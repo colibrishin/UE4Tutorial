@@ -56,28 +56,77 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		return false;
 	}
 
-	GetMesh()->AttachToComponent(
-		Character->GetMesh(), 
-		FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	const FVector PreviousLocation = GetActorLocation();
 
-	Hide();
-
-	if (!InteractImpl(Character))
+	if (GetMesh()->AttachToComponent
+		(
+		 Character->GetMesh(),
+		 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		 AMyCharacter::ChestSocketName
+		))
 	{
-		GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-		Show();
+		UE_LOG(LogTemp, Warning, TEXT("AttachToComponent success"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("AttachToComponent failed"));
 		return false;
 	}
+	Hide();
 
 	SetItemOwner(Character);
 	return true;
+}
+
+bool AMyCollectable::Use(AMyCharacter* Character)
+{
+	Character->BindOnUseInterrupted(this, &AMyCollectable::Recycle);
+	UE_LOG(LogTemp, Warning, TEXT("Use"));
+	return true;
+}
+
+void AMyCollectable::Recycle()
+{
 }
 
 bool AMyCollectable::Drop()
 {
 	if (IsBelongToCharacter())
 	{
+		FVector PreviousLocation = GetActorLocation();
+
+		FHitResult HitResult;
+		FCollisionQueryParams Params {NAME_None, false, this};
+
+		const auto& Result = GetWorld()->LineTraceSingleByProfile
+		(
+			HitResult,
+			PreviousLocation,
+			PreviousLocation - FVector::UpVector * 1000.f,
+			TEXT("IgnoreOnlyPawn"),
+			Params
+		);
+
+		GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+		if (Result)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Drop success"));
+			UE_LOG(LogTemp, Warning, TEXT("HitResult.Location: %s"), *HitResult.ImpactPoint.ToString());
+			UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
+			SetActorLocation(HitResult.Location);
+			SetActorRotation(FRotator::ZeroRotator);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Drop Fallbacked"));
+			UE_LOG(LogTemp, Warning, TEXT("PreviousLocation: %s"), *PreviousLocation.ToString());
+			SetActorLocation(PreviousLocation);
+			SetActorRotation(FRotator::ZeroRotator);
+		}
+
 		Show();
+		SetItemOwner(nullptr);
 		return true;
 	}
 
@@ -87,11 +136,24 @@ bool AMyCollectable::Drop()
 void AMyCollectable::Hide() const
 {
 	GetMesh()->SetVisibility(false);
+	GetCollider()->SetSimulatePhysics(false);
+	GetCollider()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
 }
 
 void AMyCollectable::Show() const
 {
 	GetMesh()->SetVisibility(true);
+	GetCollider()->SetSimulatePhysics(true);
+	GetCollider()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_Yes;
+}
+
+void AMyCollectable::ShowOnly() const
+{
+	GetMesh()->SetVisibility(true);
+	GetCollider()->SetSimulatePhysics(false);
+	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
 }
 
 bool AMyCollectable::IsBelongToCharacter() const
@@ -101,7 +163,24 @@ bool AMyCollectable::IsBelongToCharacter() const
 
 void AMyCollectable::SetItemOwner(AMyCharacter* NewOwner)
 {
+	if (ItemOwner == NewOwner)
+	{
+		return;
+	}
+
+	if (ItemOwner != NewOwner && ItemOwner != nullptr)
+	{
+		ItemOwner->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
+		ItemOwner->UnbindOnUseInterrupted(OnUseInterruptedHandle);
+	}
+
 	ItemOwner = NewOwner;
+
+	if (ItemOwner != nullptr)
+	{
+		OnInteractInterruptedHandle = ItemOwner->BindOnInteractInterrupted(this, &AMyCollectable::Recycle);
+		OnUseInterruptedHandle = ItemOwner->BindOnUseInterrupted(this, &AMyCollectable::Recycle);
+	}
 }
 
 // Called every frame

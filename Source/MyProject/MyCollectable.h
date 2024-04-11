@@ -22,19 +22,20 @@ public:
 	class UBoxComponent* GetCollider() const { return Collider; }
 	class AMyCharacter* GetItemOwner() const { return ItemOwner.Get(); }
 
-	virtual bool Interact(class AMyCharacter* Character) override final;
+	virtual bool Interact(class AMyCharacter* Character) override;
+	virtual bool Use(class AMyCharacter* Character) override;
+	virtual void Recycle() override;
 	virtual bool Drop();
 
 	void Hide() const;
 	void Show() const;
+	void ShowOnly() const;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void PostInitializeComponents() override;
-
-	virtual bool InteractImpl(class AMyCharacter* Character) PURE_VIRTUAL(AMyCollectable::InteractImpl, return false;);
 
 	virtual bool OnCharacterOverlap(
 		UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
@@ -62,5 +63,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	TWeakObjectPtr<class AMyCharacter> ItemOwner;
+
+	FDelegateHandle OnInteractInterruptedHandle;
+
+	FDelegateHandle OnUseInterruptedHandle;
 
 };
