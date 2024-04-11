@@ -26,6 +26,9 @@ public:
 	float GetPlantingRatio() const { return PlantingTime / FullPlantingTime; }
 	float GetDefusingRatio() const { return DefusingTime / FullDefusingTime; }
 
+	bool BeingPlanted() const { return IsPlanting; }
+	bool BeingDefused() const { return IsDefusing; }
+
 	bool  IsPlantable(OUT FHitResult& OutResult) const;
 	bool  IsDefusable() const;
 
@@ -41,6 +44,8 @@ protected:
 	void         OnBombTickingImpl();
 	void         OnBombPlantedImpl();
 	void         OnBombDefusedImpl();
+
+	virtual void PostInitializeComponents() override;
 
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -63,6 +68,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool IsDefused;
+
+	UPROPERTY(VisibleAnywhere)
+	float Elapsed;
 
 	UPROPERTY(VisibleAnywhere)
 	float PlantingTime;

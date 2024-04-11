@@ -5,8 +5,15 @@
 
 #include "ConstantFVector.hpp"
 #include "DrawDebugHelpers.h"
+#include "MyBombProgressWidget.h"
+#include "MyInGameHUD.h"
 
 #include "Components/BoxComponent.h"
+#include "Components/WidgetComponent.h"
+
+#include "GameFramework/HUD.h"
+
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AMyC4::AMyC4()
@@ -123,7 +130,7 @@ void AMyC4::OnBombPlantedImpl()
 
 	IsPlanting   = false;
 	IsPlanted    = true;
-	PlantingTime = 0.f;
+	Elapsed = 0.f;
 
 	OnBombPlantedDelegate.Broadcast();
 
@@ -157,6 +164,11 @@ void AMyC4::OnBombDefusedImpl()
 	GetWorldTimerManager().ClearTimer(OnBombDefusing);
 }
 
+void AMyC4::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+}
+
 bool AMyC4::TryDefuse(AMyCharacter* Character)
 {
 	if (IsDefused || IsExploded)
@@ -181,6 +193,8 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 			 FullDefusingTime,
 			 false
 			);
+
+			Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->BindBomb(this);
 		}
 
 		return true;
@@ -212,6 +226,8 @@ bool AMyC4::Use(AMyCharacter* Character)
 				&AMyC4::OnBombPlantedImpl,
 				FullPlantingTime,
 				false);
+
+			Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->BindBomb(this);
 		}
 
 		return true;
@@ -241,9 +257,19 @@ void AMyC4::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	if (IsPlanted)
+	if (IsPlanting)
 	{
 		PlantingTime += DeltaSeconds;
+	}
+
+	if (IsDefusing)
+	{
+		DefusingTime += DeltaSeconds;
+	}
+
+	if (IsPlanted)
+	{
+		Elapsed += DeltaSeconds;
 	}
 }
 
