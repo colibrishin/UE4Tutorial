@@ -35,9 +35,14 @@ public:
 		return (TotalAmmoCount - LoadedAmmoCount > 0) ? TotalAmmoCount - LoadedAmmoCount : 0;
 	}
 
+	float GetReloadTime() const;
+	int32   GetLoadedAmmoCount() const
+	{
+		return LoadedAmmoCount;
+	}
+
 	bool  ConsumeAmmo();
 	void  Reload();
-	float GetReloadTime() const;
 
 protected:
 	// Called when the game starts
