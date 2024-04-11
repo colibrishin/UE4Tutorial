@@ -34,9 +34,9 @@ void AMyWeapon::PostInitializeComponents()
   }
 }
 
-void AMyWeapon::Attack()
+bool AMyWeapon::Attack()
 {
-	
+	return true;
 }
 
 bool AMyWeapon::Interact(AMyCharacter* Character)
@@ -51,4 +51,8 @@ bool AMyWeapon::Interact(AMyCharacter* Character)
 
 	Drop();
 	return false;
+}
+
+void AMyWeapon::Reload()
+{
 }
