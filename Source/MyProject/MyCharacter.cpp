@@ -115,7 +115,6 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AMyCharacter::Jump);
-	PlayerInputComponent->BindAction(TEXT("Attack"), IE_Repeat, this, &AMyCharacter::Attack);
 
 	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Pressed, this, &AMyCharacter::Interactive);
 	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Repeat, this, &AMyCharacter::Interactive);
@@ -127,6 +126,8 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Repeat, this, &AMyCharacter::Aim);
 	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Released, this, &AMyCharacter::UnAim);
 
+	// Somehow BindAction with IE_Repeat doesn't work, move Attack to axis.
+	PlayerInputComponent->BindAxis(TEXT("Attack"), this, &AMyCharacter::Attack);
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
 	PlayerInputComponent->BindAxis(TEXT("LeftRight"), this, &AMyCharacter::LeftRight);
 	PlayerInputComponent->BindAxis(TEXT("Pitch"), this, &AMyCharacter::Pitch);
@@ -307,14 +308,20 @@ void AMyCharacter::UnAim()
 	OnAiming.Broadcast(IsAiming);
 }
 
-void AMyCharacter::Attack()
+void AMyCharacter::Attack(const float Value)
 {
 	if (!CanAttack)
 	{
 		return;
 	}
 
+	if (Value == 0.f)
+	{
+		return;
+	}
+
 	constexpr int32 MaxAttackIndex = 3;
+	UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
 	if (IsValid(Weapon))
 	{
@@ -323,8 +330,10 @@ void AMyCharacter::Attack()
 		switch (Weapon->GetWeaponStatComponent()->GetWeaponType())
 		{
 		case EMyWeaponType::Range:
+			UE_LOG(LogTemp, Warning, TEXT("Range Attack"));
 			if (Weapon->GetWeaponStatComponent()->IsHitscan())
 			{
+				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
 				HitscanAttack();
 			}
 			break;

@@ -10,6 +10,9 @@
 UMyWeaponStatComponent::UMyWeaponStatComponent()
 	: ID(0),
 	  Damage(0),
+	  MaxAmmoCount(0),
+	  CurrentAmmoCount(0),
+	  ClipCount(0),
 	  WeaponType(EMyWeaponType::Unknown),
 	  WeaponStat(nullptr)
 {
@@ -58,6 +61,30 @@ float UMyWeaponStatComponent::GetFireRate() const
 	return PrintErrorAndReturnDefault<float>("Trying to get fire rate from non-range weapon", GetOwner());
 }
 
+bool UMyWeaponStatComponent::ConsumeAmmo()
+{
+	if (WeaponType == EMyWeaponType::Range)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Consume ammo: %d"), CurrentAmmoCount);
+
+		--CurrentAmmoCount;
+
+		if (CurrentAmmoCount < 0)
+		{
+			CurrentAmmoCount = 0;
+			return false;
+		}
+
+		return true;
+	}
+	else if (WeaponType == EMyWeaponType::Melee)
+	{
+		return true;
+	}
+
+	return PrintErrorAndReturnDefault<bool>("Trying to consume ammo from unknown weapon type", GetOwner());
+}
+
 // Called when the game starts
 void  UMyWeaponStatComponent::BeginPlay()
 {
@@ -84,9 +111,15 @@ void UMyWeaponStatComponent::InitializeComponent()
 		{
 		case EMyWeaponType::Melee: 
 			WeaponStat = WeaponStatData->Get<FMyMeleeWeaponStat>();
+			ClipCount = 0;
+			CurrentAmmoCount = 0;
+			MaxAmmoCount = 0;
 			break;
 		case EMyWeaponType::Range: 
 			WeaponStat = WeaponStatData->Get<FMyRangeWeaponStat>();
+			ClipCount = GetRangeStat()->Magazine;
+			CurrentAmmoCount = GetRangeStat()->MaxAmmo;
+			MaxAmmoCount = CurrentAmmoCount;
 			break;
 		case EMyWeaponType::Unknown:
 		default:
