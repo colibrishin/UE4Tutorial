@@ -15,19 +15,10 @@ AMyAimableWeapon::AMyAimableWeapon()
 {
 }
 
-bool AMyAimableWeapon::Attack()
+bool AMyAimableWeapon::AttackImpl()
 {
 	if (GetWeaponStatComponent()->ConsumeAmmo())
 	{
-		Super::Attack();
-
-		GetWorld()->GetTimerManager().SetTimer(
-			FireRateTimerHandle, 
-			this, 
-			&AMyAimableWeapon::ResetFire, 
-			GetWeaponStatComponent()->GetFireRate(), 
-			false);
-
 		// todo: Recoil
 		Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
 			 GetWeaponStatComponent()->GetCurrentAmmoCount(),
@@ -53,34 +44,29 @@ bool AMyAimableWeapon::Interact(AMyCharacter* Character)
 	return false;
 }
 
-void AMyAimableWeapon::Reload()
+bool AMyAimableWeapon::ReloadImpl()
 {
-	Super::Reload();
+	if (GetWeaponStatComponent()->GetRemainingAmmoCount() > 0 && 
+		 GetWeaponStatComponent()->GetCurrentAmmoCount() != GetWeaponStatComponent()->GetLoadedAmmoCount())
+	{
+		GetWeaponStatComponent()->Reload();
+		return true;
+	}
 
-	GetWorld()->GetTimerManager().SetTimer
-		(
-		 ReloadTimerHandle,
-		 this,
-		 &AMyAimableWeapon::ReloadImpl,
-		 GetWeaponStatComponent()->GetReloadTime(),
-		 false
-		);
+	return false;
 }
 
-void AMyAimableWeapon::ResetFire()
+void AMyAimableWeapon::OnFireRateTimed()
 {
-	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
-	OnFireReady.Broadcast();
+	Super::OnFireRateTimed();
 }
 
-void AMyAimableWeapon::ReloadImpl()
+void AMyAimableWeapon::OnReloadDone()
 {
-	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
-	GetWeaponStatComponent()->Reload();
+	Super::OnReloadDone();
 
 	Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
 		 GetWeaponStatComponent()->GetCurrentAmmoCount(),
 		 GetWeaponStatComponent()->GetRemainingAmmoCount());
-
-	OnFireReady.Broadcast();
 }
+
