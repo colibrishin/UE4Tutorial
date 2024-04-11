@@ -24,6 +24,7 @@ public:
 	DECL_BINDON(OnFireReady)
 
 	virtual void Attack() override;
+	virtual bool Interact(AMyCharacter* Character) override;
 
 private:
 	void ResetFire();

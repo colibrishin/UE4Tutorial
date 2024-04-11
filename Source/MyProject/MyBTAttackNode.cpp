@@ -33,7 +33,7 @@ EBTNodeResult::Type UMyBTAttackNode::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 		return EBTNodeResult::Failed;
 	}
 
-	AIOwner->Attack();
+	AIOwner->Attack(1.f);
 	bIsAttacking = true;
 
 	return SuperResult;
