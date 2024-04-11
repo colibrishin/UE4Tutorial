@@ -164,11 +164,6 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 				FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
 				RightHandSocketName);
 
-			AimableWeapon->BindOnFireReady([this]()
-			{
-				ResetAttack();
-			});
-
 			return true;
 		}
 
@@ -191,11 +186,6 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 
 void AMyCharacter::HitscanAttack()
 {
-	if (!CanAttack)
-	{
-		return;
-	}
-
 	UE_LOG(LogTemp, Warning, TEXT("Hitscan Fire!"));
 
 	FHitResult HitResult;
@@ -256,11 +246,14 @@ void AMyCharacter::HitscanAttack()
 
 void AMyCharacter::MeleeAttack()
 {
-	constexpr int32 MaxAttackSection = 3;
+	if (CanAttack)
+	{
+		constexpr int32 MaxAttackSection = 3;
 
-	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
-	AttackIndex = (AttackIndex + 1) % MaxAttackSection;
-	AnimInstance->PlayAttackMontage(AttackIndex);
+		UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
+		AttackIndex = (AttackIndex + 1) % MaxAttackSection;
+		AnimInstance->PlayAttackMontage(AttackIndex);
+	}
 }
 
 void AMyCharacter::Reload()
@@ -323,18 +316,12 @@ void AMyCharacter::UnAim()
 
 void AMyCharacter::Attack(const float Value)
 {
-	if (!CanAttack)
-	{
-		return;
-	}
-
 	if (Value == 0.f)
 	{
 		return;
 	}
 
 	constexpr int32 MaxAttackIndex = 3;
-	UE_LOG(LogTemp, Warning, TEXT("Attack"));
 
 	if (IsValid(Weapon))
 	{
