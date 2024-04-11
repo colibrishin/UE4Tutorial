@@ -17,6 +17,8 @@ class MYPROJECT_API AMyInGameHUD : public AHUD
 public:
 	AMyInGameHUD();
 
+	void BindBomb(class AMyC4* Bomb) const;
+
 protected:
 	virtual void BeginPlay() override;
 

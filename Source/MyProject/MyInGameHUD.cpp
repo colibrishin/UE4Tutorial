@@ -24,6 +24,16 @@ AMyInGameHUD::AMyInGameHUD()
 	}
 }
 
+void AMyInGameHUD::BindBomb(AMyC4* Bomb) const
+{
+	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
+
+	if (Widget)
+	{
+		Widget->BindBomb(Bomb);
+	}
+}
+
 void AMyInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
