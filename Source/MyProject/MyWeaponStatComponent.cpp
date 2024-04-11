@@ -67,13 +67,14 @@ bool UMyWeaponStatComponent::ConsumeAmmo()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Consume ammo: %d"), CurrentAmmoCount);
 
+		--CurrentAmmoCount;
+
 		if (CurrentAmmoCount < 0)
 		{
 			CurrentAmmoCount = 0;
 			return false;
 		}
 
-		--CurrentAmmoCount;
 		return true;
 	}
 	else if (WeaponType == EMyWeaponType::Melee)
