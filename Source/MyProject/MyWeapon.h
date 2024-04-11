@@ -23,8 +23,9 @@ public:
 	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
 	UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
 
-	virtual void Attack();
+	virtual bool Attack();
 	virtual bool Interact(AMyCharacter* Character) override;
+	virtual void Reload();
 
 protected:
 	// Called when the game starts or when spawned
