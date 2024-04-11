@@ -24,16 +24,13 @@ AMyInGameHUD::AMyInGameHUD()
 	}
 }
 
-void AMyInGameHUD::BindPlayer(const AMyCharacter* Player) const
+void AMyInGameHUD::BindBomb(AMyC4* Bomb) const
 {
-	if (Widgets)
-	{
-		const UMyInGameWidget* Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
+	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
-		if (Widget)
-		{
-			Widget->BindPlayer(Player);
-		}
+	if (Widget)
+	{
+		Widget->BindBomb(Bomb);
 	}
 }
 
@@ -41,11 +38,12 @@ void AMyInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	const auto& SubWidget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
+	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
-	if (IsValid(SubWidget))
+	if (Widget)
 	{
-		SubWidget->AddToViewport();
+		Widget->AddToViewport();
+		Widget->BindPlayer(Cast<AMyCharacter>(GetOwningPawn()));
 	}
 }
 

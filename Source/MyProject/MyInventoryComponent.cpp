@@ -40,3 +40,18 @@ bool UMyInventoryComponent::TryAddItem(AMyCollectable* Item)
 	}
 }
 
+AMyCollectable* UMyInventoryComponent::Use(const int32 Index)
+{
+	if (Index < Inventory.Num())
+	{
+		AMyCollectable* Item = Inventory[Index];
+		Inventory.RemoveAt(Index);
+		return Item;
+	}
+	else
+	{
+		UE_LOG(LogTemp , Warning , TEXT("Item not found"));
+		return nullptr;
+	}
+}
+
