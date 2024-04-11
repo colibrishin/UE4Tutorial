@@ -50,6 +50,8 @@ protected:
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -64,8 +66,18 @@ public:
 
 	void Attack(const float Value);
 
+	UFUNCTION(Server, Reliable)
+	void Server_Attack(const float Value);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Attack(const float Value);
+
 private:
+	void AttackStart(const float Value);
+
+
 	void ResetAttack();
+
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
@@ -119,7 +131,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* AnimInstance;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	class AMyWeapon* Weapon;
 
 	UPROPERTY(VisibleAnywhere)
