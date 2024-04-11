@@ -18,6 +18,7 @@ public:
 	AMyInGameHUD();
 
 	void BindBomb(class AMyC4* Bomb) const;
+	void UpdateAmmo(int32 CurrentAmmoCount, int32 GetClipCount, int32 GetMaxAmmoCount);
 
 protected:
 	virtual void BeginPlay() override;

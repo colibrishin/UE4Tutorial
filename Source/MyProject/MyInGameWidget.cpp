@@ -3,6 +3,7 @@
 
 #include "MyProject/MyInGameWidget.h"
 
+#include "MyAmmoWidget.h"
 #include "MyBombProgressWidget.h"
 #include "MyC4.h"
 #include "MyCharacter.h"
@@ -27,5 +28,13 @@ void UMyInGameWidget::BindBomb(AMyC4* Bomb) const
 		{
 			BombProgressWidget->BindBomb(Bomb);
 		}
+	}
+}
+
+void UMyInGameWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 ClipCount, const int32 MaxAmmoCount) const
+{
+	if (IsValid(AmmoWidget))
+	{
+		AmmoWidget->UpdateAmmo(CurrentAmmoCount, ClipCount, MaxAmmoCount);
 	}
 }
