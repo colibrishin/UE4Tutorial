@@ -9,7 +9,7 @@
 #include "Components/BoxComponent.h"
 
 // Sets default values
-AMyWeapon::AMyWeapon()
+AMyWeapon::AMyWeapon() : CanReload(true), CanAttack(true)
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
@@ -34,9 +34,35 @@ void AMyWeapon::PostInitializeComponents()
   }
 }
 
+void AMyWeapon::OnFireRateTimed()
+{
+	CanAttack = true;
+	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
+}
+
+void AMyWeapon::OnReloadDone()
+{
+	CanReload = true;
+	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+}
+
 bool AMyWeapon::Attack()
 {
-	return true;
+	if (CanAttack)
+	{
+		GetWorld()->GetTimerManager().SetTimer(
+			FireRateTimerHandle, 
+			this, 
+			&AMyWeapon::OnFireRateTimed, 
+			GetWeaponStatComponent()->GetFireRate(), 
+			false);
+
+		CanAttack = false;
+
+		return AttackImpl();
+	}
+
+	return false;
 }
 
 bool AMyWeapon::Interact(AMyCharacter* Character)
@@ -53,6 +79,23 @@ bool AMyWeapon::Interact(AMyCharacter* Character)
 	return false;
 }
 
-void AMyWeapon::Reload()
+bool AMyWeapon::Reload()
 {
+	if (CanReload)
+	{
+		GetWorld()->GetTimerManager().SetTimer
+			(
+			 ReloadTimerHandle,
+			 this,
+			 &AMyWeapon::OnReloadDone,
+			 GetWeaponStatComponent()->GetReloadTime(),
+			 false
+			);
+
+		CanReload = false;
+
+		return ReloadImpl();
+	}
+
+	return false;
 }

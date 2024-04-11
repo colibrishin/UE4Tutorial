@@ -11,6 +11,9 @@
 #include "GameFramework/Actor.h"
 #include "MyWeapon.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnFireReady)
+DECLARE_MULTICAST_DELEGATE(FOnReloadReady)
+
 UCLASS()
 class MYPROJECT_API AMyWeapon : public AMyCollectable
 {
@@ -20,12 +23,18 @@ public:
 	// Sets default values for this actor's properties
 	AMyWeapon();
 
+	DECL_BINDON(OnFireReady)
+	DECL_BINDON(OnReloadReady)
+
 	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
 	UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
 
-	virtual bool Attack();
+	bool CanBeReloaded() const { return CanReload; }
+	bool CanDoAttack() const { return CanAttack; }
+
+	virtual bool Attack() final;
 	virtual bool Interact(AMyCharacter* Character) override;
-	virtual void Reload();
+	virtual bool Reload() final;
 
 protected:
 	// Called when the game starts or when spawned
@@ -33,7 +42,27 @@ protected:
 
 	virtual void PostInitializeComponents() override;
 
+	virtual bool AttackImpl() PURE_VIRTUAL(AMyWeapon::AttackImpl, return false;);
+	virtual bool ReloadImpl() PURE_VIRTUAL(AMyWeapon::ReloadImpl, return false;);
+
+	virtual void OnFireRateTimed();
+	virtual void OnReloadDone();
+
 private:
+	UPROPERTY(VisibleAnywhere)
+	bool CanReload;
+
+	UPROPERTY(VisibleAnywhere)
+	bool CanAttack;
+
+	FTimerHandle FireRateTimerHandle;
+
+	FTimerHandle ReloadTimerHandle;
+	
+	FOnFireReady OnFireReady;
+
+	FOnReloadReady OnReloadReady;
+
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	class UMyWeaponStatComponent* WeaponStatComponent;
 
