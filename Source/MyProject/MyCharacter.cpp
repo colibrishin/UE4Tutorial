@@ -108,6 +108,7 @@ void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyCharacter, Weapon);
+	DOREPLIFETIME(AMyCharacter, CurrentItem);
 }
 
 // Called every frame
@@ -198,6 +199,24 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	}
 }
 
+void AMyCharacter::Reload()
+{
+	if (!HasAuthority())
+	{
+		Server_Reload();
+	}
+	else
+	{
+		// todo: Check if the weapon is valid and can be reloaded
+		Multi_Reload();
+	}
+}
+
+void AMyCharacter::Server_Reload_Implementation()
+{
+	ReloadStart();
+}
+
 void AMyCharacter::HitscanAttack()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Hitscan Fire!"));
@@ -270,7 +289,12 @@ void AMyCharacter::MeleeAttack()
 	}
 }
 
-void AMyCharacter::Reload()
+void AMyCharacter::Multi_Reload_Implementation()
+{
+	ReloadStart();
+}
+
+void AMyCharacter::ReloadStart()
 {
 	if (!IsValid(Weapon))
 	{
@@ -365,6 +389,8 @@ void AMyCharacter::AttackStart(const float Value)
 		{
 			return;
 		}
+
+		// todo: process client before sending rpc to server.
 
 		switch (Weapon->GetWeaponStatComponent()->GetWeaponType())
 		{

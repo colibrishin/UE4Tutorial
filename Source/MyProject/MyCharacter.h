@@ -66,24 +66,40 @@ public:
 
 	void Attack(const float Value);
 
+private:
+
+	// ============ Attacking ============
 	UFUNCTION(Server, Reliable)
 	void Server_Attack(const float Value);
-
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_Attack(const float Value);
 
-private:
 	void AttackStart(const float Value);
 
-
+	void HitscanAttack();
+	void MeleeAttack();
 	void ResetAttack();
+
+	int32 GetDamage() const;
+	void OnAttackAnimNotify();
 
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	void HitscanAttack();
-	void MeleeAttack();
+	// ============ End of Attacking ============
+
+
+	// ============ Reloading ============
 	void Reload();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Reload();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Reload();
+
+	void ReloadStart();
+
+	// ============ End of Reloading ============
 
 	void UpDown(const float Value);
 	void LeftRight(const float Value);
@@ -91,14 +107,18 @@ private:
 	void Aim();
 	void UnAim();
 
+	// ============ Interacting ============
+
+	UPROPERTY(Replicated, VisibleAnywhere)
+	bool IsInteractPressed;
+
 	void Interactive();
 	void InteractInterrupted();
 
+	// ============ End of Interacting ============
+
 	void Use();
 	void UseInterrupt();
-
-	int32 GetDamage() const;
-	void OnAttackAnimNotify();
 
 	void Yaw(const float Value);
 	void Pitch(const float Value);
@@ -140,7 +160,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UMyInventoryComponent* Inventory;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	class AMyCollectable* CurrentItem;
 
 	FOnAttackEnded OnAttackEnded;
