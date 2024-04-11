@@ -8,6 +8,7 @@
 #include "MyC4.h"
 #include "MyCharacter.h"
 #include "MyCharacterWidget.h"
+#include "MyRoundTimeWidget.h"
 
 void UMyInGameWidget::BindPlayer(const AMyCharacter* Player) const
 {
@@ -35,6 +36,6 @@ void UMyInGameWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 Remai
 {
 	if (IsValid(AmmoWidget))
 	{
-		AmmoWidget->UpdateAmmo(CurrentAmmoCount,RemainingAmmoCount);
+		AmmoWidget->UpdateAmmo(CurrentAmmoCount, RemainingAmmoCount);
 	}
 }
