@@ -15,7 +15,7 @@ class MYPROJECT_API UMyAmmoWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void UpdateAmmo(const int32 AmmoCount, const int32 ClipSize, const int32 ClipCount) const;
+	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
 private:
 	UPROPERTY(Meta = (BindWidget))

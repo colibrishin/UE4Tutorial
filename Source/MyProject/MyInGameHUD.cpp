@@ -34,13 +34,13 @@ void AMyInGameHUD::BindBomb(AMyC4* Bomb) const
 	}
 }
 
-void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, int32 GetClipCount, int32 GetMaxAmmoCount)
+void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
 {
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
 	if (Widget)
 	{
-		Widget->UpdateAmmo(CurrentAmmoCount, GetClipCount, GetMaxAmmoCount);
+		Widget->UpdateAmmo(CurrentAmmoCount, RemainingAmmoCount);
 	}
 }
 
