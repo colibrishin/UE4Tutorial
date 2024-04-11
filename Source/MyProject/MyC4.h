@@ -62,6 +62,9 @@ private:
 	bool IsExploded;
 
 	UPROPERTY(VisibleAnywhere)
+	bool IsDefused;
+
+	UPROPERTY(VisibleAnywhere)
 	float PlantingTime;
 
 	UPROPERTY(VisibleAnywhere)
