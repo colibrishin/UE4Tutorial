@@ -44,6 +44,9 @@ struct FMyRangeWeaponStat : public FMyWeaponStatBase
 	int32 Magazine;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ReloadTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float FireRate;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)

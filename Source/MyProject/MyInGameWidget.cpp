@@ -31,10 +31,10 @@ void UMyInGameWidget::BindBomb(AMyC4* Bomb) const
 	}
 }
 
-void UMyInGameWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 ClipCount, const int32 MaxAmmoCount) const
+void UMyInGameWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
 {
 	if (IsValid(AmmoWidget))
 	{
-		AmmoWidget->UpdateAmmo(CurrentAmmoCount, ClipCount, MaxAmmoCount);
+		AmmoWidget->UpdateAmmo(CurrentAmmoCount,RemainingAmmoCount);
 	}
 }
