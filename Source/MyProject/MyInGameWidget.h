@@ -16,6 +16,7 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 
 public:
 	void BindPlayer(const class AMyCharacter* Player) const;
+	void BindBomb(class AMyC4* Bomb) const;
 
 private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
@@ -23,4 +24,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyCrosshairWidget* CrosshairWidget;
+
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyBombProgressWidget* BombProgressWidget;
+
 };
