@@ -126,6 +126,8 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Repeat, this, &AMyCharacter::Aim);
 	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Released, this, &AMyCharacter::UnAim);
 
+	PlayerInputComponent->BindAction(TEXT("Reload"), IE_Pressed, this, &AMyCharacter::Reload);
+
 	// Somehow BindAction with IE_Repeat doesn't work, move Attack to axis.
 	PlayerInputComponent->BindAxis(TEXT("Attack"), this, &AMyCharacter::Attack);
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
@@ -261,6 +263,17 @@ void AMyCharacter::MeleeAttack()
 	AnimInstance->PlayAttackMontage(AttackIndex);
 }
 
+void AMyCharacter::Reload()
+{
+	if (!IsValid(Weapon))
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Reload"));
+	Weapon->Reload();
+}
+
 void AMyCharacter::UpDown(const float Value)
 {
 	// == Vector3{1, 0, 0} * acceleration
@@ -325,7 +338,10 @@ void AMyCharacter::Attack(const float Value)
 
 	if (IsValid(Weapon))
 	{
-		Weapon->Attack();
+		if (!Weapon->Attack())
+		{
+			return;
+		}
 
 		switch (Weapon->GetWeaponStatComponent()->GetWeaponType())
 		{
