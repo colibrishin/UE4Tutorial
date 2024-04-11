@@ -10,9 +10,10 @@
 UMyWeaponStatComponent::UMyWeaponStatComponent()
 	: ID(0),
 	  Damage(0),
-	  MaxAmmoCount(0),
-	  CurrentAmmoCount(0),
-	  ClipCount(0),
+	  AmmoSpent(0),
+	  LoadedAmmoCount(0),
+	  AmmoPerLoad(0),
+	  TotalAmmoCount(0),
 	  WeaponType(EMyWeaponType::Unknown),
 	  WeaponStat(nullptr)
 {
@@ -65,16 +66,15 @@ bool UMyWeaponStatComponent::ConsumeAmmo()
 {
 	if (WeaponType == EMyWeaponType::Range)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Consume ammo: %d"), CurrentAmmoCount);
+		UE_LOG(LogTemp, Warning, TEXT("Consume ammo: %d"), AmmoSpent);
 
-		--CurrentAmmoCount;
-
-		if (CurrentAmmoCount < 0)
+		if (LoadedAmmoCount - AmmoSpent <= 0)
 		{
-			CurrentAmmoCount = 0;
+			AmmoSpent = LoadedAmmoCount;
 			return false;
 		}
 
+		++AmmoSpent;
 		return true;
 	}
 	else if (WeaponType == EMyWeaponType::Melee)
@@ -83,6 +83,50 @@ bool UMyWeaponStatComponent::ConsumeAmmo()
 	}
 
 	return PrintErrorAndReturnDefault<bool>("Trying to consume ammo from unknown weapon type", GetOwner());
+}
+
+void UMyWeaponStatComponent::Reload()
+{
+	if (WeaponType == EMyWeaponType::Range)
+	{
+		if (TotalAmmoCount <= 0)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("No ammo to reload"));
+			return;
+		}
+
+		TotalAmmoCount -= AmmoSpent;
+
+		if (TotalAmmoCount <= AmmoPerLoad)
+		{
+			LoadedAmmoCount = TotalAmmoCount;
+		}
+		else
+		{
+			LoadedAmmoCount = AmmoPerLoad;
+		}
+
+		AmmoSpent = 0;
+
+	}
+	else if (WeaponType == EMyWeaponType::Melee)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Melee weapon does not need to reload"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Unknown weapon type in %s"), *GetOwner()->GetName());
+	}
+}
+
+float UMyWeaponStatComponent::GetReloadTime() const
+{
+	if (WeaponType == EMyWeaponType::Range)
+	{
+		return GetRangeStat()->ReloadTime;
+	}
+
+	return PrintErrorAndReturnDefault<float>("Trying to get reload time from non-range weapon", GetOwner());
 }
 
 // Called when the game starts
@@ -111,15 +155,17 @@ void UMyWeaponStatComponent::InitializeComponent()
 		{
 		case EMyWeaponType::Melee: 
 			WeaponStat = WeaponStatData->Get<FMyMeleeWeaponStat>();
-			ClipCount = 0;
-			CurrentAmmoCount = 0;
-			MaxAmmoCount = 0;
+			LoadedAmmoCount = 0;
+			AmmoSpent = 0;
+			AmmoPerLoad = 0;
+			TotalAmmoCount = 0;
 			break;
 		case EMyWeaponType::Range: 
 			WeaponStat = WeaponStatData->Get<FMyRangeWeaponStat>();
-			ClipCount = GetRangeStat()->Magazine;
-			CurrentAmmoCount = GetRangeStat()->MaxAmmo;
-			MaxAmmoCount = CurrentAmmoCount;
+			LoadedAmmoCount = GetRangeStat()->MaxAmmo;
+			AmmoSpent = 0;
+			AmmoPerLoad = LoadedAmmoCount;
+			TotalAmmoCount = (GetRangeStat()->MaxAmmo * GetRangeStat()->Magazine) + LoadedAmmoCount;
 			break;
 		case EMyWeaponType::Unknown:
 		default:

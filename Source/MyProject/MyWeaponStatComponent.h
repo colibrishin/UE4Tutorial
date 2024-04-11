@@ -25,11 +25,19 @@ public:
 	EMyWeaponType GetWeaponType() const { return WeaponType; }
 	float         GetFireRate() const;
 
-	int32         GetMaxAmmoCount() const { return MaxAmmoCount; }
-	int32         GetCurrentAmmoCount() const { return CurrentAmmoCount; }
-	int32         GetClipCount() const { return ClipCount; }
+	int32         GetCurrentAmmoCount() const
+	{
+		return LoadedAmmoCount - AmmoSpent;
+	}
 
-	bool          ConsumeAmmo();
+	int32         GetRemainingAmmoCount() const
+	{
+		return (TotalAmmoCount - LoadedAmmoCount > 0) ? TotalAmmoCount - LoadedAmmoCount : 0;
+	}
+
+	bool  ConsumeAmmo();
+	void  Reload();
+	float GetReloadTime() const;
 
 protected:
 	// Called when the game starts
@@ -51,13 +59,16 @@ private:
 	int32 Damage;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)
-	int32 MaxAmmoCount;
+	int32 AmmoSpent;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)
-	int32 CurrentAmmoCount;
+	int32 LoadedAmmoCount;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)
-	int32 ClipCount;
+	int32 AmmoPerLoad;
+
+	UPROPERTY(VisibleAnywhere, Category=Stats)
+	int32 TotalAmmoCount;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)
 	TEnumAsByte<EMyWeaponType> WeaponType;

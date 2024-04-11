@@ -71,6 +71,7 @@ private:
 
 	void HitscanAttack();
 	void MeleeAttack();
+	void Reload();
 
 	void UpDown(const float Value);
 	void LeftRight(const float Value);

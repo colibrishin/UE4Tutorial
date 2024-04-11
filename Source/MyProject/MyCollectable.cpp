@@ -58,6 +58,8 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 
 	const FVector PreviousLocation = GetActorLocation();
 
+	GetCollider()->SetSimulatePhysics(false);
+
 	if (GetMesh()->AttachToComponent
 		(
 		 Character->GetMesh(),
@@ -126,6 +128,7 @@ bool AMyCollectable::Drop()
 		}
 
 		Show();
+		GetCollider()->SetSimulatePhysics(true);
 		SetItemOwner(nullptr);
 		return true;
 	}
