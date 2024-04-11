@@ -62,7 +62,7 @@ public:
 
 	bool TryPickWeapon(AMyWeapon* NewWeapon);
 
-	void Attack();
+	void Attack(const float Value);
 
 private:
 	void ResetAttack();

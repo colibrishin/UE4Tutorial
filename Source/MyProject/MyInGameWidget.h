@@ -17,6 +17,7 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 public:
 	void BindPlayer(const class AMyCharacter* Player) const;
 	void BindBomb(class AMyC4* Bomb) const;
+	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 ClipCount, const int32 MaxAmmoCount) const;
 
 private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
@@ -27,5 +28,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyBombProgressWidget* BombProgressWidget;
+
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyAmmoWidget* AmmoWidget;
 
 };
