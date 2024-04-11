@@ -11,10 +11,17 @@ AMyItem::AMyItem()
 	GetMesh()->SetSimulatePhysics(true);
 }
 
-bool AMyItem::InteractImpl(AMyCharacter* Character)
+bool AMyItem::Interact(AMyCharacter* Character)
 {
-	const auto& Inventory = Character->GetInventory();
-	return Inventory->TryAddItem(this);
+	if (Super::Interact(Character))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Item Interacted: %s"), *GetName());
+		const auto& Inventory = Character->GetInventory();
+		return Inventory->TryAddItem(this);
+	}
+
+	Drop();
+	return false;
 }
 
 void AMyItem::PostInitializeComponents()

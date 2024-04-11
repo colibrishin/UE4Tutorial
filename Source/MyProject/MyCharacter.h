@@ -4,12 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "Utilities.hpp"
+#include "Enum.h"
 
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnAttackEnded)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAiming, bool)
+DECLARE_MULTICAST_DELEGATE(FOnUseInterrupted)
+DECLARE_MULTICAST_DELEGATE(FOnInteractInterrupted)
 
 class UMyStatComponent;
 class AMyWeapon;
@@ -26,12 +29,15 @@ public:
 	static const FName LeftHandSocketName;
 	static const FName RightHandSocketName;
 	static const FName HeadSocketName;
+	static const FName ChestSocketName;
 
 	// Sets default values for this character's properties
 	AMyCharacter();
 
 	DECL_BINDON(OnAttackEnded)
 	DECL_BINDON(OnAiming, bool)
+	DECL_BINDON(OnUseInterrupted)
+	DECL_BINDON(OnInteractInterrupted)
 
 	class UMyInventoryComponent* GetInventory() const { return Inventory; }
 	class UMyStatComponent*      GetStatComponent() const { return StatComponent; }
@@ -73,6 +79,10 @@ private:
 	void UnAim();
 
 	void Interactive();
+	void InteractInterrupted();
+
+	void Use();
+	void UseInterrupt();
 
 	int32 GetDamage() const;
 	void OnAttackAnimNotify();
@@ -117,7 +127,14 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UMyInventoryComponent* Inventory;
 
+	UPROPERTY(VisibleAnywhere)
+	class AMyCollectable* CurrentItem;
+
 	FOnAttackEnded OnAttackEnded;
 
 	FOnAiming OnAiming;
+
+	FOnUseInterrupted OnUseInterrupted;
+
+	FOnInteractInterrupted OnInteractInterrupted;
 };

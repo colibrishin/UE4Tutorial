@@ -22,15 +22,15 @@ public:
 
 	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
 	const UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
+
 	virtual void Attack();
+	virtual bool Interact(AMyCharacter* Character) override;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void PostInitializeComponents() override;
-
-	virtual bool InteractImpl(class AMyCharacter* Character) override;
 
 private:
 	UPROPERTY(EditAnywhere, Category = "Weapon")

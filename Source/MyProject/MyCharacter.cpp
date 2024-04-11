@@ -18,6 +18,7 @@
 #include "ConstantFVector.hpp"
 #include "MyAIController.h"
 #include "MyAimableWeapon.h"
+#include "MyC4.h"
 #include "MyCharacterWidget.h"
 #include "MyInventoryComponent.h"
 
@@ -26,6 +27,7 @@
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
 const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
+const FName AMyCharacter::ChestSocketName(TEXT("Chest"));
 
 // Sets default values
 AMyCharacter::AMyCharacter() : CanAttack(true)
@@ -54,7 +56,7 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	// 캐릭터의 바닥을 맞추기 위해 사용할 수도 있음
 	GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -88.0f), FRotator(0.0f, -90.0f, 0.0f));
 
-	SpringArm->TargetArmLength = 100.0f;
+	SpringArm->TargetArmLength = 0.f;
 	SpringArm->SetRelativeLocation({93.f, 41.f, 84.f});
 
 	bUseControllerRotationYaw = true;
@@ -113,9 +115,16 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AMyCharacter::Jump);
-	PlayerInputComponent->BindAction(TEXT("Attack"), IE_Pressed, this, &AMyCharacter::Attack);
+	PlayerInputComponent->BindAction(TEXT("Attack"), IE_Repeat, this, &AMyCharacter::Attack);
+
 	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Pressed, this, &AMyCharacter::Interactive);
-	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Pressed, this, &AMyCharacter::Aim);
+	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Repeat, this, &AMyCharacter::Interactive);
+	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Released, this, &AMyCharacter::InteractInterrupted);
+
+	PlayerInputComponent->BindAction(TEXT("Use"), IE_Repeat, this, &AMyCharacter::Use);
+	PlayerInputComponent->BindAction(TEXT("Use"), IE_Released, this, &AMyCharacter::UseInterrupt);
+
+	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Repeat, this, &AMyCharacter::Aim);
 	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Released, this, &AMyCharacter::UnAim);
 
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
@@ -146,10 +155,10 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 			}
 
 			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
-			AimableWeapon->Show();
+			AimableWeapon->ShowOnly();
 			AimableWeapon->AttachToComponent(
 				GetMesh(), 
-				FAttachmentTransformRules::SnapToTargetIncludingScale, 
+				FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
 				RightHandSocketName);
 
 			AimableWeapon->BindOnFireReady([this]()
@@ -161,8 +170,8 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Weapon: %s"), *Weapon->GetName());
-		Weapon->Show();
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, LeftHandSocketName);
+		Weapon->ShowOnly();
+		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocketName);
 		return true;
 	}
 
@@ -196,10 +205,10 @@ void AMyCharacter::HitscanAttack()
 
 	const auto& Result = GetWorld()->LineTraceSingleByChannel
 		(
-		 OUT HitResult ,
+		 OUT HitResult,
 		 Camera->GetComponentLocation() ,
-		 EndVector ,
-		 ECollisionChannel::ECC_Visibility ,
+		 EndVector,
+		 ECollisionChannel::ECC_Visibility,
 		 Params
 		);
 
@@ -365,17 +374,39 @@ void AMyCharacter::Interactive()
 	{
 		for (const auto& Hit : HitResults)
 		{
-			const auto& Collectable = Cast<AMyInteractiveActor>(Hit.GetActor());
+			const auto& Interactive = Cast<AMyCollectable>(Hit.GetActor());
 
-			if (IsValid(Collectable))
+			if (IsValid(Interactive))
 			{
-				if (Collectable->Interact(this))
+				if (Interactive->GetItemOwner() != this && Interactive->Interact(this))
 				{
 					break;
 				}
 			}
 		}
 	}
+}
+
+void AMyCharacter::InteractInterrupted()
+{
+	OnInteractInterrupted.Broadcast();
+}
+
+void AMyCharacter::Use()
+{
+	if (IsValid(CurrentItem))
+	{
+		CurrentItem->Use(this);
+	}
+	else
+	{
+		CurrentItem = Inventory->Use(0);
+	}
+}
+
+void AMyCharacter::UseInterrupt()
+{
+	OnUseInterrupted.Broadcast();
 }
 
 int32 AMyCharacter::GetDamage() const
@@ -409,7 +440,7 @@ void AMyCharacter::OnAttackAnimNotify()
 		Center,
 		GetActorLocation() + AttackEndVec,
 		FQuat::Identity,
-		ECollisionChannel::ECC_EngineTraceChannel2, // DefaultEngine.ini 참조
+		ECollisionChannel::ECC_GameTraceChannel2, // DefaultEngine.ini 참조
 		FCollisionShape::MakeSphere(AttackRadius),
 		Params // 까먹지 않도록 조심, 기본인자가 있음
 	);
