@@ -5,11 +5,11 @@
 
 #include "Components/TextBlock.h"
 
-void UMyAmmoWidget::UpdateAmmo(const int32 AmmoCount, const int32 ClipSize, const int32 ClipCount) const
+void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
 {
 	const FText Formatted = FText::Format(FText::FromString(TEXT("{0}/{1}")), 
-	                                     FText::AsNumber(AmmoCount), 
-	                                     FText::AsNumber(ClipCount * ClipSize));
+	                                     FText::AsNumber(CurrentAmmoCount), 
+	                                     FText::AsNumber(RemainingAmmoCount));
 
 	AmmoText->SetText(Formatted);
 }
