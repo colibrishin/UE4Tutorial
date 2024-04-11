@@ -15,7 +15,7 @@ AMyAimableWeapon::AMyAimableWeapon()
 {
 }
 
-void AMyAimableWeapon::Attack()
+bool AMyAimableWeapon::Attack()
 {
 	if (GetWeaponStatComponent()->ConsumeAmmo())
 	{
@@ -30,20 +30,8 @@ void AMyAimableWeapon::Attack()
 
 		// todo: Recoil
 		Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
-			GetWeaponStatComponent()->GetCurrentAmmoCount(),
-			GetWeaponStatComponent()->GetClipCount(),
-			GetWeaponStatComponent()->GetMaxAmmoCount());
-	}
-}
-
-bool AMyAimableWeapon::Interact(AMyCharacter* Character)
-{
-	if (Super::Interact(Character))
-	{
-		Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
-			GetWeaponStatComponent()->GetCurrentAmmoCount(),
-			GetWeaponStatComponent()->GetClipCount(),
-			GetWeaponStatComponent()->GetMaxAmmoCount());
+			 GetWeaponStatComponent()->GetCurrentAmmoCount(),
+			 GetWeaponStatComponent()->GetRemainingAmmoCount());
 
 		return true;
 	}
@@ -51,8 +39,48 @@ bool AMyAimableWeapon::Interact(AMyCharacter* Character)
 	return false;
 }
 
+bool AMyAimableWeapon::Interact(AMyCharacter* Character)
+{
+	if (Super::Interact(Character))
+	{
+		Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
+			 GetWeaponStatComponent()->GetCurrentAmmoCount(),
+			 GetWeaponStatComponent()->GetRemainingAmmoCount());
+
+		return true;
+	}
+
+	return false;
+}
+
+void AMyAimableWeapon::Reload()
+{
+	Super::Reload();
+
+	GetWorld()->GetTimerManager().SetTimer
+		(
+		 ReloadTimerHandle,
+		 this,
+		 &AMyAimableWeapon::ReloadImpl,
+		 GetWeaponStatComponent()->GetReloadTime(),
+		 false
+		);
+}
+
 void AMyAimableWeapon::ResetFire()
 {
 	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
+	OnFireReady.Broadcast();
+}
+
+void AMyAimableWeapon::ReloadImpl()
+{
+	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+	GetWeaponStatComponent()->Reload();
+
+	Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
+		 GetWeaponStatComponent()->GetCurrentAmmoCount(),
+		 GetWeaponStatComponent()->GetRemainingAmmoCount());
+
 	OnFireReady.Broadcast();
 }
