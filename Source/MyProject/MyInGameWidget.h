@@ -32,4 +32,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyAmmoWidget* AmmoWidget;
 
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyRoundTimeWidget* RoundTimeWidget;
+
 };
