@@ -29,7 +29,7 @@ public:
 	{
 		for (const auto& Item : Inventory)
 		{
-			T* TypeCheck = Cast<T>(Item);
+			const T* TypeCheck = Cast<T>(Item);
 
 			if (TypeCheck)
 			{
