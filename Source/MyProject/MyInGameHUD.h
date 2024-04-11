@@ -17,8 +17,6 @@ class MYPROJECT_API AMyInGameHUD : public AHUD
 public:
 	AMyInGameHUD();
 
-	void BindPlayer(const class AMyCharacter* Player) const;
-
 protected:
 	virtual void BeginPlay() override;
 
