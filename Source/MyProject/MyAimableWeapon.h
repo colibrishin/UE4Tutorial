@@ -8,8 +8,6 @@
 #include "MyProject/MyWeapon.h"
 #include "MyAimableWeapon.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnFireReady)
-
 /**
  * 
  */
@@ -21,22 +19,14 @@ class MYPROJECT_API AMyAimableWeapon : public AMyWeapon
 public:
 	AMyAimableWeapon();
 
-	DECL_BINDON(OnFireReady)
-
-	virtual bool Attack() override;
 	virtual bool Interact(AMyCharacter* Character) override;
-	virtual void Reload() override;
 
-private:
-	void ResetFire();
-	void ReloadImpl();
 
-	UPROPERTY(VisibleAnywhere)
+protected:
+	virtual bool AttackImpl() override;
 
-	FTimerHandle FireRateTimerHandle;
+	virtual bool ReloadImpl() override;
 
-	FTimerHandle ReloadTimerHandle;
-
-	FOnFireReady OnFireReady;
-	
+	virtual void OnFireRateTimed() override;
+	virtual void OnReloadDone() override;
 };
