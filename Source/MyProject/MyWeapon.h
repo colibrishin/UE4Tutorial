@@ -21,7 +21,7 @@ public:
 	AMyWeapon();
 
 	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
-	const UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
+	UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
 
 	virtual void Attack();
 	virtual bool Interact(AMyCharacter* Character) override;
