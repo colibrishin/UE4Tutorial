@@ -50,6 +50,8 @@ protected:
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -65,13 +67,39 @@ public:
 	void Attack(const float Value);
 
 private:
-	void ResetAttack();
-	UFUNCTION()
-	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	// ============ Attacking ============
+	UFUNCTION(Server, Reliable)
+	void Server_Attack(const float Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Attack(const float Value);
+
+	void AttackStart(const float Value);
 
 	void HitscanAttack();
 	void MeleeAttack();
+	void ResetAttack();
+
+	int32 GetDamage() const;
+	void OnAttackAnimNotify();
+
+	UFUNCTION()
+	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	// ============ End of Attacking ============
+
+
+	// ============ Reloading ============
 	void Reload();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Reload();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Reload();
+
+	void ReloadStart();
+
+	// ============ End of Reloading ============
 
 	void UpDown(const float Value);
 	void LeftRight(const float Value);
@@ -79,14 +107,31 @@ private:
 	void Aim();
 	void UnAim();
 
+	// ============ Interacting ============
+
 	void Interactive();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Interactive();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Interactive();
+
+	void InteractiveStart();
+
 	void InteractInterrupted();
+
+	UFUNCTION(Server, Reliable)
+	void Server_InteractInterrupted();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_InteractInterrupted();
+
+	void InteractInterruptedStart();
+
+	// ============ End of Interacting ============
 
 	void Use();
 	void UseInterrupt();
-
-	int32 GetDamage() const;
-	void OnAttackAnimNotify();
 
 	void Yaw(const float Value);
 	void Pitch(const float Value);
@@ -119,7 +164,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* AnimInstance;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	class AMyWeapon* Weapon;
 
 	UPROPERTY(VisibleAnywhere)
@@ -128,7 +173,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UMyInventoryComponent* Inventory;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	class AMyCollectable* CurrentItem;
 
 	FOnAttackEnded OnAttackEnded;
@@ -138,4 +183,6 @@ private:
 	FOnUseInterrupted OnUseInterrupted;
 
 	FOnInteractInterrupted OnInteractInterrupted;
+
+	FDelegateHandle OnAttackEndedHandle;
 };

@@ -6,6 +6,8 @@
 #include "MyCharacter.h"
 #include "MyCollectable.h"
 
+#include "Net/UnrealNetwork.h"
+
 // Sets default values for this component's properties
 UMyInventoryComponent::UMyInventoryComponent()
 	: InventorySize(10)
@@ -53,5 +55,12 @@ AMyCollectable* UMyInventoryComponent::Use(const int32 Index)
 		UE_LOG(LogTemp , Warning , TEXT("Item not found"));
 		return nullptr;
 	}
+}
+
+void UMyInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UMyInventoryComponent, Inventory);
+	DOREPLIFETIME(UMyInventoryComponent, InventorySize);
 }
 
