@@ -93,12 +93,12 @@ bool AMyCollectable::Use(AMyCharacter* Character)
 
 void AMyCollectable::InteractInterrupted()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s: InteractInterrupted"), *GetName());
+	LOG_FUNC(LogTemp, Warning, "InteractInterrupted");
 }
 
 void AMyCollectable::UseInterrupted()
 {
-	UE_LOG(LogTemp, Warning, TEXT("%s: UseInterrupted"), *GetName());
+	LOG_FUNC(LogTemp, Warning, "UseInterrupted");
 }
 
 bool AMyCollectable::Drop()
@@ -181,12 +181,6 @@ void AMyCollectable::SetItemOwner(AMyCharacter* NewOwner)
 		OnInteractInterruptedHandle = ItemOwner->BindOnInteractInterrupted(this, &AMyCollectable::InteractInterrupted);
 		OnUseInterruptedHandle = ItemOwner->BindOnUseInterrupted(this, &AMyCollectable::UseInterrupted);
 	}
-}
-
-void AMyCollectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMyCollectable, ItemOwner);
 }
 
 // Called every frame
