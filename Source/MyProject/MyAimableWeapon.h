@@ -29,4 +29,7 @@ protected:
 
 	virtual void OnFireRateTimed() override;
 	virtual void OnReloadDone() override;
+
+private:
+	void UpdateAmmoDisplay() const;
 };
