@@ -20,10 +20,7 @@ bool AMyAimableWeapon::AttackImpl()
 	if (GetWeaponStatComponent()->ConsumeAmmo())
 	{
 		// todo: Recoil
-		Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
-			 GetWeaponStatComponent()->GetCurrentAmmoCount(),
-			 GetWeaponStatComponent()->GetRemainingAmmoCount());
-
+		UpdateAmmoDisplay();
 		return true;
 	}
 
@@ -34,10 +31,7 @@ bool AMyAimableWeapon::Interact(AMyCharacter* Character)
 {
 	if (Super::Interact(Character))
 	{
-		Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
-			 GetWeaponStatComponent()->GetCurrentAmmoCount(),
-			 GetWeaponStatComponent()->GetRemainingAmmoCount());
-
+		UpdateAmmoDisplay();
 		return true;
 	}
 
@@ -64,9 +58,31 @@ void AMyAimableWeapon::OnFireRateTimed()
 void AMyAimableWeapon::OnReloadDone()
 {
 	Super::OnReloadDone();
+	UpdateAmmoDisplay();
+}
 
-	Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->UpdateAmmo(
-		 GetWeaponStatComponent()->GetCurrentAmmoCount(),
-		 GetWeaponStatComponent()->GetRemainingAmmoCount());
+void AMyAimableWeapon::UpdateAmmoDisplay() const
+{
+	if (!IsValid(GetItemOwner()))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Owner is not valid"));
+		return;
+	}
+
+	if (GetItemOwner() != GetWorld()->GetFirstPlayerController()->GetPawn())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Owner is not a player"));
+		return;
+	}
+
+	const auto& PlayerController = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+
+	const auto& HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD());
+
+	HUD->UpdateAmmo(
+				GetWeaponStatComponent()->GetCurrentAmmoCount(),
+				GetWeaponStatComponent()->GetRemainingAmmoCount());
+
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Ammo updated"));
 }
 
