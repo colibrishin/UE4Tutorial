@@ -294,7 +294,7 @@ void AMyCharacter::Multi_Reload_Implementation()
 	ReloadStart();
 }
 
-void AMyCharacter::ReloadStart()
+void AMyCharacter::ReloadStart() const
 {
 	if (!IsValid(Weapon))
 	{
