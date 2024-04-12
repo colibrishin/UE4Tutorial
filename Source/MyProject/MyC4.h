@@ -32,6 +32,8 @@ public:
 	bool  IsPlantable(OUT FHitResult& OutResult) const;
 	bool  IsDefusable() const;
 
+	const AMyCharacter* GetDefusingCharacter() const { return DefusingCharacter.Get(); }
+
 	virtual bool Interact(class AMyCharacter* Character) override;
 	virtual bool Use(class AMyCharacter* Character) override;
 
@@ -54,8 +56,8 @@ protected:
 private:
 	void SetDefusing(const bool NewDefusing, class AMyCharacter* Character);
 	void SetPlanting(const bool NewPlanting);
-	void ShowBombProgressWidget() const;
-	void HideBombProgressWidget() const;
+	void ShowBombProgressWidget(const AMyCharacter* Character) const;
+	void HideBombProgressWidget(const AMyCharacter* Character) const;
 	bool TryDefuse(class AMyCharacter* Character);
 
 	UPROPERTY(VisibleAnywhere)
