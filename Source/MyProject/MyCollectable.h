@@ -48,8 +48,6 @@ protected:
 
 	void SetItemOwner(class AMyCharacter* NewOwner);
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -64,7 +62,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* Collider;
 
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere)
 	TWeakObjectPtr<class AMyCharacter> ItemOwner;
 
 	FDelegateHandle OnInteractInterruptedHandle;
