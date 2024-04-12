@@ -34,7 +34,9 @@ public:
 
 	virtual bool Interact(class AMyCharacter* Character) override;
 	virtual bool Use(class AMyCharacter* Character) override;
-	virtual void Recycle() override;
+
+	virtual void InteractInterrupted() override;
+	virtual void UseInterrupted() override;
 
 	DECL_BINDON(OnBombPlantedDelegate)
 
@@ -52,6 +54,8 @@ protected:
 private:
 	void SetDefusing(const bool NewDefusing, class AMyCharacter* Character);
 	void SetPlanting(const bool NewPlanting);
+	void ShowBombProgressWidget() const;
+	void HideBombProgressWidget() const;
 	bool TryDefuse(class AMyCharacter* Character);
 
 	UPROPERTY(VisibleAnywhere)
@@ -80,6 +84,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	TWeakObjectPtr<class AMyCharacter> DefusingCharacter;
+
+	FDelegateHandle DefuserOnInteractInterruptedHandle;
 
 	FOnBombPlanted OnBombPlantedDelegate;
 

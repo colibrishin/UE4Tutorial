@@ -60,6 +60,8 @@ bool AMyC4::IsPlantable(OUT FHitResult& OutResult) const
 		Params
 	);
 
+	const auto& Speed = GetItemOwner()->GetVelocity().Size();
+
 	DrawDebugLine
 	(
 		GetWorld(),
@@ -70,17 +72,65 @@ bool AMyC4::IsPlantable(OUT FHitResult& OutResult) const
 		1.f
 	);
 
-	return !IsPlanted && !IsExploded && GroundResult && OverlapResult;
+	return !IsPlanted && !IsExploded && GroundResult && OverlapResult && (Speed == 0.f);
 }
 
 bool AMyC4::IsDefusable() const
 {
-	return IsPlanted && !IsExploded && !IsDefused;
+	const FCollisionQueryParams Params{NAME_None, false, this};
+	const FCollisionObjectQueryParams ObjectParams(ECollisionChannel::ECC_Pawn);
+
+	TArray<FOverlapResult> OverlapResult;
+
+	const auto& DefuserCheck = GetWorld()->OverlapMultiByObjectType
+	(
+		OverlapResult,
+		GetActorLocation(),
+		FQuat::Identity,
+		ObjectParams,
+		FCollisionShape::MakeSphere(50.f),
+		Params
+	);
+
+	bool IsDefuserNearby = false;
+
+	for (const auto& Result : OverlapResult)
+	{
+		const auto& Actor = Result.GetActor();
+
+		UE_LOG(LogTemp, Warning, TEXT("NearBy Actor: %s"), *Actor->GetName());
+
+		if (Actor == DefusingCharacter)
+		{
+			IsDefuserNearby = true;
+			break;
+		}
+	}
+
+	float Speed = 1.f;
+
+	if (DefusingCharacter.IsValid())
+	{
+		Speed = DefusingCharacter->GetVelocity().Size();
+	}
+
+	DrawDebugSphere
+		(
+		 GetWorld(),
+		 GetActorLocation(),
+		 50.f,
+		 16,
+		 IsDefuserNearby ? FColor::Green : FColor::Red,
+		 false,
+		 1.f
+		);
+
+	return IsPlanted && !IsExploded && !IsDefused && IsDefuserNearby && (Speed == 0.f);
 }
 
 bool AMyC4::Interact(AMyCharacter* Character)
 {
-	if (!IsDefusable())
+	if (!IsPlanted)
 	{
 		if (IsExploded || IsDefused)
 		{
@@ -105,6 +155,11 @@ void AMyC4::OnBombTickingImpl()
 	IsPlanted = false;
 	IsExploded = true;
 
+	if (IsDefusing)
+	{
+		SetDefusing(false, nullptr);
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Bomb Exploded"));
 	GetWorldTimerManager().ClearTimer(OnBombTicking);
 }
@@ -114,10 +169,9 @@ void AMyC4::OnBombPlantedImpl()
 	if (!IsValid(GetItemOwner()))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Owner is not valid"));
+		PlantingTime = 0.f;
 		return;
 	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Bomb planted"));
 
 	FHitResult  HitResult;
 	const auto& GroundResult = IsPlantable(OUT HitResult);
@@ -125,8 +179,11 @@ void AMyC4::OnBombPlantedImpl()
 	if (!GroundResult)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Bomb is not on the ground"));
+		PlantingTime = 0.f;
 		return;
 	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Bomb planted"));
 
 	IsPlanting   = false;
 	IsPlanted    = true;
@@ -150,6 +207,14 @@ void AMyC4::OnBombDefusedImpl()
 {
 	if (!DefusingCharacter.IsValid())
 	{
+		DefusingTime = 0.f;
+		return;
+	}
+
+	// Second chance, preventing from not InteractInterrupted
+	if (!IsDefusable())
+	{
+		DefusingTime = 0.f;
 		return;
 	}
 
@@ -176,11 +241,17 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 		return false;
 	}
 
+	if (DefusingCharacter.IsValid() && DefusingCharacter != Character)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Another character is defusing"));
+		return false;
+	}
+
+	// todo: need to know character is defusable
+	SetDefusing(true, Character);
+
 	if (IsDefusable())
 	{
-		// todo: need to know character is defusable
-		SetDefusing(true, Character);
-
 		UE_LOG(LogTemp, Warning, TEXT("Bomb defusing"));
 
 		if (!OnBombDefusing.IsValid())
@@ -194,10 +265,17 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 			 false
 			);
 
-			Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->BindBomb(this);
+			ShowBombProgressWidget();
+
+			DefuserOnInteractInterruptedHandle = DefusingCharacter->BindOnInteractInterrupted(
+				this, &AMyC4::InteractInterrupted);
 		}
 
 		return true;
+	}
+	else
+	{
+		SetDefusing(false, nullptr);
 	}
 
 	return false;
@@ -227,7 +305,7 @@ bool AMyC4::Use(AMyCharacter* Character)
 				FullPlantingTime,
 				false);
 
-			Cast<AMyInGameHUD>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD())->BindBomb(this);
+			ShowBombProgressWidget();
 		}
 
 		return true;
@@ -236,20 +314,31 @@ bool AMyC4::Use(AMyCharacter* Character)
 	return false;
 }
 
-void AMyC4::Recycle()
+void AMyC4::InteractInterrupted()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Interrupt caught"));
-
-	if (IsPlanting && GetPlantingRatio() < 1.f)
-	{
-		GetWorldTimerManager().ClearTimer(OnBombPlanted);
-		SetPlanting(false);
-	}
+	Super::InteractInterrupted();
 
 	if (IsDefusing && GetDefusingRatio() < 1.f)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Defusing interrupted"));
 		GetWorldTimerManager().ClearTimer(OnBombDefusing);
+		HideBombProgressWidget();
+
+		DefusingCharacter->UnbindOnInteractInterrupted(DefuserOnInteractInterruptedHandle);
 		SetDefusing(false, nullptr);
+	}
+}
+
+void AMyC4::UseInterrupted()
+{
+	Super::UseInterrupted();
+
+	if (IsPlanting && GetPlantingRatio() < 1.f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Planting interrupted"));
+		GetWorldTimerManager().ClearTimer(OnBombPlanted);
+		HideBombProgressWidget();
+		SetPlanting(false);
 	}
 }
 
@@ -292,4 +381,64 @@ void AMyC4::SetPlanting(const bool NewPlanting)
 	{
 		PlantingTime = 0.f;
 	}
+}
+
+void AMyC4::ShowBombProgressWidget() const
+{
+	if (!IsValid(GetItemOwner()))
+	{
+		return;
+	}
+
+	if (GetItemOwner() != GetWorld()->GetFirstPlayerController()->GetPawn())
+	{
+		return;
+	}
+
+	const auto& PlayerController = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+
+	const auto& HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD());
+
+	if (!IsValid(HUD))
+	{
+		return;
+	}
+
+	HUD->BindBomb(this);
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Bomb widget updated"));
+}
+
+void AMyC4::HideBombProgressWidget() const
+{
+	if (!IsValid(GetItemOwner()))
+	{
+		return;
+	}
+
+	if (GetItemOwner() != GetWorld()->GetFirstPlayerController()->GetPawn())
+	{
+		return;
+	}
+
+	const auto& PlayerController = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+
+	if (!IsValid(PlayerController))
+	{
+		return;
+	}
+
+	const auto& HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD());
+
+	if (!IsValid(HUD))
+	{
+		return;
+	}
+
+	HUD->BindBomb(nullptr);
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Bomb widget updated"));
 }
