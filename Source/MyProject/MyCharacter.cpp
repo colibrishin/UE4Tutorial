@@ -24,6 +24,8 @@
 
 #include "Components/WidgetComponent.h"
 
+#include "Net/UnrealNetwork.h"
+
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
 const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
@@ -102,6 +104,13 @@ float AMyCharacter::TakeDamage(
 	return Damage;
 }
 
+void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyCharacter, Weapon);
+	DOREPLIFETIME(AMyCharacter, CurrentItem);
+}
+
 // Called every frame
 void AMyCharacter::Tick(float DeltaTime)
 {
@@ -158,7 +167,7 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 			}
 
 			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
-			AimableWeapon->ShowOnly();
+			AimableWeapon->Show();
 			AimableWeapon->AttachToComponent(
 				GetMesh(), 
 				FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
@@ -168,7 +177,7 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Weapon: %s"), *Weapon->GetName());
-		Weapon->ShowOnly();
+		Weapon->Show();
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocketName);
 		return true;
 	}
@@ -176,12 +185,36 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	return false;
 }
 
+void AMyCharacter::Server_Attack_Implementation(const float Value)
+{
+	AttackStart(Value);
+}
+
+
 void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
 	if (Montage == AnimInstance->GetAttackMontage())
 	{
 		ResetAttack();
 	}
+}
+
+void AMyCharacter::Reload()
+{
+	if (!HasAuthority())
+	{
+		Server_Reload();
+	}
+	else if (HasAuthority() || IsRunningDedicatedServer())
+	{
+		// todo: Check if the weapon is valid and can be reloaded
+		Multi_Reload();
+	}
+}
+
+void AMyCharacter::Server_Reload_Implementation()
+{
+	ReloadStart();
 }
 
 void AMyCharacter::HitscanAttack()
@@ -256,7 +289,12 @@ void AMyCharacter::MeleeAttack()
 	}
 }
 
-void AMyCharacter::Reload()
+void AMyCharacter::Multi_Reload_Implementation()
+{
+	ReloadStart();
+}
+
+void AMyCharacter::ReloadStart()
 {
 	if (!IsValid(Weapon))
 	{
@@ -314,7 +352,41 @@ void AMyCharacter::UnAim()
 	OnAiming.Broadcast(IsAiming);
 }
 
+void AMyCharacter::Interactive()
+{
+	if (!HasAuthority())
+	{
+		Server_Interactive();
+	}
+	else if (HasAuthority() || IsRunningDedicatedServer())
+	{
+		Multi_Interactive();
+	}
+}
+
 void AMyCharacter::Attack(const float Value)
+{
+	if (Value == 0.f)
+	{
+		return;
+	}
+
+	if (!HasAuthority())
+	{
+		Server_Attack(Value);
+	}
+	else if (HasAuthority() || IsRunningDedicatedServer())
+	{
+		Multi_Attack(Value);
+	}
+}
+
+void AMyCharacter::Multi_Attack_Implementation(const float Value)
+{
+	AttackStart(Value);
+}
+
+void AMyCharacter::AttackStart(const float Value)
 {
 	if (Value == 0.f)
 	{
@@ -330,10 +402,15 @@ void AMyCharacter::Attack(const float Value)
 			return;
 		}
 
+		// todo: process client before sending rpc to server.
+
 		switch (Weapon->GetWeaponStatComponent()->GetWeaponType())
 		{
 		case EMyWeaponType::Range:
 			UE_LOG(LogTemp, Warning, TEXT("Range Attack"));
+			// todo: unbind the fire when player drops.
+			OnAttackEndedHandle = Weapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+
 			if (Weapon->GetWeaponStatComponent()->IsHitscan())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
@@ -360,12 +437,25 @@ void AMyCharacter::Attack(const float Value)
 
 void AMyCharacter::ResetAttack()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Reset Attack"));
 	CanAttack = true;
 	OnAttackEnded.Broadcast();
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+
+	Weapon->UnbindOnFireReady(OnAttackEndedHandle);
 }
 
-void AMyCharacter::Interactive()
+void AMyCharacter::Server_Interactive_Implementation()
+{
+	InteractiveStart();
+}
+
+void AMyCharacter::Multi_Interactive_Implementation()
+{
+	InteractiveStart();
+}
+
+void AMyCharacter::InteractiveStart()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Interactive"));
 	FHitResult HitResult;
@@ -400,6 +490,28 @@ void AMyCharacter::Interactive()
 }
 
 void AMyCharacter::InteractInterrupted()
+{
+	if (!HasAuthority())
+	{
+		Server_InteractInterrupted();
+	}
+	else
+	{
+		Multi_InteractInterrupted();
+	}
+}
+
+void AMyCharacter::Server_InteractInterrupted_Implementation()
+{
+	InteractInterruptedStart();
+}
+
+void AMyCharacter::Multi_InteractInterrupted_Implementation()
+{
+	InteractInterruptedStart();
+}
+
+void AMyCharacter::InteractInterruptedStart()
 {
 	OnInteractInterrupted.Broadcast();
 }
