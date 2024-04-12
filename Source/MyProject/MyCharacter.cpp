@@ -167,7 +167,7 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 			}
 
 			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
-			AimableWeapon->ShowOnly();
+			AimableWeapon->Show();
 			AimableWeapon->AttachToComponent(
 				GetMesh(), 
 				FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
@@ -177,7 +177,7 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 		}
 
 		UE_LOG(LogTemp, Warning, TEXT("Weapon: %s"), *Weapon->GetName());
-		Weapon->ShowOnly();
+		Weapon->Show();
 		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocketName);
 		return true;
 	}
@@ -205,7 +205,7 @@ void AMyCharacter::Reload()
 	{
 		Server_Reload();
 	}
-	else
+	else if (HasAuthority() || IsRunningDedicatedServer())
 	{
 		// todo: Check if the weapon is valid and can be reloaded
 		Multi_Reload();
@@ -352,6 +352,18 @@ void AMyCharacter::UnAim()
 	OnAiming.Broadcast(IsAiming);
 }
 
+void AMyCharacter::Interactive()
+{
+	if (!HasAuthority())
+	{
+		Server_Interactive();
+	}
+	else if (HasAuthority() || IsRunningDedicatedServer())
+	{
+		Multi_Interactive();
+	}
+}
+
 void AMyCharacter::Attack(const float Value)
 {
 	if (Value == 0.f)
@@ -363,7 +375,7 @@ void AMyCharacter::Attack(const float Value)
 	{
 		Server_Attack(Value);
 	}
-	else
+	else if (HasAuthority() || IsRunningDedicatedServer())
 	{
 		Multi_Attack(Value);
 	}
@@ -396,6 +408,9 @@ void AMyCharacter::AttackStart(const float Value)
 		{
 		case EMyWeaponType::Range:
 			UE_LOG(LogTemp, Warning, TEXT("Range Attack"));
+			// todo: unbind the fire when player drops.
+			OnAttackEndedHandle = Weapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+
 			if (Weapon->GetWeaponStatComponent()->IsHitscan())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
@@ -422,12 +437,25 @@ void AMyCharacter::AttackStart(const float Value)
 
 void AMyCharacter::ResetAttack()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Reset Attack"));
 	CanAttack = true;
 	OnAttackEnded.Broadcast();
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+
+	Weapon->UnbindOnFireReady(OnAttackEndedHandle);
 }
 
-void AMyCharacter::Interactive()
+void AMyCharacter::Server_Interactive_Implementation()
+{
+	InteractiveStart();
+}
+
+void AMyCharacter::Multi_Interactive_Implementation()
+{
+	InteractiveStart();
+}
+
+void AMyCharacter::InteractiveStart()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Interactive"));
 	FHitResult HitResult;
@@ -462,6 +490,28 @@ void AMyCharacter::Interactive()
 }
 
 void AMyCharacter::InteractInterrupted()
+{
+	if (!HasAuthority())
+	{
+		Server_InteractInterrupted();
+	}
+	else
+	{
+		Multi_InteractInterrupted();
+	}
+}
+
+void AMyCharacter::Server_InteractInterrupted_Implementation()
+{
+	InteractInterruptedStart();
+}
+
+void AMyCharacter::Multi_InteractInterrupted_Implementation()
+{
+	InteractInterruptedStart();
+}
+
+void AMyCharacter::InteractInterruptedStart()
 {
 	OnInteractInterrupted.Broadcast();
 }

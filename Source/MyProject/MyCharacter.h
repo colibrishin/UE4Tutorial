@@ -109,11 +109,24 @@ private:
 
 	// ============ Interacting ============
 
-	UPROPERTY(Replicated, VisibleAnywhere)
-	bool IsInteractPressed;
-
 	void Interactive();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Interactive();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Interactive();
+
+	void InteractiveStart();
+
 	void InteractInterrupted();
+
+	UFUNCTION(Server, Reliable)
+	void Server_InteractInterrupted();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_InteractInterrupted();
+
+	void InteractInterruptedStart();
 
 	// ============ End of Interacting ============
 
@@ -170,4 +183,6 @@ private:
 	FOnUseInterrupted OnUseInterrupted;
 
 	FOnInteractInterrupted OnInteractInterrupted;
+
+	FDelegateHandle OnAttackEndedHandle;
 };
