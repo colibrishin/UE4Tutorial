@@ -24,7 +24,10 @@ public:
 
 	virtual bool Interact(class AMyCharacter* Character) override;
 	virtual bool Use(class AMyCharacter* Character) override;
-	virtual void Recycle() override;
+
+	virtual void InteractInterrupted() override;
+	virtual void UseInterrupted() override;
+
 	virtual bool Drop();
 
 	void Hide() const;
