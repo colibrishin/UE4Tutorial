@@ -11,7 +11,7 @@ void UMyBombProgressWidget::SetValue(const float Value) const
 	ProgressBar->SetPercent(Value);
 }
 
-void UMyBombProgressWidget::BindBomb(AMyC4* NewBomb)
+void UMyBombProgressWidget::BindBomb(const AMyC4* NewBomb)
 {
 	Bomb = NewBomb;
 }
