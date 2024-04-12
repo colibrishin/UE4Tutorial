@@ -43,3 +43,6 @@ FORCEINLINE T PrintErrorAndReturnDefault(const FString& Message, const UObject* 
 
 #define LOG_FUNC(CategoryName, Verbosity, String) \
 	UE_LOG(CategoryName, Verbosity, TEXT("%hs: %s"), __FUNCTION__, TEXT(String))
+
+#define LOG_FUNC_RAW(CategoryName, Verbosity, String) \
+	UE_LOG(CategoryName, Verbosity, TEXT("%hs: %s"), __FUNCTION__, String)
