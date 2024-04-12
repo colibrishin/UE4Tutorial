@@ -187,6 +187,16 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 
 void AMyCharacter::Server_Attack_Implementation(const float Value)
 {
+	if (!CanAttack)
+	{
+		return;
+	}
+
+	if (IsValid(Weapon) && !Weapon->CanDoAttack())
+	{
+		return;
+	}
+
 	Multi_Attack(Value);
 }
 
@@ -207,18 +217,32 @@ void AMyCharacter::Reload()
 	}
 	else if (HasAuthority() || IsRunningDedicatedServer())
 	{
-		// todo: Check if the weapon is valid and can be reloaded
 		Multi_Reload();
 	}
 }
 
 void AMyCharacter::Server_Reload_Implementation()
 {
+	if (!IsValid(Weapon))
+	{
+		return;
+	}
+
+	if (!Weapon->CanBeReloaded())
+	{
+		return;
+	}
+
 	Multi_Reload();
 }
 
 void AMyCharacter::HitscanAttack()
 {
+	if (!CanAttack)
+	{
+		return;
+	}
+
 	UE_LOG(LogTemp, Warning, TEXT("Hitscan Fire!"));
 
 	FHitResult HitResult;
@@ -279,14 +303,16 @@ void AMyCharacter::HitscanAttack()
 
 void AMyCharacter::MeleeAttack()
 {
-	if (CanAttack)
+	if (!CanAttack)
 	{
-		constexpr int32 MaxAttackSection = 3;
-
-		UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
-		AttackIndex = (AttackIndex + 1) % MaxAttackSection;
-		AnimInstance->PlayAttackMontage(AttackIndex);
+		return;
 	}
+
+	constexpr int32 MaxAttackSection = 3;
+
+	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
+	AttackIndex = (AttackIndex + 1) % MaxAttackSection;
+	AnimInstance->PlayAttackMontage(AttackIndex);
 }
 
 void AMyCharacter::Multi_Reload_Implementation()
@@ -371,6 +397,11 @@ void AMyCharacter::Attack(const float Value)
 		return;
 	}
 
+	if (!CanAttack)
+	{
+		return;
+	}
+
 	if (!HasAuthority())
 	{
 		Server_Attack(Value);
@@ -440,8 +471,8 @@ void AMyCharacter::ResetAttack()
 	UE_LOG(LogTemp, Warning, TEXT("Reset Attack"));
 	CanAttack = true;
 	OnAttackEnded.Broadcast();
-	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 	Weapon->UnbindOnFireReady(OnAttackEndedHandle);
 }
 
