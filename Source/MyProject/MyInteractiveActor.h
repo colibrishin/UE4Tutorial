@@ -17,6 +17,7 @@ public:
 
 	virtual bool Interact(class AMyCharacter* Character) PURE_VIRTUAL(AMyInteractiveActor::Interact, return false;);
 	virtual bool Use(class AMyCharacter* Character) PURE_VIRTUAL(AMyInteractiveActor::Use, return false;);
-	virtual void Recycle() PURE_VIRTUAL(AMyInteractiveActor::Recycle, );
 
+	virtual void InteractInterrupted() PURE_VIRTUAL(AMyInteractiveActor::Recycle, );
+	virtual void UseInterrupted() PURE_VIRTUAL(AMyInteractiveActor::Recycle, );
 };
