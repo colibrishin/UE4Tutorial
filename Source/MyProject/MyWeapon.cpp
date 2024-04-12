@@ -37,12 +37,14 @@ void AMyWeapon::PostInitializeComponents()
 void AMyWeapon::OnFireRateTimed()
 {
 	CanAttack = true;
+	OnFireReady.Broadcast();
 	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
 }
 
 void AMyWeapon::OnReloadDone()
 {
 	CanReload = true;
+	OnReloadReady.Broadcast();
 	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
 }
 
