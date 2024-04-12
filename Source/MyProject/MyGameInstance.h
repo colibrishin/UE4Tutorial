@@ -84,6 +84,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 Damage;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Price;
+
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
 	FMyMeleeWeaponStat MeleeWeaponStat{};
@@ -121,7 +124,7 @@ public:
 
 	virtual void Init() override;
 
-	FORCEINLINE const FMyStat*       GetValue(const int32 Level) const
+	FORCEINLINE const FMyStat*       GetStatValue(const int32 Level) const
 	{
 		return StatTable->FindRow<FMyStat>(*FString::FromInt(Level), TEXT(""));
 	}
@@ -131,12 +134,17 @@ public:
 		return WeaponStatTable->FindRow<FMyWeaponStat>(*FString::FromInt(ID), TEXT(""));
 	}
 
+	FORCEINLINE int32 GetWeaponCount() const
+	{
+		return WeaponStatTable->GetRowMap().Num();
+	}
+
 private:
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(AllowPrivateAccess))
 	UDataTable* StatTable;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(AllowPrivateAccess))
 	UDataTable* WeaponStatTable;
 
 };

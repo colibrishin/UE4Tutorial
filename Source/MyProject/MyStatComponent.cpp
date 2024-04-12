@@ -38,7 +38,7 @@ void UMyStatComponent::InitializeComponent()
 
 	if (IsValid(GameInstance))
 	{
-		const auto& Data = GameInstance->GetValue(Level);
+		const auto& Data = GameInstance->GetStatValue(Level);
 
 		// IsValid 스킵
 
