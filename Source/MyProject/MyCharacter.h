@@ -97,7 +97,7 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_Reload();
 
-	void ReloadStart();
+	void ReloadStart() const;
 
 	// ============ End of Reloading ============
 
