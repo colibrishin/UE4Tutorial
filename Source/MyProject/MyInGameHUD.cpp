@@ -3,6 +3,7 @@
 
 #include "MyProject/MyInGameHUD.h"
 
+#include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
 #include "MyInGameWidget.h"
 
@@ -11,6 +12,7 @@
 AMyInGameHUD::AMyInGameHUD()
 {
 	Widgets = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widgets"));
+	BuyMenu = CreateDefaultSubobject<UWidgetComponent>(TEXT("BuyMenu"));
 
 	SetRootComponent(Widgets);
 	Widgets->SetWidgetSpace(EWidgetSpace::Screen);
@@ -21,6 +23,14 @@ AMyInGameHUD::AMyInGameHUD()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Widget is loaded"));
 		Widgets->SetWidgetClass(BP_Widget.Class);
+	}
+
+	static ConstructorHelpers::FClassFinder<UMyBuyMenuWidget> BP_BuyMenu(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyBuyMenuWidget.BPMyBuyMenuWidget_C'"));
+
+	if (BP_Widget.Succeeded())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BuyMenu is loaded"));
+		BuyMenu->SetWidgetClass(BP_BuyMenu.Class);
 	}
 }
 
@@ -55,6 +65,15 @@ void AMyInGameHUD::BeginPlay()
 		Widget->AddToViewport();
 		Widget->BindPlayer(Cast<AMyCharacter>(GetOwningPawn()));
 	}
+
+	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
+
+	if (BuyMenuWidget)
+	{
+		BuyMenuWidget->Populate();
+		BuyMenuWidget->AddToViewport();
+		BuyMenuWidget->Open();
+	}
 }
 
 void AMyInGameHUD::DrawHUD()
@@ -67,4 +86,5 @@ void AMyInGameHUD::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	Widgets->InitWidget();
+	BuyMenu->InitWidget();
 }
