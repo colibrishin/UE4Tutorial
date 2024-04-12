@@ -58,7 +58,7 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 
 	const FVector PreviousLocation = GetActorLocation();
 
-	GetCollider()->SetSimulatePhysics(false);
+	GetMesh()->SetSimulatePhysics(false);
 
 	if (GetMesh()->AttachToComponent
 		(
