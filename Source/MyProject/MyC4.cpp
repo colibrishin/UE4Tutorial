@@ -60,7 +60,12 @@ bool AMyC4::IsPlantable(OUT FHitResult& OutResult) const
 		Params
 	);
 
-	const auto& Speed = GetItemOwner()->GetVelocity().Size();
+	float Speed = 1.f;
+
+	if (IsValid(GetItemOwner()))
+	{
+		Speed = GetItemOwner()->GetVelocity().Size();
+	}
 
 	DrawDebugLine
 	(
@@ -168,7 +173,7 @@ void AMyC4::OnBombPlantedImpl()
 {
 	if (!IsValid(GetItemOwner()))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Owner is not valid"));
+		LOG_FUNC(LogTemp, Warning, "Item owner is not valid");
 		PlantingTime = 0.f;
 		return;
 	}
@@ -178,12 +183,12 @@ void AMyC4::OnBombPlantedImpl()
 
 	if (!GroundResult)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Bomb is not on the ground"));
+		LOG_FUNC(LogTemp, Warning, "Bomb is not plantable");
 		PlantingTime = 0.f;
 		return;
 	}
 
-	UE_LOG(LogTemp, Warning, TEXT("Bomb planted"));
+	LOG_FUNC(LogTemp, Warning, "Bomb planted");
 
 	IsPlanting   = false;
 	IsPlanted    = true;
@@ -265,7 +270,10 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 			 false
 			);
 
-			ShowBombProgressWidget();
+			if (IsValid(GetDefusingCharacter()))
+			{
+				ShowBombProgressWidget(GetDefusingCharacter());
+			}
 
 			DefuserOnInteractInterruptedHandle = DefusingCharacter->BindOnInteractInterrupted(
 				this, &AMyC4::InteractInterrupted);
@@ -305,7 +313,10 @@ bool AMyC4::Use(AMyCharacter* Character)
 				FullPlantingTime,
 				false);
 
-			ShowBombProgressWidget();
+			if (IsValid(GetItemOwner()))
+			{
+				ShowBombProgressWidget(GetItemOwner());	
+			}
 		}
 
 		return true;
@@ -322,8 +333,12 @@ void AMyC4::InteractInterrupted()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Defusing interrupted"));
 		GetWorldTimerManager().ClearTimer(OnBombDefusing);
-		HideBombProgressWidget();
 
+		if (IsValid(GetDefusingCharacter()))
+		{
+			HideBombProgressWidget(GetDefusingCharacter());
+		}
+		
 		DefusingCharacter->UnbindOnInteractInterrupted(DefuserOnInteractInterruptedHandle);
 		SetDefusing(false, nullptr);
 	}
@@ -337,7 +352,12 @@ void AMyC4::UseInterrupted()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Planting interrupted"));
 		GetWorldTimerManager().ClearTimer(OnBombPlanted);
-		HideBombProgressWidget();
+
+		if (IsValid(GetItemOwner()))
+		{
+			HideBombProgressWidget(GetItemOwner());	
+		}
+
 		SetPlanting(false);
 	}
 }
@@ -383,19 +403,19 @@ void AMyC4::SetPlanting(const bool NewPlanting)
 	}
 }
 
-void AMyC4::ShowBombProgressWidget() const
+void AMyC4::ShowBombProgressWidget(const AMyCharacter* Character) const
 {
-	if (!IsValid(GetItemOwner()))
+	if (!IsValid(Character))
 	{
 		return;
 	}
 
-	if (GetItemOwner() != GetWorld()->GetFirstPlayerController()->GetPawn())
+	if (Character != GetWorld()->GetFirstPlayerController()->GetPawn())
 	{
 		return;
 	}
 
-	const auto& PlayerController = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+	const auto& PlayerController = Cast<APlayerController>(Character->GetController());
 
 	if (!IsValid(PlayerController))
 	{
@@ -413,19 +433,19 @@ void AMyC4::ShowBombProgressWidget() const
 	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Bomb widget updated"));
 }
 
-void AMyC4::HideBombProgressWidget() const
+void AMyC4::HideBombProgressWidget(const AMyCharacter* Character) const
 {
-	if (!IsValid(GetItemOwner()))
+	if (!IsValid(Character))
 	{
 		return;
 	}
 
-	if (GetItemOwner() != GetWorld()->GetFirstPlayerController()->GetPawn())
+	if (Character != GetWorld()->GetFirstPlayerController()->GetPawn())
 	{
 		return;
 	}
 
-	const auto& PlayerController = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+	const auto& PlayerController = Cast<APlayerController>(Character->GetController());
 
 	if (!IsValid(PlayerController))
 	{
