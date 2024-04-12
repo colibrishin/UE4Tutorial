@@ -52,12 +52,22 @@ bool AMyWeapon::Attack()
 {
 	if (CanAttack)
 	{
-		GetWorld()->GetTimerManager().SetTimer(
-			FireRateTimerHandle, 
-			this, 
-			&AMyWeapon::OnFireRateTimed, 
-			GetWeaponStatComponent()->GetFireRate(), 
-			false);
+		if (GetWeaponStatComponent()->GetWeaponType() == Range)
+		{
+			GetWorld()->GetTimerManager().SetTimer
+			(
+				FireRateTimerHandle, 
+				this, 
+				&AMyWeapon::OnFireRateTimed, 
+				GetWeaponStatComponent()->GetFireRate(), 
+				false
+			);
+		}
+		else if (GetWeaponStatComponent()->GetWeaponType() == Melee)
+		{
+			LOG_FUNC(LogTemp, Warning, "Melee attack, Not implemented");
+			return AttackImpl();
+		}
 
 		CanAttack = false;
 
@@ -85,14 +95,22 @@ bool AMyWeapon::Reload()
 {
 	if (CanReload)
 	{
-		GetWorld()->GetTimerManager().SetTimer
+		if (GetWeaponStatComponent()->GetWeaponType() == Range)
+		{
+			GetWorld()->GetTimerManager().SetTimer
 			(
-			 ReloadTimerHandle,
-			 this,
-			 &AMyWeapon::OnReloadDone,
-			 GetWeaponStatComponent()->GetReloadTime(),
-			 false
+				 ReloadTimerHandle ,
+				 this ,
+				 &AMyWeapon::OnReloadDone ,
+				 GetWeaponStatComponent()->GetReloadTime() ,
+				 false
 			);
+		}
+		else if (GetWeaponStatComponent()->GetWeaponType() == Melee)
+		{
+			LOG_FUNC(LogTemp, Warning, "Melee reload, Not implemented");
+			return ReloadImpl();
+		}
 
 		CanReload = false;
 
