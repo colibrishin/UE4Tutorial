@@ -87,13 +87,18 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 
 bool AMyCollectable::Use(AMyCharacter* Character)
 {
-	Character->BindOnUseInterrupted(this, &AMyCollectable::Recycle);
 	UE_LOG(LogTemp, Warning, TEXT("Use"));
 	return true;
 }
 
-void AMyCollectable::Recycle()
+void AMyCollectable::InteractInterrupted()
 {
+	UE_LOG(LogTemp, Warning, TEXT("%s: InteractInterrupted"), *GetName());
+}
+
+void AMyCollectable::UseInterrupted()
+{
+	UE_LOG(LogTemp, Warning, TEXT("%s: UseInterrupted"), *GetName());
 }
 
 bool AMyCollectable::Drop()
@@ -173,8 +178,8 @@ void AMyCollectable::SetItemOwner(AMyCharacter* NewOwner)
 
 	if (ItemOwner != nullptr)
 	{
-		OnInteractInterruptedHandle = ItemOwner->BindOnInteractInterrupted(this, &AMyCollectable::Recycle);
-		OnUseInterruptedHandle = ItemOwner->BindOnUseInterrupted(this, &AMyCollectable::Recycle);
+		OnInteractInterruptedHandle = ItemOwner->BindOnInteractInterrupted(this, &AMyCollectable::InteractInterrupted);
+		OnUseInterruptedHandle = ItemOwner->BindOnUseInterrupted(this, &AMyCollectable::UseInterrupted);
 	}
 }
 
