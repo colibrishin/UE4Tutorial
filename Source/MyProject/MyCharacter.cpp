@@ -187,7 +187,7 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 
 void AMyCharacter::Server_Attack_Implementation(const float Value)
 {
-	AttackStart(Value);
+	Multi_Attack(Value);
 }
 
 
@@ -214,7 +214,7 @@ void AMyCharacter::Reload()
 
 void AMyCharacter::Server_Reload_Implementation()
 {
-	ReloadStart();
+	Multi_Reload();
 }
 
 void AMyCharacter::HitscanAttack()
@@ -447,7 +447,7 @@ void AMyCharacter::ResetAttack()
 
 void AMyCharacter::Server_Interactive_Implementation()
 {
-	InteractiveStart();
+	Multi_Interactive();
 }
 
 void AMyCharacter::Multi_Interactive_Implementation()
@@ -495,7 +495,7 @@ void AMyCharacter::InteractInterrupted()
 	{
 		Server_InteractInterrupted();
 	}
-	else
+	else if (HasAuthority() || IsRunningDedicatedServer())
 	{
 		Multi_InteractInterrupted();
 	}
@@ -503,7 +503,7 @@ void AMyCharacter::InteractInterrupted()
 
 void AMyCharacter::Server_InteractInterrupted_Implementation()
 {
-	InteractInterruptedStart();
+	Multi_InteractInterrupted();
 }
 
 void AMyCharacter::Multi_InteractInterrupted_Implementation()
