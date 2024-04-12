@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyProjectGameModeBase.h"
+
 #include "GameFramework/HUD.h"
 #include "MyInGameHUD.generated.h"
 
