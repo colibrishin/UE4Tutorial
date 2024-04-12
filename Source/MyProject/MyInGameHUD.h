@@ -34,4 +34,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UWidgetComponent* Widgets;
 
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* BuyMenu;
+
 };
