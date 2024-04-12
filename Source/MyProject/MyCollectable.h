@@ -29,7 +29,6 @@ public:
 
 	void Hide() const;
 	void Show() const;
-	void ShowOnly() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -46,6 +45,7 @@ protected:
 
 	void SetItemOwner(class AMyCharacter* NewOwner);
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
 	// Called every frame
@@ -61,7 +61,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* Collider;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Replicated, VisibleAnywhere)
 	TWeakObjectPtr<class AMyCharacter> ItemOwner;
 
 	FDelegateHandle OnInteractInterruptedHandle;
