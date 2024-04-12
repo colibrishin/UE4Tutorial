@@ -16,7 +16,7 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 
 public:
 	void BindPlayer(const class AMyCharacter* Player) const;
-	void BindBomb(class AMyC4* Bomb) const;
+	void BindBomb(const class AMyC4* Bomb) const;
 	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
 private:

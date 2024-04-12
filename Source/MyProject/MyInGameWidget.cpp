@@ -21,7 +21,7 @@ void UMyInGameWidget::BindPlayer(const AMyCharacter* Player) const
 	}
 }
 
-void UMyInGameWidget::BindBomb(AMyC4* Bomb) const
+void UMyInGameWidget::BindBomb(const AMyC4* Bomb) const
 {
 	if (IsValid(Bomb))
 	{

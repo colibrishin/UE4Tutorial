@@ -16,7 +16,7 @@ class MYPROJECT_API UMyBombProgressWidget : public UUserWidget
 
 public:
 	void SetValue(const float Value) const;
-	void BindBomb(class AMyC4* NewBomb);
+	void BindBomb(const class AMyC4* NewBomb);
 
 protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -25,6 +25,6 @@ private:
 	UPROPERTY(Meta=(BindWidget))
 	class UProgressBar* ProgressBar;
 
-	TWeakObjectPtr<class AMyC4> Bomb;
+	TWeakObjectPtr<const AMyC4> Bomb;
 
 };
