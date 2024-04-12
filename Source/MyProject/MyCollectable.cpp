@@ -7,6 +7,8 @@
 
 #include "Components/BoxComponent.h"
 
+#include "Net/UnrealNetwork.h"
+
 // Sets default values
 AMyCollectable::AMyCollectable()
 {
@@ -25,6 +27,8 @@ AMyCollectable::AMyCollectable()
 	GetCollider()->SetBoxExtent(FVector{10.f, 30.f, 10.f});
 
 	ItemOwner = nullptr;
+	GetMesh()->SetSimulatePhysics(false);
+	GetCollider()->SetSimulatePhysics(false);
 }
 
 // Called when the game starts or when spawned
@@ -58,7 +62,8 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 
 	const FVector PreviousLocation = GetActorLocation();
 
-	GetMesh()->SetSimulatePhysics(false);
+	//GetMesh()->SetSimulatePhysics(false);
+	//GetCollider()->SetSimulatePhysics(false);
 
 	if (GetMesh()->AttachToComponent
 		(
@@ -67,11 +72,11 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		 AMyCharacter::ChestSocketName
 		))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AttachToComponent success"));
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("AttachToComponent failed"));
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
 		return false;
 	}
 	Hide();
@@ -128,7 +133,7 @@ bool AMyCollectable::Drop()
 		}
 
 		Show();
-		GetCollider()->SetSimulatePhysics(true);
+		//GetMesh()->SetSimulatePhysics(true);
 		SetItemOwner(nullptr);
 		return true;
 	}
@@ -139,24 +144,11 @@ bool AMyCollectable::Drop()
 void AMyCollectable::Hide() const
 {
 	GetMesh()->SetVisibility(false);
-	GetCollider()->SetSimulatePhysics(false);
-	GetCollider()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
 }
 
 void AMyCollectable::Show() const
 {
 	GetMesh()->SetVisibility(true);
-	GetCollider()->SetSimulatePhysics(true);
-	GetCollider()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_Yes;
-}
-
-void AMyCollectable::ShowOnly() const
-{
-	GetMesh()->SetVisibility(true);
-	GetCollider()->SetSimulatePhysics(false);
-	GetCollider()->CanCharacterStepUpOn = ECanBeCharacterBase::ECB_No;
 }
 
 bool AMyCollectable::IsBelongToCharacter() const
@@ -184,6 +176,12 @@ void AMyCollectable::SetItemOwner(AMyCharacter* NewOwner)
 		OnInteractInterruptedHandle = ItemOwner->BindOnInteractInterrupted(this, &AMyCollectable::Recycle);
 		OnUseInterruptedHandle = ItemOwner->BindOnUseInterrupted(this, &AMyCollectable::Recycle);
 	}
+}
+
+void AMyCollectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyCollectable, ItemOwner);
 }
 
 // Called every frame
