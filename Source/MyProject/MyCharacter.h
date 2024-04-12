@@ -126,12 +126,33 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_InteractInterrupted();
 
-	void InteractInterruptedStart();
+	void InteractInterruptedStart() const;
 
 	// ============ End of Interacting ============
 
+	// ============ Using ============
+
 	void Use();
+
+	UFUNCTION(Server, Reliable)
+	void Server_Use();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Use();
+
+	void UseStart();
+
 	void UseInterrupt();
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseInterrupt();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_UseInterrupt();
+
+	void UseInterruptStart() const;
+
+	// ============ End of Using ============
 
 	void Yaw(const float Value);
 	void Pitch(const float Value);

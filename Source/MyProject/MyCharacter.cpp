@@ -511,12 +511,35 @@ void AMyCharacter::Multi_InteractInterrupted_Implementation()
 	InteractInterruptedStart();
 }
 
-void AMyCharacter::InteractInterruptedStart()
+void AMyCharacter::InteractInterruptedStart() const
 {
+	UE_LOG(LogTemp, Warning, TEXT("Interact Interrupted"));
 	OnInteractInterrupted.Broadcast();
 }
 
 void AMyCharacter::Use()
+{
+	if (!HasAuthority())
+	{
+		Server_Use();
+	}
+	else if (HasAuthority() || IsRunningDedicatedServer())
+	{
+		Multi_Use();
+	}
+}
+
+void AMyCharacter::Server_Use_Implementation()
+{
+	Multi_Use();
+}
+
+void AMyCharacter::Multi_Use_Implementation()
+{
+	UseStart();
+}
+
+void AMyCharacter::UseStart()
 {
 	if (IsValid(CurrentItem))
 	{
@@ -530,6 +553,29 @@ void AMyCharacter::Use()
 
 void AMyCharacter::UseInterrupt()
 {
+	if (!HasAuthority())
+	{
+		Server_UseInterrupt();
+	}
+	else if (HasAuthority() || IsRunningDedicatedServer())
+	{
+		Multi_UseInterrupt();
+	}
+}
+
+void AMyCharacter::Server_UseInterrupt_Implementation()
+{
+	Multi_UseInterrupt();
+}
+
+void AMyCharacter::Multi_UseInterrupt_Implementation()
+{
+	UseInterruptStart();
+}
+
+void AMyCharacter::UseInterruptStart() const
+{
+	UE_LOG(LogTemp, Warning, TEXT("Use Interrupted"));
 	OnUseInterrupted.Broadcast();
 }
 
