@@ -8,7 +8,7 @@
 #include "Blueprint/UserWidget.h"
 #include "MyBuyMenuWeaponWidget.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnItemCliekd, float)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnItemCliekd, int32)
 
 /**
  * 
@@ -22,8 +22,11 @@ public:
 	void SetImage(UTexture2D* Texture) const;
 	void SetName(const FString& Name) const;
 	void SetPrice(const int32 Price);
+	void SetID(const int32 ID);
 
-	DECL_BINDON(OnItemClicked, float);
+	DECL_BINDON(OnItemClicked, int32);
+
+	int32 GetID() const { return WeaponID; }
 
 protected:
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
@@ -40,6 +43,8 @@ private:
 
 	UPROPERTY(Meta=(BindWidget))
 	class UTextBlock* WeaponPrice;
+
+	int32 WeaponID;
 
 	int32 WeaponPriceValue;
 
