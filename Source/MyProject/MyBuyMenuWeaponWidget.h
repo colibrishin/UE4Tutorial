@@ -3,10 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Utilities.hpp"
 
-#include "Blueprint/IUserObjectListEntry.h"
 #include "Blueprint/UserWidget.h"
 #include "MyBuyMenuWeaponWidget.generated.h"
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnItemCliekd, float)
 
 /**
  * 
@@ -19,7 +21,12 @@ class MYPROJECT_API UMyBuyMenuWeaponWidget : public UUserWidget
 public:
 	void SetImage(UTexture2D* Texture) const;
 	void SetName(const FString& Name) const;
-	void SetPrice(const int32 Price) const;
+	void SetPrice(const int32 Price);
+
+	DECL_BINDON(OnItemClicked, float);
+
+protected:
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 
 private:
 	UPROPERTY(Meta=(BindWidget))
@@ -33,5 +40,9 @@ private:
 
 	UPROPERTY(Meta=(BindWidget))
 	class UTextBlock* WeaponPrice;
+
+	int32 WeaponPriceValue;
+
+	FOnItemCliekd OnItemClicked;
 
 };
