@@ -4,11 +4,12 @@
 #include "MyProject/MyBuyMenuWidget.h"
 
 #include "MyBuyMenuWeaponWidget.h"
+#include "MyCharacter.h"
 #include "MyGameInstance.h"
+#include "MyStatComponent.h"
 #include "Utilities.hpp"
 #include "GameFramework/PlayerController.h"
 #include "Runtime/Engine/Classes/Engine/Player.h"
-
 #include "Components/GridPanel.h"
 #include "Components/TileView.h"
 #include "Components/UniformGridPanel.h"
@@ -36,18 +37,98 @@ void UMyBuyMenuWidget::Populate() const
 
 			Widget->SetName(Weapon->Name);
 			Widget->SetPrice(Weapon->Price);
+			Widget->BindOnItemClicked(this, &UMyBuyMenuWidget::ProcessBuy);
 			WeaponGridPanel->AddChildToUniformGrid(Widget, i / 4, i % 4);
 		}
 	}
 }
 
-void UMyBuyMenuWidget::Open() const
+void UMyBuyMenuWidget::Open()
 {
+	if (IsOpen)
+	{
+		LOG_FUNC(LogTemp, Warning, "Buy Menu is already open");
+		return;
+	}
+
+	LOG_FUNC(LogTemp, Warning, "Opening Buy Menu");
+	IsOpen = true;
+
 	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
 
 	Controller->SetInputMode(FInputModeUIOnly());
 	Controller->SetShowMouseCursor(true);
+	SetFocus();
+	AddToViewport();
 
+	SetVisibility(ESlateVisibility::Visible);
+}
 
-	
+void UMyBuyMenuWidget::Close()
+{
+	if (!IsOpen)
+	{
+		LOG_FUNC(LogTemp, Warning, "Buy Menu is already closed");
+		return;
+	}
+
+	LOG_FUNC(LogTemp, Warning, "Closing Buy Menu");
+	IsOpen = false;
+
+	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
+
+	Controller->SetInputMode(FInputModeGameOnly());
+	Controller->SetShowMouseCursor(false);
+	RemoveFromViewport();
+
+	SetVisibility(ESlateVisibility::Hidden);
+}
+
+FReply UMyBuyMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (InKeyEvent.GetKey() == EKeys::B)
+	{
+		Close();
+	}
+
+	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
+}
+
+void UMyBuyMenuWidget::ProcessBuy(const float Price) const
+{
+	if (GetVisibility() != ESlateVisibility::Visible)
+	{
+		return;
+	}
+
+	if (Price > 0)
+	{
+		const auto& Character = Cast<AMyCharacter>(GetOwningLocalPlayer()->PlayerController->GetPawn());
+
+		if (IsValid(Character))
+		{
+			if (Character->GetStatComponent()->GetMoney() - Price <= 0)
+			{
+				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Not enough money!"));
+				return;
+			}
+
+			Server_RequestBuy(Character, Price);
+		}
+	}
+
+}
+
+void UMyBuyMenuWidget::Server_RequestBuy_Implementation(AMyCharacter* Character, const float Price) const
+{
+	if (IsValid(Character))
+	{
+		// Second chance check.
+		if (Character->GetStatComponent()->GetMoney() - Price <= 0)
+		{
+			return;
+		}
+
+		Character->GetStatComponent()->AddMoney(-Price);
+	}
 }

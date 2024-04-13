@@ -21,7 +21,15 @@ void UMyBuyMenuWeaponWidget::SetName(const FString& Name) const
 	WeaponName->SetText(FText::FromString(Name));
 }
 
-void UMyBuyMenuWeaponWidget::SetPrice(const int32 Price) const
+void UMyBuyMenuWeaponWidget::SetPrice(const int32 Price)
 {
 	WeaponPrice->SetText(FText::FromString("$" + FString::FromInt(Price)));
+	WeaponPriceValue = Price;
+}
+
+FReply UMyBuyMenuWeaponWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	OnItemClicked.Broadcast(WeaponPriceValue);
+
+	return Super::NativeOnMouseButtonDown(InGeometry , InMouseEvent);
 }
