@@ -17,12 +17,12 @@ class MYPROJECT_API UMyWeaponDataAsset : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
-	TSubclassOf<class AMyWeapon> GetWeaponClass() const { return WeaponBlueprint->GetBlueprintClass(); }
+	TSubclassOf<class AMyWeapon> GetWeaponClass() const { return WeaponBlueprint; }
 	const FMyWeaponStat& GetWeaponStat() const { return WeaponStat; }
 
 private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
-	UBlueprint* WeaponBlueprint;
+	TSubclassOf<class AMyWeapon> WeaponBlueprint;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
 	FMyWeaponStat WeaponStat;
