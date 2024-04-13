@@ -26,7 +26,6 @@ AMyCollectable::AMyCollectable()
 
 	GetCollider()->SetBoxExtent(FVector{10.f, 30.f, 10.f});
 
-	ItemOwner = nullptr;
 	GetMesh()->SetSimulatePhysics(false);
 	GetCollider()->SetSimulatePhysics(false);
 }
@@ -53,10 +52,17 @@ bool AMyCollectable::OnCharacterOverlap(
 	return false;
 }
 
+AMyCharacter* AMyCollectable::GetItemOwner() const
+{
+	const auto& CollectableOwner = GetAttachParentActor();
+	return Cast<AMyCharacter>(CollectableOwner);
+}
+
 bool AMyCollectable::Interact(class AMyCharacter* Character)
 {
 	if (IsBelongToCharacter())
 	{
+		LOG_FUNC(LogTemp, Warning, "Already belong to character");
 		return false;
 	}
 
@@ -64,6 +70,8 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 
 	//GetMesh()->SetSimulatePhysics(false);
 	//GetCollider()->SetSimulatePhysics(false);
+
+	LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Setting Owner to : %s"), *Character->GetName()));
 
 	if (GetMesh()->AttachToComponent
 		(
@@ -81,7 +89,6 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 	}
 	Hide();
 
-	SetItemOwner(Character);
 	return true;
 }
 
@@ -139,7 +146,6 @@ bool AMyCollectable::Drop()
 
 		Show();
 		//GetMesh()->SetSimulatePhysics(true);
-		SetItemOwner(nullptr);
 		return true;
 	}
 
@@ -158,29 +164,7 @@ void AMyCollectable::Show() const
 
 bool AMyCollectable::IsBelongToCharacter() const
 {
-	return ItemOwner.IsValid();
-}
-
-void AMyCollectable::SetItemOwner(AMyCharacter* NewOwner)
-{
-	if (ItemOwner == NewOwner)
-	{
-		return;
-	}
-
-	if (ItemOwner != NewOwner && ItemOwner != nullptr)
-	{
-		ItemOwner->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
-		ItemOwner->UnbindOnUseInterrupted(OnUseInterruptedHandle);
-	}
-
-	ItemOwner = NewOwner;
-
-	if (ItemOwner != nullptr)
-	{
-		OnInteractInterruptedHandle = ItemOwner->BindOnInteractInterrupted(this, &AMyCollectable::InteractInterrupted);
-		OnUseInterruptedHandle = ItemOwner->BindOnUseInterrupted(this, &AMyCollectable::UseInterrupted);
-	}
+	return IsValid(GetOwner());
 }
 
 // Called every frame
