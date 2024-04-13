@@ -212,6 +212,11 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 
 void AMyCharacter::Reload()
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (!HasAuthority())
 	{
 		Server_Reload();
@@ -347,6 +352,11 @@ void AMyCharacter::LeftRight(const float Value)
 
 void AMyCharacter::Aim()
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (!IsValid(Weapon))
 	{
 		return;
@@ -381,6 +391,11 @@ void AMyCharacter::UnAim()
 
 void AMyCharacter::Interactive()
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (!HasAuthority())
 	{
 		Server_Interactive();
@@ -393,6 +408,11 @@ void AMyCharacter::Interactive()
 
 void AMyCharacter::Attack(const float Value)
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (Value == 0.f)
 	{
 		return;
@@ -551,6 +571,11 @@ void AMyCharacter::InteractInterruptedStart() const
 
 void AMyCharacter::Use()
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (!HasAuthority())
 	{
 		Server_Use();
@@ -677,12 +702,34 @@ void AMyCharacter::OnAttackAnimNotify()
 
 void AMyCharacter::Yaw(const float Value)
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	// 폰의 설정에서 Rotation Yaw가 true여야 함
 	AddControllerYawInput(Value);
 }
 
 void AMyCharacter::Pitch(const float Value)
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	// 폰의 설정에서 Rotation Pitch가 true여야 함
 	//AddControllerPitchInput(Value);	
+}
+
+bool AMyCharacter::IsBuyMenuOpened() const
+{
+	const auto& HUD = Cast<AMyInGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+
+	if (HUD)
+	{
+		return HUD->IsBuyMenuOpened();
+	}
+
+	return false;
 }
