@@ -67,8 +67,6 @@ void UMyBuyMenuWidget::Open()
 	}
 
 	Controller->SetShowMouseCursor(true);
-
-	// todo: do not interact with the game world.
 	const FInputModeGameAndUI InputModeData;
 	Controller->SetInputMode(InputModeData);
 
@@ -113,41 +111,69 @@ void UMyBuyMenuWidget::Toggle()
 	}
 }
 
-void UMyBuyMenuWidget::ProcessBuy(const float Price) const
+bool UMyBuyMenuWidget::Validate(const int32 ID, AMyCharacter* const& Character) const
+{
+	const auto& Instance   = Cast<UMyGameInstance>(GetGameInstance());
+	const auto& WeaponData = GetWeaponData(this, ID);
+	const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
+
+	if (WeaponData == nullptr)
+	{
+		LOG_FUNC(LogTemp, Error, "WeaponInfo is nullptr");
+		return false;
+	}
+
+	if (Character->GetStatComponent()->GetMoney() <= 0)
+	{
+		LOG_FUNC(LogTemp, Error, "Player => Not enough money");
+		return false;
+	}
+
+	if (Character->GetStatComponent()->GetMoney() - WeaponStat.Price < 0)
+	{
+		LOG_FUNC(LogTemp, Error, "Player has money but have not enough money to buy");
+		return false;
+	}
+
+	return true;
+}
+
+void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 {
 	if (GetVisibility() != ESlateVisibility::Visible)
 	{
 		return;
 	}
 
-	if (Price > 0)
-	{
-		const auto& Character = Cast<AMyCharacter>(GetOwningLocalPlayer()->PlayerController->GetPawn());
+	const auto& Character = Cast<AMyCharacter>(GetOwningLocalPlayer()->PlayerController->GetPawn());
 
-		if (IsValid(Character))
-		{
-			if (Character->GetStatComponent()->GetMoney() - Price <= 0)
-			{
-				GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Not enough money!"));
-				return;
-			}
-
-			Server_RequestBuy(Character, Price);
-		}
-	}
-
-}
-
-void UMyBuyMenuWidget::Server_RequestBuy_Implementation(AMyCharacter* Character, const float Price) const
-{
 	if (IsValid(Character))
 	{
-		// Second chance check.
-		if (Character->GetStatComponent()->GetMoney() - Price <= 0)
+		if (!Validate(ID , Character)) 
 		{
 			return;
 		}
 
-		Character->GetStatComponent()->AddMoney(-Price);
+		Server_RequestBuy(Character, ID);
+	}
+
+}
+
+void UMyBuyMenuWidget::Server_RequestBuy_Implementation(AMyCharacter* Character, const int32 ID) const
+{
+	if (IsValid(Character))
+	{
+		// Second chance check.
+		const auto& WeaponData = GetWeaponData(this, ID);
+		const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
+
+		if (!Validate(ID, Character))
+		{
+			return;
+		}
+
+		Character->GetStatComponent()->AddMoney(-WeaponStat.Price);
+
+
 	}
 }
