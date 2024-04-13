@@ -23,6 +23,7 @@ public:
 	void Open();
 	void Close();
 	void Toggle();
+	FORCEINLINE bool IsOpened() const { return IsOpen; }
 
 private:
 	void ProcessBuy(const float Price) const;
