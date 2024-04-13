@@ -9,7 +9,7 @@
 
 #include "Components/WidgetComponent.h"
 
-AMyInGameHUD::AMyInGameHUD()
+AMyInGameHUD::AMyInGameHUD() : IsBuyMenuOpen(false)
 {
 	Widgets = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widgets"));
 	BuyMenu = CreateDefaultSubobject<UWidgetComponent>(TEXT("BuyMenu"));
@@ -32,6 +32,8 @@ AMyInGameHUD::AMyInGameHUD()
 		UE_LOG(LogTemp, Warning, TEXT("BuyMenu is loaded"));
 		BuyMenu->SetWidgetClass(BP_BuyMenu.Class);
 	}
+
+	BuyMenu->SetWidgetSpace(EWidgetSpace::Screen);
 }
 
 void AMyInGameHUD::BindBomb(const AMyC4* Bomb) const
@@ -54,13 +56,22 @@ void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoC
 	}
 }
 
-void AMyInGameHUD::OpenBuyMenu() const
+void AMyInGameHUD::ToggleBuyMenu()
 {
+	LOG_FUNC(LogTemp, Warning, "Toggle buy menu");
+
+	const auto& Controller = GetOwningPlayerController();
+
+	if (Controller->IsInState("Dead"))
+	{
+		return;
+	}
+
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
 
 	if (BuyMenuWidget)
 	{
-		BuyMenuWidget->Open();
+		BuyMenuWidget->Toggle();
 	}
 }
 
@@ -82,6 +93,11 @@ void AMyInGameHUD::BeginPlay()
 	{
 		BuyMenuWidget->Populate();
 	}
+
+	const auto& Controller = GetOwningPlayerController();
+	EnableInput(Controller);
+
+	InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, this, &AMyInGameHUD::ToggleBuyMenu);
 }
 
 void AMyInGameHUD::DrawHUD()

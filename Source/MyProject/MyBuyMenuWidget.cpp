@@ -47,51 +47,52 @@ void UMyBuyMenuWidget::Open()
 {
 	if (IsOpen)
 	{
-		LOG_FUNC(LogTemp, Warning, "Buy Menu is already open");
+		LOG_FUNC(LogTemp, Error, "Already opened");
 		return;
 	}
 
-	LOG_FUNC(LogTemp, Warning, "Opening Buy Menu");
-	IsOpen = true;
-
+	LOG_FUNC(LogTemp, Warning, "Opening");
+	AddToViewport();
 	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
 
-	Controller->SetInputMode(FInputModeUIOnly());
 	Controller->SetShowMouseCursor(true);
-	SetFocus();
-	AddToViewport();
+	const FInputModeGameAndUI InputModeData;
+	Controller->SetInputMode(InputModeData);
 
 	SetVisibility(ESlateVisibility::Visible);
+	IsOpen = true;
 }
 
 void UMyBuyMenuWidget::Close()
 {
 	if (!IsOpen)
 	{
-		LOG_FUNC(LogTemp, Warning, "Buy Menu is already closed");
+		LOG_FUNC(LogTemp, Error, "Already closed");
 		return;
 	}
 
-	LOG_FUNC(LogTemp, Warning, "Closing Buy Menu");
-	IsOpen = false;
-
+	LOG_FUNC(LogTemp, Warning, "Closing");
+	RemoveFromViewport();
 	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
 
-	Controller->SetInputMode(FInputModeGameOnly());
 	Controller->SetShowMouseCursor(false);
-	RemoveFromViewport();
+	const FInputModeGameOnly InputModeData;
+	Controller->SetInputMode(InputModeData);
 
 	SetVisibility(ESlateVisibility::Hidden);
+	IsOpen = false;
 }
 
-FReply UMyBuyMenuWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+void UMyBuyMenuWidget::Toggle()
 {
-	if (InKeyEvent.GetKey() == EKeys::B)
+	if (!IsOpen)
+	{
+		Open();
+	}
+	else
 	{
 		Close();
 	}
-
-	return Super::NativeOnKeyDown(InGeometry, InKeyEvent);
 }
 
 void UMyBuyMenuWidget::ProcessBuy(const float Price) const
