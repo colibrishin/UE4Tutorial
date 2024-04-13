@@ -1,6 +1,10 @@
 #pragma once
 #include <functional>
 
+#include "MyGameInstance.h"
+
+#include "Kismet/GameplayStatics.h"
+
 #define DECL_BINDON_LAMBDA(Delegate, ...) \
 	FDelegateHandle Bind##Delegate(const std::function<void(__VA_ARGS__)>& Func) \
 	{ \
@@ -46,3 +50,31 @@ FORCEINLINE T PrintErrorAndReturnDefault(const FString& Message, const UObject* 
 
 #define LOG_FUNC_RAW(CategoryName, Verbosity, String) \
 	UE_LOG(CategoryName, Verbosity, TEXT("%hs: %s"), __FUNCTION__, String)
+
+FORCEINLINE const struct FMyWeaponData* GetWeaponData(const UObject* InWorldContext, const int32 ID)
+{
+	const auto&     Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
+	FMyWeaponData* Weapon   = nullptr;
+	Instance->GetWeaponValue(ID, &Weapon);
+
+	if (Weapon == nullptr)
+	{
+		return nullptr;
+	}
+
+	return Weapon;
+}
+
+FORCEINLINE const struct FMyStat* GetStatData(const UObject* InWorldContext, const int32 Level)
+{
+	const auto& Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
+	FMyStat* Stat     = nullptr;
+	Instance->GetStatValue(Level, &Stat);
+
+	if (Stat == nullptr)
+	{
+		return nullptr;
+	}
+
+	return Stat;
+}
