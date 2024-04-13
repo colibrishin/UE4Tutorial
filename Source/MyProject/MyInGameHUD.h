@@ -22,6 +22,8 @@ public:
 	void BindBomb(const class AMyC4* Bomb) const;
 	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
+	void OpenBuyMenu() const;
+
 protected:
 	virtual void BeginPlay() override;
 
