@@ -71,13 +71,25 @@ void AMyAimableWeapon::UpdateAmmoDisplay() const
 
 	if (GetItemOwner() != GetWorld()->GetFirstPlayerController()->GetPawn())
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Owner is not a player"));
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Owner is not a player, Skip"));
 		return;
 	}
 
 	const auto& PlayerController = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
 
+	if (!IsValid(PlayerController))
+	{
+		LOG_FUNC(LogTemp, Error, "PlayerController is not valid");
+		return;
+	}
+
 	const auto& HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD());
+
+	if (!IsValid(HUD))
+	{
+		LOG_FUNC(LogTemp, Error, "HUD is not valid");
+		return;
+	}
 
 	HUD->UpdateAmmo(
 				GetWeaponStatComponent()->GetCurrentAmmoCount(),
