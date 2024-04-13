@@ -154,10 +154,9 @@ private:
 
 	// ============ End of Using ============
 
-	void OpenBuyMenu();
-
 	void Yaw(const float Value);
 	void Pitch(const float Value);
+	bool IsBuyMenuOpened() const;
 
 	UPROPERTY(VisibleAnywhere)
 	float ForwardInput;
