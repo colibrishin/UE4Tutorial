@@ -3,7 +3,9 @@
 
 #include "MyWeaponStatComponent.h"
 
+#include "Data.h"
 #include "MyGameInstance.h"
+#include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 
 // Sets default values for this component's properties
@@ -144,37 +146,34 @@ void UMyWeaponStatComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 
-	const UMyGameInstance* GameInstance = Cast<UMyGameInstance>(GetWorld()->GetGameInstance());
+	const auto& WeaponData = GetWeaponData(this, ID);
+	const auto& WeaponStatData = WeaponData->WeaponDataAsset->GetWeaponStat();
 
-	if (IsValid(GameInstance))
+	WeaponType = WeaponStatData.WeaponType;
+
+	switch (WeaponType)
 	{
-		const auto& WeaponStatData = GameInstance->GetWeaponValue(ID);
-		WeaponType = WeaponStatData->WeaponType;
-
-		switch (WeaponType)
-		{
-		case EMyWeaponType::Melee: 
-			WeaponStat = WeaponStatData->Get<FMyMeleeWeaponStat>();
-			LoadedAmmoCount = 0;
-			AmmoSpent = 0;
-			AmmoPerLoad = 0;
-			TotalAmmoCount = 0;
-			break;
-		case EMyWeaponType::Range: 
-			WeaponStat = WeaponStatData->Get<FMyRangeWeaponStat>();
-			LoadedAmmoCount = GetRangeStat()->MaxAmmo;
-			AmmoSpent = 0;
-			AmmoPerLoad = LoadedAmmoCount;
-			TotalAmmoCount = (GetRangeStat()->MaxAmmo * GetRangeStat()->Magazine) + LoadedAmmoCount;
-			break;
-		case EMyWeaponType::Unknown:
-		default:
-			UE_LOG(LogTemp, Error, TEXT("Unknown weapon type in %s"), *GetOwner()->GetName());
-		}
-
-		Name = WeaponStatData->Name;
-		Damage = WeaponStatData->Damage;
+	case EMyWeaponType::Melee: 
+		WeaponStat = WeaponStatData.Get<FMyMeleeWeaponStat>();
+		LoadedAmmoCount = 0;
+		AmmoSpent = 0;
+		AmmoPerLoad = 0;
+		TotalAmmoCount = 0;
+		break;
+	case EMyWeaponType::Range: 
+		WeaponStat = WeaponStatData.Get<FMyRangeWeaponStat>();
+		LoadedAmmoCount = GetRangeStat()->MaxAmmo;
+		AmmoSpent = 0;
+		AmmoPerLoad = LoadedAmmoCount;
+		TotalAmmoCount = (GetRangeStat()->MaxAmmo * GetRangeStat()->Magazine) + LoadedAmmoCount;
+		break;
+	case EMyWeaponType::Unknown:
+	default:
+		UE_LOG(LogTemp, Error, TEXT("Unknown weapon type in %s"), *GetOwner()->GetName());
 	}
+
+	Name = WeaponStatData.Name;
+	Damage = WeaponStatData.Damage;
 }
 
 const FMyRangeWeaponStat* UMyWeaponStatComponent::GetRangeStat() const
