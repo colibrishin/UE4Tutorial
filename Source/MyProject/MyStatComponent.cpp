@@ -16,7 +16,7 @@ UMyStatComponent::UMyStatComponent()
 	  Damage(0),
 	  Health(0),
 	  MaxHealth(0),
-	  Money(800)
+	  Money(18000)
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
