@@ -146,7 +146,20 @@ void UMyWeaponStatComponent::InitializeComponent()
 {
 	Super::InitializeComponent();
 
+	if (ID == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Weapon ID is not set in %s"), *GetOwner()->GetName());
+		return;
+	}
+
 	const auto& WeaponData = GetWeaponData(this, ID);
+
+	if (WeaponData == nullptr)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Weapon data is not valid in %s"), *GetOwner()->GetName());
+		return;
+	}
+
 	const auto& WeaponStatData = WeaponData->WeaponDataAsset->GetWeaponStat();
 
 	WeaponType = WeaponStatData.WeaponType;
