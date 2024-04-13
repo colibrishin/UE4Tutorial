@@ -138,8 +138,6 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 	PlayerInputComponent->BindAction(TEXT("Reload"), IE_Pressed, this, &AMyCharacter::Reload);
 
-	PlayerInputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, this, &AMyCharacter::OpenBuyMenu);
-
 	// Somehow BindAction with IE_Repeat doesn't work, move Attack to axis.
 	PlayerInputComponent->BindAxis(TEXT("Attack"), this, &AMyCharacter::Attack);
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
@@ -611,16 +609,6 @@ void AMyCharacter::UseInterruptStart() const
 {
 	UE_LOG(LogTemp, Warning, TEXT("Use Interrupted"));
 	OnUseInterrupted.Broadcast();
-}
-
-void AMyCharacter::OpenBuyMenu()
-{
-	LOG_FUNC(LogTemp, Warning, "Open up buy menu");
-
-	const auto& PlayerController = Cast<APlayerController>(GetController());
-	const auto& HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD());
-
-	HUD->OpenBuyMenu();
 }
 
 int32 AMyCharacter::GetDamage() const

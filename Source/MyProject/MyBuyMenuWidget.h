@@ -22,9 +22,7 @@ public:
 	void Populate() const;
 	void Open();
 	void Close();
-
-protected:
-	virtual FReply NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent) override;
+	void Toggle();
 
 private:
 	void ProcessBuy(const float Price) const;
@@ -32,14 +30,11 @@ private:
 	UFUNCTION(Server, Reliable)
 	void Server_RequestBuy(class AMyCharacter* Character, const float Price) const;
 
-
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget, AllowPrivateAccess))
 	class UUniformGridPanel* WeaponGridPanel;
 
 	UPROPERTY(EditAnywhere, Meta=(AllowPrivateAccess))
 	TSubclassOf<UUserWidget> ItemWidgetClass;
-
-	std::mutex Mutex;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Meta=(AllowPrivateAccess))
 	bool IsOpen;
