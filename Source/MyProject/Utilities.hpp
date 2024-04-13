@@ -54,6 +54,13 @@ FORCEINLINE T PrintErrorAndReturnDefault(const FString& Message, const UObject* 
 FORCEINLINE const struct FMyWeaponData* GetWeaponData(const UObject* InWorldContext, const int32 ID)
 {
 	const auto&     Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
+
+	if (!IsValid(Instance))
+	{
+		LOG_FUNC(LogTemp, Error, "Invalid game instance");
+		return nullptr;
+	}
+
 	FMyWeaponData* Weapon   = nullptr;
 	Instance->GetWeaponValue(ID, &Weapon);
 
@@ -68,6 +75,13 @@ FORCEINLINE const struct FMyWeaponData* GetWeaponData(const UObject* InWorldCont
 FORCEINLINE const struct FMyStat* GetStatData(const UObject* InWorldContext, const int32 Level)
 {
 	const auto& Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
+
+	if (!IsValid(Instance))
+	{
+		LOG_FUNC(LogTemp, Error, "Invalid game instance");
+		return nullptr;
+	}
+
 	FMyStat* Stat     = nullptr;
 	Instance->GetStatValue(Level, &Stat);
 
