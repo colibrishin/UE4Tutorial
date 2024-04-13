@@ -3,6 +3,7 @@
 
 #include "MyStatComponent.h"
 
+#include "Data.h"
 #include "MyGameInstance.h"
 
 #include "Engine/World.h"
@@ -41,7 +42,7 @@ void UMyStatComponent::InitializeComponent()
 
 	if (IsValid(GameInstance))
 	{
-		const auto& Data = GameInstance->GetStatValue(Level);
+		const FMyStat* Data = GetStatData(this, Level);
 
 		// IsValid 스킵
 
