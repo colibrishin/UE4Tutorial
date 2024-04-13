@@ -54,6 +54,16 @@ void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoC
 	}
 }
 
+void AMyInGameHUD::OpenBuyMenu() const
+{
+	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
+
+	if (BuyMenuWidget)
+	{
+		BuyMenuWidget->Open();
+	}
+}
+
 void AMyInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -71,8 +81,6 @@ void AMyInGameHUD::BeginPlay()
 	if (BuyMenuWidget)
 	{
 		BuyMenuWidget->Populate();
-		BuyMenuWidget->AddToViewport();
-		BuyMenuWidget->Open();
 	}
 }
 
