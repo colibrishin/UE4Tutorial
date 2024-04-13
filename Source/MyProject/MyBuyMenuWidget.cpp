@@ -3,12 +3,14 @@
 
 #include "MyProject/MyBuyMenuWidget.h"
 
+#include "ConstantFVector.hpp"
 #include "Data.h"
 #include "MyBuyMenuWeaponWidget.h"
 #include "MyCharacter.h"
 #include "MyGameInstance.h"
 #include "MyInGameHUD.h"
 #include "MyStatComponent.h"
+#include "MyWeapon.h"
 #include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 #include "GameFramework/PlayerController.h"
@@ -159,26 +161,12 @@ void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 			return;
 		}
 
-		Server_RequestBuy(Character, ID);
-	}
+		const auto& Instance = Cast<UMyGameInstance>(GetGameInstance());
 
-}
-
-void UMyBuyMenuWidget::Server_RequestBuy_Implementation(AMyCharacter* Character, const int32 ID) const
-{
-	if (IsValid(Character))
-	{
-		// Second chance check.
-		const auto& WeaponData = GetWeaponData(this, ID);
-		const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
-
-		if (!Validate(ID, Character))
+		if (IsValid(Instance))
 		{
-			return;
+			Instance->BuyWeapon(Character, ID);
 		}
-
-		Character->GetStatComponent()->AddMoney(-WeaponStat.Price);
-
-
 	}
+
 }
