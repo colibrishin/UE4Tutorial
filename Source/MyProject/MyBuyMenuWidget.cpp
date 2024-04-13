@@ -6,6 +6,7 @@
 #include "MyBuyMenuWeaponWidget.h"
 #include "MyCharacter.h"
 #include "MyGameInstance.h"
+#include "MyInGameHUD.h"
 #include "MyStatComponent.h"
 #include "Utilities.hpp"
 #include "GameFramework/PlayerController.h"
@@ -52,10 +53,22 @@ void UMyBuyMenuWidget::Open()
 	}
 
 	LOG_FUNC(LogTemp, Warning, "Opening");
-	AddToViewport();
+
+	if (!IsInViewport())
+	{
+		AddToViewport();
+	}
+
 	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
 
+	if (Controller->IsInState("Dead"))
+	{
+		return;
+	}
+
 	Controller->SetShowMouseCursor(true);
+
+	// todo: do not interact with the game world.
 	const FInputModeGameAndUI InputModeData;
 	Controller->SetInputMode(InputModeData);
 
@@ -72,7 +85,12 @@ void UMyBuyMenuWidget::Close()
 	}
 
 	LOG_FUNC(LogTemp, Warning, "Closing");
-	RemoveFromViewport();
+
+	if (IsInViewport())
+	{
+		RemoveFromViewport();
+	}
+
 	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
 
 	Controller->SetShowMouseCursor(false);
