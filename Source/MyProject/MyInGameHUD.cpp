@@ -56,28 +56,12 @@ void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoC
 	}
 }
 
-void AMyInGameHUD::ToggleBuyMenu()
-{
-	LOG_FUNC(LogTemp, Warning, "Toggle buy menu");
-
-	const auto& Controller = GetOwningPlayerController();
-
-	if (Controller->IsInState("Dead"))
-	{
-		return;
-	}
-
-	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
-
-	if (BuyMenuWidget)
-	{
-		BuyMenuWidget->Toggle();
-	}
-}
-
 void AMyInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
+
+	const auto& Controller = GetOwningPlayerController();
+	EnableInput(Controller);
 
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
@@ -92,12 +76,8 @@ void AMyInGameHUD::BeginPlay()
 	if (BuyMenuWidget)
 	{
 		BuyMenuWidget->Populate();
+		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
 	}
-
-	const auto& Controller = GetOwningPlayerController();
-	EnableInput(Controller);
-
-	InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, this, &AMyInGameHUD::ToggleBuyMenu);
 }
 
 void AMyInGameHUD::DrawHUD()
