@@ -3,11 +3,13 @@
 
 #include "MyProject/MyBuyMenuWidget.h"
 
+#include "Data.h"
 #include "MyBuyMenuWeaponWidget.h"
 #include "MyCharacter.h"
 #include "MyGameInstance.h"
 #include "MyInGameHUD.h"
 #include "MyStatComponent.h"
+#include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 #include "GameFramework/PlayerController.h"
 #include "Runtime/Engine/Classes/Engine/Player.h"
@@ -25,19 +27,22 @@ void UMyBuyMenuWidget::Populate() const
 	{
 		for (int i = 1; i < Instance->GetWeaponCount(); ++i)
 		{
-			const auto& Weapon = Instance->GetWeaponValue(i);
+			const auto& WeaponData = GetWeaponData(this, i);
 
-			if (Weapon == nullptr)
+			if (WeaponData == nullptr)
 			{
 				continue;
 			}
+
+			const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
 
 			const auto  Name      = FName(*FString::Printf(TEXT("WeaponMenu%d"), i));
 			const auto  RawWidget = CreateWidget(GetRootWidget(), ItemWidgetClass);
 			const auto  Widget    = Cast<UMyBuyMenuWeaponWidget>(RawWidget);
 
-			Widget->SetName(Weapon->Name);
-			Widget->SetPrice(Weapon->Price);
+			Widget->SetName(WeaponStat.Name);
+			Widget->SetPrice(WeaponStat.Price);
+			Widget->SetID(i);
 			Widget->BindOnItemClicked(this, &UMyBuyMenuWidget::ProcessBuy);
 			WeaponGridPanel->AddChildToUniformGrid(Widget, i / 4, i % 4);
 		}
