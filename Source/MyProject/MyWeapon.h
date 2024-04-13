@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "MyCollectable.h"
 #include "MyWeaponStatComponent.h"
+#include "Utilities.hpp"
 
 #include "Engine/DataTable.h"
 

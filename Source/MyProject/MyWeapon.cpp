@@ -79,11 +79,17 @@ bool AMyWeapon::Attack()
 
 bool AMyWeapon::Interact(AMyCharacter* Character)
 {
+	LOG_FUNC(LogTemp, Warning, "Interact");
+
 	if (Super::Interact(Character))
 	{
 		if (Character->TryPickWeapon(this))
 		{
 			return true;
+		}
+		else
+		{
+			LOG_FUNC(LogTemp, Error, "Failed to pick weapon");
 		}
 	}
 
