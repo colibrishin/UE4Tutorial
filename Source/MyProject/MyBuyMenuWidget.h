@@ -29,9 +29,6 @@ public:
 private:
 	void ProcessBuy(const int32 ID) const;
 
-	UFUNCTION(Server, Reliable)
-	void Server_RequestBuy(class AMyCharacter* Character, const int32 ID) const;
-
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget, AllowPrivateAccess))
 	class UUniformGridPanel* WeaponGridPanel;
 
