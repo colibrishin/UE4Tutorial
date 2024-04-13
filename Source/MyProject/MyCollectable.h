@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyCharacter.h"
 #include "MyInteractiveActor.h"
 
 #include "GameFramework/Actor.h"
@@ -20,7 +19,7 @@ public:
 
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 	class UBoxComponent* GetCollider() const { return Collider; }
-	class AMyCharacter* GetItemOwner() const { return ItemOwner.Get(); }
+	class AMyCharacter* GetItemOwner() const;
 
 	virtual bool Interact(class AMyCharacter* Character) override;
 	virtual bool Use(class AMyCharacter* Character) override;
@@ -46,8 +45,6 @@ protected:
 
 	bool IsBelongToCharacter() const;
 
-	void SetItemOwner(class AMyCharacter* NewOwner);
-
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -61,9 +58,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* Collider;
-
-	UPROPERTY(VisibleAnywhere)
-	TWeakObjectPtr<class AMyCharacter> ItemOwner;
 
 	FDelegateHandle OnInteractInterruptedHandle;
 
