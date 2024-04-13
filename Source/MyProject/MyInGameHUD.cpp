@@ -9,7 +9,7 @@
 
 #include "Components/WidgetComponent.h"
 
-AMyInGameHUD::AMyInGameHUD() : IsBuyMenuOpen(false)
+AMyInGameHUD::AMyInGameHUD()
 {
 	Widgets = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widgets"));
 	BuyMenu = CreateDefaultSubobject<UWidgetComponent>(TEXT("BuyMenu"));
@@ -54,6 +54,18 @@ void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoC
 	{
 		Widget->UpdateAmmo(CurrentAmmoCount, RemainingAmmoCount);
 	}
+}
+
+bool AMyInGameHUD::IsBuyMenuOpened() const
+{
+	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
+
+	if (BuyMenuWidget)
+	{
+		return BuyMenuWidget->IsOpened();
+	}
+
+	return false;
 }
 
 void AMyInGameHUD::BeginPlay()

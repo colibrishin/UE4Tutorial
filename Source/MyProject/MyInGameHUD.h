@@ -22,7 +22,7 @@ public:
 	void BindBomb(const class AMyC4* Bomb) const;
 	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
-	void ToggleBuyMenu();
+	bool IsBuyMenuOpened() const;
 
 protected:
 	virtual void BeginPlay() override;
@@ -38,8 +38,5 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UWidgetComponent* BuyMenu;
-
-	UPROPERTY(VisibleAnywhere)
-	bool IsBuyMenuOpen;
 
 };
