@@ -15,22 +15,61 @@ AMyAimableWeapon::AMyAimableWeapon()
 {
 }
 
+bool AMyAimableWeapon::PreInteract(AMyCharacter* Character)
+{
+	return Super::PreInteract(Character);
+}
+
+bool AMyAimableWeapon::PostInteract(AMyCharacter* Character)
+{
+	const auto& Result = Super::PostInteract(Character);
+
+	if (Result)
+	{
+		UpdateAmmoDisplay();
+	}
+	
+	return Result;
+}
+
+bool AMyAimableWeapon::TryAttachItem(const AMyCharacter* Character)
+{
+	LOG_FUNC(LogTemp, Warning, "TryAttachItem");
+
+	if (GetMesh()->AttachToComponent
+		(
+		 Character->GetMesh(),
+		 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		 AMyCharacter::RightHandSocketName
+		))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+		return true;
+	}
+	else
+	{
+		const FVector PreviousLocation = GetActorLocation();
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
+		SetActorLocation(PreviousLocation);
+		return false;
+	}
+}
+
+bool AMyAimableWeapon::PreUse(AMyCharacter* Character)
+{
+	return Super::PreUse(Character);
+}
+
+bool AMyAimableWeapon::PostUse(AMyCharacter* Character)
+{
+	return Super::PostUse(Character);
+}
+
 bool AMyAimableWeapon::AttackImpl()
 {
 	if (GetWeaponStatComponent()->ConsumeAmmo())
 	{
 		// todo: Recoil
-		UpdateAmmoDisplay();
-		return true;
-	}
-
-	return false;
-}
-
-bool AMyAimableWeapon::Interact(AMyCharacter* Character)
-{
-	if (Super::Interact(Character))
-	{
 		UpdateAmmoDisplay();
 		return true;
 	}
