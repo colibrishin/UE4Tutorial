@@ -51,6 +51,9 @@ FORCEINLINE T PrintErrorAndReturnDefault(const FString& Message, const UObject* 
 #define LOG_FUNC_RAW(CategoryName, Verbosity, String) \
 	UE_LOG(CategoryName, Verbosity, TEXT("%hs: %s"), __FUNCTION__, String)
 
+#define LOG_FUNC_PRINTF(CategoryName, Verbosity, StringAndFormat, ...) \
+	UE_LOG(CategoryName, Verbosity, TEXT("%hs: %s"), __FUNCTION__, *FString::Printf(TEXT(StringAndFormat), __VA_ARGS__))
+
 FORCEINLINE const struct FMyWeaponData* GetWeaponData(const UObject* InWorldContext, const int32 ID)
 {
 	const auto&     Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
@@ -108,5 +111,23 @@ FORCEINLINE void ExecuteServer(
 	else if (ActorContext->HasAuthority() || IsRunningDedicatedServer())
 	{
 		(static_cast<T*>(ActorContext)->*ServerFunction)(Arguments...);
+	}
+}
+
+template <typename T , typename... Args>
+FORCEINLINE void ExecuteServer(
+	const AActor* ActorContext, 
+	void (T::*ClientFunction)(Args...) const, 
+	void (T::*ServerFunction)(Args...) const,
+	Args... Arguments
+)
+{
+	if (!ActorContext->HasAuthority())
+	{
+		(static_cast<const T*>(ActorContext)->*ClientFunction)(Arguments...);
+	}
+	else if (ActorContext->HasAuthority() || IsRunningDedicatedServer())
+	{
+		(static_cast<const T*>(ActorContext)->*ServerFunction)(Arguments...);
 	}
 }

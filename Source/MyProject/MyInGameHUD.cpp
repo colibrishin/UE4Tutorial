@@ -7,6 +7,7 @@
 #include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
 #include "MyInGameWidget.h"
+#include "MyStatComponent.h"
 
 #include "Components/WidgetComponent.h"
 
@@ -75,6 +76,7 @@ void AMyInGameHUD::BeginPlay()
 
 	const auto& Controller = GetOwningPlayerController();
 	EnableInput(Controller);
+	const auto& Character = Cast<AMyCharacter>(GetOwningPawn());
 
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
@@ -89,6 +91,7 @@ void AMyInGameHUD::BeginPlay()
 	if (BuyMenuWidget)
 	{
 		BuyMenuWidget->Populate();
+		BuyMenuWidget->BindPlayer(Character);
 		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
 	}
 }
