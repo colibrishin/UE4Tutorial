@@ -199,14 +199,12 @@ void AMyCharacter::Reload()
 		return;
 	}
 
-	if (!HasAuthority())
-	{
-		Server_Reload();
-	}
-	else if (HasAuthority() || IsRunningDedicatedServer())
-	{
-		Multi_Reload();
-	}
+	ExecuteServer
+	(
+	 this,
+		 &AMyCharacter::Server_Reload,
+		 &AMyCharacter::Multi_Reload
+	);
 }
 
 void AMyCharacter::Server_Reload_Implementation()
@@ -378,14 +376,12 @@ void AMyCharacter::Interactive()
 		return;
 	}
 
-	if (!HasAuthority())
-	{
-		Server_Interactive();
-	}
-	else if (HasAuthority() || IsRunningDedicatedServer())
-	{
-		Multi_Interactive();
-	}
+	ExecuteServer
+	(
+	 this,
+		 &AMyCharacter::Server_Interactive,
+		 &AMyCharacter::Multi_Interactive
+	);
 }
 
 void AMyCharacter::Attack(const float Value)
@@ -405,14 +401,13 @@ void AMyCharacter::Attack(const float Value)
 		return;
 	}
 
-	if (!HasAuthority())
-	{
-		Server_Attack(Value);
-	}
-	else if (HasAuthority() || IsRunningDedicatedServer())
-	{
-		Multi_Attack(Value);
-	}
+	ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_Attack,
+		 &AMyCharacter::Multi_Attack,
+		 Value
+		);
 }
 
 void AMyCharacter::Multi_Attack_Implementation(const float Value)
@@ -529,14 +524,12 @@ void AMyCharacter::InteractiveStart()
 
 void AMyCharacter::InteractInterrupted()
 {
-	if (!HasAuthority())
-	{
-		Server_InteractInterrupted();
-	}
-	else if (HasAuthority() || IsRunningDedicatedServer())
-	{
-		Multi_InteractInterrupted();
-	}
+	ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_InteractInterrupted,
+		 &AMyCharacter::Multi_InteractInterrupted
+		);
 }
 
 void AMyCharacter::Server_InteractInterrupted_Implementation()
@@ -562,14 +555,12 @@ void AMyCharacter::Use()
 		return;
 	}
 
-	if (!HasAuthority())
-	{
-		Server_Use();
-	}
-	else if (HasAuthority() || IsRunningDedicatedServer())
-	{
-		Multi_Use();
-	}
+	ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_Use,
+		 &AMyCharacter::Multi_Use
+		);
 }
 
 void AMyCharacter::Server_Use_Implementation()
@@ -596,14 +587,12 @@ void AMyCharacter::UseStart()
 
 void AMyCharacter::UseInterrupt()
 {
-	if (!HasAuthority())
-	{
-		Server_UseInterrupt();
-	}
-	else if (HasAuthority() || IsRunningDedicatedServer())
-	{
-		Multi_UseInterrupt();
-	}
+	ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_UseInterrupt,
+		 &AMyCharacter::Multi_UseInterrupt
+		);
 }
 
 void AMyCharacter::Server_UseInterrupt_Implementation()
