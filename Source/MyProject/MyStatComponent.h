@@ -9,6 +9,7 @@
 #include "MyStatComponent.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHPChanged, float)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, int32)
 
 
 struct FMyStat;
@@ -23,6 +24,7 @@ public:
 	UMyStatComponent();
 
 	DECL_BINDON(OnHPChanged, float)
+	DECL_BINDON(OnMoneyChanged, int32)
 
 	FORCEINLINE uint32 GetLevel() const { return Level; }
 	FORCEINLINE uint32 GetDamage() const { return Damage; }
@@ -39,10 +41,7 @@ public:
 		OnHPChanged.Broadcast(GetHPRatio());
 	}
 
-	FORCEINLINE void AddMoney(const int32 MoneyAmount)
-	{
-		Money += MoneyAmount;
-	}
+	void AddMoney(const int32 MoneyAmount);
 
 	FORCEINLINE void OnDamage(const int32 DamageAmount)
 	{
@@ -63,6 +62,10 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	UFUNCTION()
+	void OnRep_MoneyChanged() const;
+
+
 	UPROPERTY(EditAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Level;
 
@@ -76,8 +79,11 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 MaxHealth;
 
-	UPROPERTY(Replicated, VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
+	UPROPERTY(ReplicatedUsing=OnRep_MoneyChanged, VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Money;
 
 	FOnHPChanged OnHPChanged;
+
+	FOnMoneyChanged OnMoneyChanged;
+
 };

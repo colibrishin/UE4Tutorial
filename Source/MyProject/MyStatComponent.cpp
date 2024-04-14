@@ -5,8 +5,11 @@
 
 #include "Data.h"
 #include "MyGameInstance.h"
+#include "MyInGameHUD.h"
 
 #include "Engine/World.h"
+
+#include "GameFramework/HUD.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -25,6 +28,16 @@ UMyStatComponent::UMyStatComponent()
 	bWantsInitializeComponent = true;
 }
 
+void UMyStatComponent::AddMoney(const int32 MoneyAmount)
+{
+	Money += MoneyAmount;
+
+	// Server does not participate in the replication.
+	if (GetOwner()->HasAuthority())
+	{
+		OnMoneyChanged.Broadcast(Money);
+	}
+}
 // Called when the game starts
 void UMyStatComponent::BeginPlay()
 {
@@ -58,4 +71,9 @@ void UMyStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(UMyStatComponent, Money);
+}
+
+void UMyStatComponent::OnRep_MoneyChanged() const
+{
+	OnMoneyChanged.Broadcast(Money);
 }
