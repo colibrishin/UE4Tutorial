@@ -9,6 +9,7 @@
 #include "MyCharacter.h"
 #include "MyGameInstance.h"
 #include "MyInGameHUD.h"
+#include "MyPlayerController.h"
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
 #include "MyWeaponDataAsset.h"
@@ -152,21 +153,17 @@ void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 		return;
 	}
 
-	const auto& Character = Cast<AMyCharacter>(GetOwningLocalPlayer()->PlayerController->GetPawn());
+	const auto& Controller =  Cast<AMyPlayerController>(GetOwningLocalPlayer()->PlayerController);
+	const auto& Character = Cast<AMyCharacter>(Controller->GetPawn());
 
 	if (IsValid(Character))
 	{
-		if (!Validate(ID , Character)) 
+		if (!Validate(ID, Character)) 
 		{
 			return;
 		}
 
-		const auto& Instance = Cast<UMyGameInstance>(GetGameInstance());
-
-		if (IsValid(Instance))
-		{
-			Instance->BuyWeapon(Character, ID);
-		}
+		Controller->BuyWeapon(ID);
 	}
 
 }
