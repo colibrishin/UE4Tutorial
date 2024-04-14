@@ -34,7 +34,6 @@ public:
 	bool CanDoAttack() const { return CanAttack; }
 
 	virtual bool Attack() final;
-	virtual bool Interact(AMyCharacter* Character) override;
 	virtual bool Reload() final;
 
 protected:
@@ -45,6 +44,9 @@ protected:
 
 	virtual bool AttackImpl() PURE_VIRTUAL(AMyWeapon::AttackImpl, return false;);
 	virtual bool ReloadImpl() PURE_VIRTUAL(AMyWeapon::ReloadImpl, return false;);
+
+	virtual bool TryAttachItem(const AMyCharacter* Character) override;
+	virtual bool PostInteract(AMyCharacter* Character) override;
 
 	virtual void OnFireRateTimed();
 	virtual void OnReloadDone();
