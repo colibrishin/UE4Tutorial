@@ -19,12 +19,15 @@ class MYPROJECT_API AMyAimableWeapon : public AMyWeapon
 public:
 	AMyAimableWeapon();
 
-	virtual bool Interact(AMyCharacter* Character) override;
+	virtual bool PreInteract(AMyCharacter* Character) override;
+	virtual bool PostInteract(AMyCharacter* Character) override;
+	virtual bool TryAttachItem(const AMyCharacter* Character) override;
+	virtual bool PreUse(AMyCharacter* Character) override;
+	virtual bool PostUse(AMyCharacter* Character) override;
 
 
 protected:
 	virtual bool AttackImpl() override;
-
 	virtual bool ReloadImpl() override;
 
 	virtual void OnFireRateTimed() override;

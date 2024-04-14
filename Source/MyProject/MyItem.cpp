@@ -8,20 +8,23 @@
 
 AMyItem::AMyItem()
 {
-	GetMesh()->SetSimulatePhysics(true);
 }
 
-bool AMyItem::Interact(AMyCharacter* Character)
+bool AMyItem::PostInteract(AMyCharacter* Character)
 {
-	if (Super::Interact(Character))
+	const auto& Inventory = Character->GetInventory();
+
+	if (Inventory->TryAddItem(this))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Item Interacted: %s"), *GetName());
-		const auto& Inventory = Character->GetInventory();
-		return Inventory->TryAddItem(this);
+		return true && Super::PostInteract(Character);;
+	}
+	else
+	{
+		return false && Super::PostInteract(Character);
 	}
 
-	Drop();
-	return false;
+	return false && Super::PostInteract(Character);
 }
 
 void AMyItem::PostInitializeComponents()

@@ -34,7 +34,6 @@ AMyCollectable::AMyCollectable()
 void AMyCollectable::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void AMyCollectable::PostInitializeComponents()
@@ -52,13 +51,7 @@ bool AMyCollectable::OnCharacterOverlap(
 	return false;
 }
 
-AMyCharacter* AMyCollectable::GetItemOwner() const
-{
-	const auto& CollectableOwner = GetAttachParentActor();
-	return Cast<AMyCharacter>(CollectableOwner);
-}
-
-bool AMyCollectable::Interact(class AMyCharacter* Character)
+bool AMyCollectable::PreInteract(AMyCharacter* Character)
 {
 	if (IsBelongToCharacter())
 	{
@@ -66,11 +59,12 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		return false;
 	}
 
-	const FVector PreviousLocation = GetActorLocation();
+	LOG_FUNC(LogTemp, Warning, "PreInteract success");
+	return true;
+}
 
-	//GetMesh()->SetSimulatePhysics(false);
-	//GetCollider()->SetSimulatePhysics(false);
-
+bool AMyCollectable::TryAttachItem(const AMyCharacter* Character)
+{
 	LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Setting Owner to : %s"), *Character->GetName()));
 
 	if (GetMesh()->AttachToComponent
@@ -81,20 +75,78 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+		return true;
 	}
 	else
 	{
+		const FVector PreviousLocation = GetActorLocation();
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
+		SetActorLocation(PreviousLocation);
 		return false;
 	}
-	Hide();
+}
+
+bool AMyCollectable::PostInteract(AMyCharacter* Character)
+{
+	if (TryAttachItem(Character))
+	{
+		LOG_FUNC(LogTemp, Warning, "PostInteract success");
+		Hide();
+		return true;
+	}
+	else
+	{
+		LOG_FUNC(LogTemp, Warning, "PostInteract failed");
+		return false;
+	}
+}
+
+bool AMyCollectable::PreUse(AMyCharacter* Character)
+{
+	LOG_FUNC(LogTemp, Warning, "PreUse");
+	return true;
+}
+
+bool AMyCollectable::PostUse(AMyCharacter* Character)
+{
+	LOG_FUNC(LogTemp, Warning, "PostUse");
+	return true;
+}
+
+AMyCharacter* AMyCollectable::GetItemOwner() const
+{
+	const auto& CollectableOwner = GetAttachParentActor();
+	return Cast<AMyCharacter>(CollectableOwner);
+}
+
+bool AMyCollectable::Interact(class AMyCharacter* Character)
+{
+	LOG_FUNC(LogTemp, Warning, "Interact");
+
+	if (!PreInteract(Character))
+	{
+		return false;
+	}
+	if (!PostInteract(Character))
+	{
+		return false;
+	}
 
 	return true;
 }
 
 bool AMyCollectable::Use(AMyCharacter* Character)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Use"));
+	if (!PreUse(Character))
+	{
+		return false;
+	}
+
+	if (!PostUse(Character))
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -110,6 +162,7 @@ void AMyCollectable::UseInterrupted()
 
 bool AMyCollectable::Drop()
 {
+	// todo: Move to the player
 	if (IsBelongToCharacter())
 	{
 		FVector PreviousLocation = GetActorLocation();

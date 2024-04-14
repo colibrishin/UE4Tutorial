@@ -6,6 +6,7 @@
 #include "ConstantFVector.hpp"
 #include "DrawDebugHelpers.h"
 #include "MyBombProgressWidget.h"
+#include "MyCharacter.h"
 #include "MyInGameHUD.h"
 
 #include "Components/BoxComponent.h"
@@ -133,22 +134,6 @@ bool AMyC4::IsDefusable() const
 	return IsPlanted && !IsExploded && !IsDefused && IsDefuserNearby && (Speed == 0.f);
 }
 
-bool AMyC4::Interact(AMyCharacter* Character)
-{
-	if (!IsPlanted)
-	{
-		if (IsExploded || IsDefused)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Bomb is exploded or defused"));
-			return false;
-		}
-
-		return Super::Interact(Character);
-	}
-
-	return TryDefuse(Character);
-}
-
 // Called when the game starts or when spawned
 void AMyC4::BeginPlay()
 {
@@ -234,6 +219,66 @@ void AMyC4::OnBombDefusedImpl()
 	GetWorldTimerManager().ClearTimer(OnBombDefusing);
 }
 
+bool AMyC4::PreInteract(AMyCharacter* Character)
+{
+	if (!IsPlanted)
+	{
+		if (IsExploded || IsDefused)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Bomb is exploded or defused"));
+			return false;
+		}
+	}
+
+	return Super::Interact(Character);
+}
+
+bool AMyC4::PostInteract(AMyCharacter* Character)
+{
+	return TryDefuse(Character) && Super::PostInteract(Character);
+}
+
+bool AMyC4::PreUse(AMyCharacter* Character)
+{
+	if (!IsPlanted)
+	{
+		if (IsExploded || IsDefused)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Bomb is exploded or defused"));
+			return false;
+		}
+	}
+
+	return Super::PreUse(Character);
+}
+
+bool AMyC4::PostUse(AMyCharacter* Character)
+{
+	if (!IsPlanted)
+	{
+		SetPlanting(true);
+
+		UE_LOG(LogTemp, Warning, TEXT("Bomb planting"));
+
+		if (!OnBombPlanted.IsValid())
+		{
+			GetWorldTimerManager().SetTimer(
+				OnBombPlanted, 
+				this,
+				&AMyC4::OnBombPlantedImpl,
+				FullPlantingTime,
+				false);
+
+			if (IsValid(GetItemOwner()))
+			{
+				ShowBombProgressWidget(GetItemOwner());	
+			}
+		}
+	}
+
+	return Super::PostUse(Character);
+}
+
 void AMyC4::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -284,42 +329,6 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 	else
 	{
 		SetDefusing(false, nullptr);
-	}
-
-	return false;
-}
-
-bool AMyC4::Use(AMyCharacter* Character)
-{
-	if (!IsPlanted)
-	{
-		FHitResult HitResult;
-		if (!IsPlantable(OUT HitResult))
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Bomb is not plantable"));
-			return false;
-		}
-
-		SetPlanting(true);
-
-		UE_LOG(LogTemp, Warning, TEXT("Bomb planting"));
-
-		if (!OnBombPlanted.IsValid())
-		{
-			GetWorldTimerManager().SetTimer(
-				OnBombPlanted, 
-				this,
-				&AMyC4::OnBombPlantedImpl,
-				FullPlantingTime,
-				false);
-
-			if (IsValid(GetItemOwner()))
-			{
-				ShowBombProgressWidget(GetItemOwner());	
-			}
-		}
-
-		return true;
 	}
 
 	return false;

@@ -108,8 +108,8 @@ float AMyCharacter::TakeDamage(
 void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMyCharacter, Weapon);
 	DOREPLIFETIME(AMyCharacter, CurrentItem);
+	DOREPLIFETIME(AMyCharacter, Weapon);
 }
 
 // Called every frame
@@ -151,39 +151,21 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 {
 	if (IsValid(Weapon))
 	{
+		LOG_FUNC(LogTemp, Warning, "Already has weapon");
 		return false;
 	}
 
 	if (IsValid(NewWeapon))
 	{
+		LOG_FUNC(LogTemp, Warning, "Weapon is valid");
 		Weapon = NewWeapon;
-
-		if (Weapon->IsA<AMyAimableWeapon>())
-		{
-			const auto& AimableWeapon = Cast<AMyAimableWeapon>(Weapon);
-
-			if (!IsValid(AimableWeapon))
-			{
-				return false;
-			}
-
-			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
-			AimableWeapon->Show();
-			AimableWeapon->AttachToComponent(
-				GetMesh(), 
-				FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
-				RightHandSocketName);
-
-			return true;
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Weapon: %s"), *Weapon->GetName());
-		Weapon->Show();
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocketName);
 		return true;
 	}
-
-	return false;
+	else
+	{
+		LOG_FUNC(LogTemp, Warning, "Weapon is not valid");
+		return false;
+	}
 }
 
 void AMyCharacter::Server_Attack_Implementation(const float Value)
@@ -449,8 +431,11 @@ void AMyCharacter::AttackStart(const float Value)
 
 	if (IsValid(Weapon))
 	{
+		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack with weapon, Is Client? : %d"), !HasAuthority()));
+
 		if (!Weapon->Attack())
 		{
+			LOG_FUNC(LogTemp, Error, "Failed to attack");
 			return;
 		}
 
@@ -480,6 +465,7 @@ void AMyCharacter::AttackStart(const float Value)
 	}
 	else
 	{
+		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack without weapon, Is Client? : %d"), HasAuthority()));
 		MeleeAttack();
 	}
 
