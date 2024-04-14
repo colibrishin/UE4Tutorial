@@ -63,24 +63,32 @@ bool AMyPlayerController::BuyWeapon_Validate(AMyCharacter* RequestCharacter , co
 
 void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32 WeaponID) const
 {
-	const auto& WeaponData = GetWeaponData(this, WeaponID);
-	const auto& WeaponClass = WeaponData->WeaponDataAsset->GetWeaponClass();
-	const auto& CharacterLocation = RequestCharacter->GetActorLocation();
-
-	const auto& GeneratedWeapon = GetWorld()->SpawnActor
-	(
-		WeaponClass, 
-		&CharacterLocation,
-		nullptr
-	);
-
-	LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("%s"), *WeaponClass->GetName()));
-
-	if (IsValid(GeneratedWeapon))
+	if (HasAuthority())
 	{
-		GeneratedWeapon->SetReplicateMovement(true);
-		GeneratedWeapon->SetReplicates(true);
-		Cast<AMyWeapon>(GeneratedWeapon)->Interact(RequestCharacter);
+		const auto& WeaponData        = GetWeaponData(this, WeaponID);
+		const auto& WeaponClass       = WeaponData->WeaponDataAsset->GetWeaponClass();
+		const auto& CharacterLocation = RequestCharacter->GetActorLocation();
+
+		RequestCharacter->GetStatComponent()->AddMoney
+			(
+			 -WeaponData->WeaponDataAsset->GetWeaponStat().Price
+			);
+
+		const auto& GeneratedWeapon = GetWorld()->SpawnActor
+			(
+			 WeaponClass,
+			 &CharacterLocation,
+			 nullptr
+			);
+
+		LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponData->WeaponDataAsset->GetWeaponStat().Name);
+
+		if (IsValid(GeneratedWeapon))
+		{
+			GeneratedWeapon->SetReplicateMovement(true);
+			GeneratedWeapon->SetReplicates(true);
+			Cast<AMyWeapon>(GeneratedWeapon)->Interact(RequestCharacter);
+		}
 	}
 }
 
@@ -119,14 +127,12 @@ void AMyPlayerController::BuyWeapon(const int32 WeaponID) const
 
 	if (IsValid(RequestCharacter))
 	{
-		if (!HasAuthority())
-		{
-			Server_BuyWeapon(RequestCharacter, WeaponID);
-		}
-		else
-		{
-			ProcessBuy(RequestCharacter, WeaponID);	
-		}
-
+		ExecuteServer(
+			this, 
+			&AMyPlayerController::Server_BuyWeapon, 
+			&AMyPlayerController::ProcessBuy,
+			RequestCharacter,
+			WeaponID);
 	}
+
 }
