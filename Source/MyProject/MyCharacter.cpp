@@ -20,6 +20,7 @@
 #include "MyAimableWeapon.h"
 #include "MyC4.h"
 #include "MyCharacterWidget.h"
+#include "MyInGameHUD.h"
 #include "MyInventoryComponent.h"
 
 #include "Components/WidgetComponent.h"
@@ -107,8 +108,8 @@ float AMyCharacter::TakeDamage(
 void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMyCharacter, Weapon);
 	DOREPLIFETIME(AMyCharacter, CurrentItem);
+	DOREPLIFETIME(AMyCharacter, Weapon);
 }
 
 // Called every frame
@@ -150,39 +151,21 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 {
 	if (IsValid(Weapon))
 	{
+		LOG_FUNC(LogTemp, Warning, "Already has weapon");
 		return false;
 	}
 
 	if (IsValid(NewWeapon))
 	{
+		LOG_FUNC(LogTemp, Warning, "Weapon is valid");
 		Weapon = NewWeapon;
-
-		if (Weapon->IsA<AMyAimableWeapon>())
-		{
-			const auto& AimableWeapon = Cast<AMyAimableWeapon>(Weapon);
-
-			if (!IsValid(AimableWeapon))
-			{
-				return false;
-			}
-
-			UE_LOG(LogTemp, Warning, TEXT("AimableWeapon: %s"), *AimableWeapon->GetName());
-			AimableWeapon->Show();
-			AimableWeapon->AttachToComponent(
-				GetMesh(), 
-				FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
-				RightHandSocketName);
-
-			return true;
-		}
-
-		UE_LOG(LogTemp, Warning, TEXT("Weapon: %s"), *Weapon->GetName());
-		Weapon->Show();
-		Weapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, LeftHandSocketName);
 		return true;
 	}
-
-	return false;
+	else
+	{
+		LOG_FUNC(LogTemp, Warning, "Weapon is not valid");
+		return false;
+	}
 }
 
 void AMyCharacter::Server_Attack_Implementation(const float Value)
@@ -211,6 +194,11 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 
 void AMyCharacter::Reload()
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (!HasAuthority())
 	{
 		Server_Reload();
@@ -346,6 +334,11 @@ void AMyCharacter::LeftRight(const float Value)
 
 void AMyCharacter::Aim()
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (!IsValid(Weapon))
 	{
 		return;
@@ -380,6 +373,11 @@ void AMyCharacter::UnAim()
 
 void AMyCharacter::Interactive()
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (!HasAuthority())
 	{
 		Server_Interactive();
@@ -392,6 +390,11 @@ void AMyCharacter::Interactive()
 
 void AMyCharacter::Attack(const float Value)
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (Value == 0.f)
 	{
 		return;
@@ -428,8 +431,11 @@ void AMyCharacter::AttackStart(const float Value)
 
 	if (IsValid(Weapon))
 	{
+		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack with weapon, Is Client? : %d"), !HasAuthority()));
+
 		if (!Weapon->Attack())
 		{
+			LOG_FUNC(LogTemp, Error, "Failed to attack");
 			return;
 		}
 
@@ -459,6 +465,7 @@ void AMyCharacter::AttackStart(const float Value)
 	}
 	else
 	{
+		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack without weapon, Is Client? : %d"), HasAuthority()));
 		MeleeAttack();
 	}
 
@@ -550,6 +557,11 @@ void AMyCharacter::InteractInterruptedStart() const
 
 void AMyCharacter::Use()
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	if (!HasAuthority())
 	{
 		Server_Use();
@@ -676,12 +688,34 @@ void AMyCharacter::OnAttackAnimNotify()
 
 void AMyCharacter::Yaw(const float Value)
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	// 폰의 설정에서 Rotation Yaw가 true여야 함
 	AddControllerYawInput(Value);
 }
 
 void AMyCharacter::Pitch(const float Value)
 {
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
 	// 폰의 설정에서 Rotation Pitch가 true여야 함
 	//AddControllerPitchInput(Value);	
+}
+
+bool AMyCharacter::IsBuyMenuOpened() const
+{
+	const auto& HUD = Cast<AMyInGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
+
+	if (HUD)
+	{
+		return HUD->IsBuyMenuOpened();
+	}
+
+	return false;
 }

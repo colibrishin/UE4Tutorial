@@ -16,10 +16,16 @@ public class MyProject: ModuleRules
 			"CoreUObject",
 			"Engine",
 			"InputCore",
+			"SlateCore",
 			"UMG",
 			"NavigationSystem",
 			"AIModule",
 			"GameplayTasks"
 		});
+
+		PrivateDependencyModuleNames.AddRange(new string[]
+        {
+			"InputCore"
+        });
 	}
 }

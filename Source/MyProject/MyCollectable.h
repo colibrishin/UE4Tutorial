@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyCharacter.h"
 #include "MyInteractiveActor.h"
 
 #include "GameFramework/Actor.h"
@@ -20,10 +19,10 @@ public:
 
 	UStaticMeshComponent* GetMesh() const { return Mesh; }
 	class UBoxComponent* GetCollider() const { return Collider; }
-	class AMyCharacter* GetItemOwner() const { return ItemOwner.Get(); }
+	class AMyCharacter* GetItemOwner() const;
 
-	virtual bool Interact(class AMyCharacter* Character) override;
-	virtual bool Use(class AMyCharacter* Character) override;
+	virtual bool Interact(class AMyCharacter* Character) override final;
+	virtual bool Use(class AMyCharacter* Character) override final;
 
 	virtual void InteractInterrupted() override;
 	virtual void UseInterrupted() override;
@@ -44,9 +43,14 @@ protected:
 		int32 OtherBodyIndex, bool bFromSweep, class AMyCharacter* Character, const FHitResult& SweepResult
 	);
 
-	bool IsBelongToCharacter() const;
+	virtual bool PreInteract(class AMyCharacter* Character);
+	virtual bool TryAttachItem(const AMyCharacter* Character);
+	virtual bool PostInteract(class AMyCharacter* Character);
 
-	void SetItemOwner(class AMyCharacter* NewOwner);
+	virtual bool PreUse(class AMyCharacter* Character);
+	virtual bool PostUse(class AMyCharacter* Character);
+
+	bool IsBelongToCharacter() const;
 
 public:	
 	// Called every frame
@@ -61,9 +65,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UBoxComponent* Collider;
-
-	UPROPERTY(VisibleAnywhere)
-	TWeakObjectPtr<class AMyCharacter> ItemOwner;
 
 	FDelegateHandle OnInteractInterruptedHandle;
 
