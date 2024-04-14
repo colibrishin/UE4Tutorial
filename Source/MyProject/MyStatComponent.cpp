@@ -3,16 +3,20 @@
 
 #include "MyStatComponent.h"
 
+#include "Data.h"
 #include "MyGameInstance.h"
 
 #include "Engine/World.h"
+
+#include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
 UMyStatComponent::UMyStatComponent()
 	: Level(1),
 	  Damage(0),
 	  Health(0),
-	  MaxHealth(0)
+	  MaxHealth(0),
+	  Money(18000)
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -38,7 +42,7 @@ void UMyStatComponent::InitializeComponent()
 
 	if (IsValid(GameInstance))
 	{
-		const auto& Data = GameInstance->GetValue(Level);
+		const FMyStat* Data = GetStatData(this, Level);
 
 		// IsValid 스킵
 
@@ -48,4 +52,10 @@ void UMyStatComponent::InitializeComponent()
 		SetHP(Data->MaxHealth);
 	}
 
+}
+
+void UMyStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UMyStatComponent, Money);
 }

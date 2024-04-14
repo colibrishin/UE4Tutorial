@@ -39,9 +39,19 @@ public:
 		OnHPChanged.Broadcast(GetHPRatio());
 	}
 
+	FORCEINLINE void AddMoney(const int32 MoneyAmount)
+	{
+		Money += MoneyAmount;
+	}
+
 	FORCEINLINE void OnDamage(const int32 DamageAmount)
 	{
 		SetHP(Health - DamageAmount);
+	}
+
+	FORCEINLINE int32 GetMoney() const
+	{
+		return Money;
 	}
 
 protected:
@@ -50,6 +60,8 @@ protected:
 
 	virtual void InitializeComponent() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 private:
 	UPROPERTY(EditAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Level;
@@ -57,11 +69,15 @@ private:
 	UPROPERTY(VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Damage;
 
+	// todo: replication?
 	UPROPERTY(VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 Health;
 
 	UPROPERTY(VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
 	int32 MaxHealth;
+
+	UPROPERTY(Replicated, VisibleAnywhere, Category = "Stats", Meta=(AllowPrivateAccess))
+	int32 Money;
 
 	FOnHPChanged OnHPChanged;
 };

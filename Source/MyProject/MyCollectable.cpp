@@ -26,7 +26,6 @@ AMyCollectable::AMyCollectable()
 
 	GetCollider()->SetBoxExtent(FVector{10.f, 30.f, 10.f});
 
-	ItemOwner = nullptr;
 	GetMesh()->SetSimulatePhysics(false);
 	GetCollider()->SetSimulatePhysics(false);
 }
@@ -35,7 +34,6 @@ AMyCollectable::AMyCollectable()
 void AMyCollectable::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void AMyCollectable::PostInitializeComponents()
@@ -53,17 +51,21 @@ bool AMyCollectable::OnCharacterOverlap(
 	return false;
 }
 
-bool AMyCollectable::Interact(class AMyCharacter* Character)
+bool AMyCollectable::PreInteract(AMyCharacter* Character)
 {
 	if (IsBelongToCharacter())
 	{
+		LOG_FUNC(LogTemp, Warning, "Already belong to character");
 		return false;
 	}
 
-	const FVector PreviousLocation = GetActorLocation();
+	LOG_FUNC(LogTemp, Warning, "PreInteract success");
+	return true;
+}
 
-	//GetMesh()->SetSimulatePhysics(false);
-	//GetCollider()->SetSimulatePhysics(false);
+bool AMyCollectable::TryAttachItem(const AMyCharacter* Character)
+{
+	LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Setting Owner to : %s"), *Character->GetName()));
 
 	if (GetMesh()->AttachToComponent
 		(
@@ -73,21 +75,79 @@ bool AMyCollectable::Interact(class AMyCharacter* Character)
 		))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+		return true;
 	}
 	else
 	{
+		const FVector PreviousLocation = GetActorLocation();
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
+		SetActorLocation(PreviousLocation);
 		return false;
 	}
-	Hide();
+}
 
-	SetItemOwner(Character);
+bool AMyCollectable::PostInteract(AMyCharacter* Character)
+{
+	if (TryAttachItem(Character))
+	{
+		LOG_FUNC(LogTemp, Warning, "PostInteract success");
+		Hide();
+		return true;
+	}
+	else
+	{
+		LOG_FUNC(LogTemp, Warning, "PostInteract failed");
+		Drop();
+		return false;
+	}
+}
+
+bool AMyCollectable::PreUse(AMyCharacter* Character)
+{
+	LOG_FUNC(LogTemp, Warning, "PreUse");
+	return true;
+}
+
+bool AMyCollectable::PostUse(AMyCharacter* Character)
+{
+	LOG_FUNC(LogTemp, Warning, "PostUse");
+	return true;
+}
+
+AMyCharacter* AMyCollectable::GetItemOwner() const
+{
+	const auto& CollectableOwner = GetAttachParentActor();
+	return Cast<AMyCharacter>(CollectableOwner);
+}
+
+bool AMyCollectable::Interact(class AMyCharacter* Character)
+{
+	LOG_FUNC(LogTemp, Warning, "Interact");
+
+	if (!PreInteract(Character))
+	{
+		return false;
+	}
+	if (!PostInteract(Character))
+	{
+		return false;
+	}
+
 	return true;
 }
 
 bool AMyCollectable::Use(AMyCharacter* Character)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Use"));
+	if (!PreUse(Character))
+	{
+		return false;
+	}
+
+	if (!PostUse(Character))
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -103,6 +163,7 @@ void AMyCollectable::UseInterrupted()
 
 bool AMyCollectable::Drop()
 {
+	// todo: Move to the player
 	if (IsBelongToCharacter())
 	{
 		FVector PreviousLocation = GetActorLocation();
@@ -139,7 +200,6 @@ bool AMyCollectable::Drop()
 
 		Show();
 		//GetMesh()->SetSimulatePhysics(true);
-		SetItemOwner(nullptr);
 		return true;
 	}
 
@@ -158,29 +218,7 @@ void AMyCollectable::Show() const
 
 bool AMyCollectable::IsBelongToCharacter() const
 {
-	return ItemOwner.IsValid();
-}
-
-void AMyCollectable::SetItemOwner(AMyCharacter* NewOwner)
-{
-	if (ItemOwner == NewOwner)
-	{
-		return;
-	}
-
-	if (ItemOwner != NewOwner && ItemOwner != nullptr)
-	{
-		ItemOwner->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
-		ItemOwner->UnbindOnUseInterrupted(OnUseInterruptedHandle);
-	}
-
-	ItemOwner = NewOwner;
-
-	if (ItemOwner != nullptr)
-	{
-		OnInteractInterruptedHandle = ItemOwner->BindOnInteractInterrupted(this, &AMyCollectable::InteractInterrupted);
-		OnUseInterruptedHandle = ItemOwner->BindOnUseInterrupted(this, &AMyCollectable::UseInterrupted);
-	}
+	return IsValid(GetOwner());
 }
 
 // Called every frame

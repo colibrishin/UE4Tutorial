@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "MyItem.h"
+#include "Utilities.hpp"
 
 #include "GameFramework/Actor.h"
 #include "MyC4.generated.h"
@@ -34,9 +35,6 @@ public:
 
 	const AMyCharacter* GetDefusingCharacter() const { return DefusingCharacter.Get(); }
 
-	virtual bool Interact(class AMyCharacter* Character) override;
-	virtual bool Use(class AMyCharacter* Character) override;
-
 	virtual void InteractInterrupted() override;
 	virtual void UseInterrupted() override;
 
@@ -48,6 +46,12 @@ protected:
 	void         OnBombTickingImpl();
 	void         OnBombPlantedImpl();
 	void         OnBombDefusedImpl();
+
+	virtual bool PreInteract(AMyCharacter* Character) override;
+	virtual bool PostInteract(AMyCharacter* Character) override;
+
+	virtual bool PreUse(AMyCharacter* Character) override;
+	virtual bool PostUse(AMyCharacter* Character) override;
 
 	virtual void PostInitializeComponents() override;
 
