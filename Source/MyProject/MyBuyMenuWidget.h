@@ -19,18 +19,24 @@ class MYPROJECT_API UMyBuyMenuWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void             Populate() const;
+	void             Populate();
 	void             Open();
 	void             Close();
 	void             Toggle();
 	bool             Validate(const int32 ID, class AMyCharacter* const& Character) const;
+
 	FORCEINLINE bool IsOpened() const { return IsOpen; }
+	void             BindPlayer(AMyCharacter* Character);
 
 private:
 	void ProcessBuy(const int32 ID) const;
+	void UpdateMoney(const int32 Money) const;
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget, AllowPrivateAccess))
 	class UUniformGridPanel* WeaponGridPanel;
+
+	UPROPERTY(BlueprintReadWrite, meta=(BindWidget, AllowPrivateAccess))
+	class UTextBlock* CurrentMoney;
 
 	UPROPERTY(EditAnywhere, Meta=(AllowPrivateAccess))
 	TSubclassOf<UUserWidget> ItemWidgetClass;
