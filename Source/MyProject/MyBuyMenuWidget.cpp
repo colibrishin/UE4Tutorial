@@ -17,12 +17,13 @@
 #include "GameFramework/PlayerController.h"
 #include "Runtime/Engine/Classes/Engine/Player.h"
 #include "Components/GridPanel.h"
+#include "Components/TextBlock.h"
 #include "Components/TileView.h"
 #include "Components/UniformGridPanel.h"
 
 #include "Kismet/GameplayStatics.h"
 
-void UMyBuyMenuWidget::Populate() const
+void UMyBuyMenuWidget::Populate()
 {
 	const auto& Instance = Cast<UMyGameInstance>(GetGameInstance());
 
@@ -68,6 +69,12 @@ void UMyBuyMenuWidget::Open()
 	}
 
 	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
+	const auto& Character = Cast<AMyCharacter>(Controller->GetPawn());
+
+	if (IsValid(Character))
+	{
+		UpdateMoney(Character->GetStatComponent()->GetMoney());
+	}
 
 	if (Controller->IsInState("Dead"))
 	{
@@ -146,6 +153,11 @@ bool UMyBuyMenuWidget::Validate(const int32 ID, AMyCharacter* const& Character) 
 	return true;
 }
 
+void UMyBuyMenuWidget::BindPlayer(AMyCharacter* Character)
+{
+	Character->GetStatComponent()->BindOnMoneyChanged(this, &UMyBuyMenuWidget::UpdateMoney);
+}
+
 void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 {
 	if (GetVisibility() != ESlateVisibility::Visible)
@@ -166,4 +178,9 @@ void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 		Controller->BuyWeapon(ID);
 	}
 
+}
+
+void UMyBuyMenuWidget::UpdateMoney(const int32 Money) const
+{
+	CurrentMoney->SetText(FText::FromString(FString::Printf(TEXT("Money: %d"), Money)));
 }
