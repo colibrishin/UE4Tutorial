@@ -34,6 +34,37 @@ void AMyWeapon::PostInitializeComponents()
   }
 }
 
+bool AMyWeapon::TryAttachItem(const AMyCharacter* Character)
+{
+	if (GetMesh()->AttachToComponent
+		(
+		 Character->GetMesh(),
+		 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+		 AMyCharacter::LeftHandSocketName
+		))
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+		return true;
+	}
+	else
+	{
+		const FVector PreviousLocation = GetActorLocation();
+		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
+		SetActorLocation(PreviousLocation);
+		return false;
+	}
+}
+
+bool AMyWeapon::PostInteract(AMyCharacter* Character)
+{
+	if (Super::PostInteract(Character) && Character->TryPickWeapon(this))
+	{
+		Show();
+	}
+
+	return false;
+}
+
 void AMyWeapon::OnFireRateTimed()
 {
 	CanAttack = true;
@@ -74,20 +105,6 @@ bool AMyWeapon::Attack()
 		return AttackImpl();
 	}
 
-	return false;
-}
-
-bool AMyWeapon::Interact(AMyCharacter* Character)
-{
-	if (Super::Interact(Character))
-	{
-		if (Character->TryPickWeapon(this))
-		{
-			return true;
-		}
-	}
-
-	Drop();
 	return false;
 }
 

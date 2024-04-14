@@ -3,6 +3,8 @@
 
 #include "MyProject/MyInGameHUD.h"
 
+#include "MyAmmoWidget.h"
+#include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
 #include "MyInGameWidget.h"
 
@@ -11,6 +13,7 @@
 AMyInGameHUD::AMyInGameHUD()
 {
 	Widgets = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widgets"));
+	BuyMenu = CreateDefaultSubobject<UWidgetComponent>(TEXT("BuyMenu"));
 
 	SetRootComponent(Widgets);
 	Widgets->SetWidgetSpace(EWidgetSpace::Screen);
@@ -22,6 +25,16 @@ AMyInGameHUD::AMyInGameHUD()
 		UE_LOG(LogTemp, Warning, TEXT("Widget is loaded"));
 		Widgets->SetWidgetClass(BP_Widget.Class);
 	}
+
+	static ConstructorHelpers::FClassFinder<UMyBuyMenuWidget> BP_BuyMenu(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyBuyMenuWidget.BPMyBuyMenuWidget_C'"));
+
+	if (BP_Widget.Succeeded())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("BuyMenu is loaded"));
+		BuyMenu->SetWidgetClass(BP_BuyMenu.Class);
+	}
+
+	BuyMenu->SetWidgetSpace(EWidgetSpace::Screen);
 }
 
 void AMyInGameHUD::BindBomb(const AMyC4* Bomb) const
@@ -34,7 +47,7 @@ void AMyInGameHUD::BindBomb(const AMyC4* Bomb) const
 	}
 }
 
-void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
+void AMyInGameHUD::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
 {
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
@@ -44,9 +57,24 @@ void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoC
 	}
 }
 
+bool AMyInGameHUD::IsBuyMenuOpened() const
+{
+	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
+
+	if (BuyMenuWidget)
+	{
+		return BuyMenuWidget->IsOpened();
+	}
+
+	return false;
+}
+
 void AMyInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
+
+	const auto& Controller = GetOwningPlayerController();
+	EnableInput(Controller);
 
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
@@ -54,6 +82,14 @@ void AMyInGameHUD::BeginPlay()
 	{
 		Widget->AddToViewport();
 		Widget->BindPlayer(Cast<AMyCharacter>(GetOwningPawn()));
+	}
+
+	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
+
+	if (BuyMenuWidget)
+	{
+		BuyMenuWidget->Populate();
+		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
 	}
 }
 
@@ -67,4 +103,5 @@ void AMyInGameHUD::PostInitializeComponents()
 	Super::PostInitializeComponents();
 
 	Widgets->InitWidget();
+	BuyMenu->InitWidget();
 }

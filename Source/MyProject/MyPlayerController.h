@@ -17,9 +17,19 @@ class MYPROJECT_API AMyPlayerController : public APlayerController
 public:
 	AMyPlayerController();
 
+	void BuyWeapon(const int32 WeaponID) const;
+
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void PostInitializeComponents() override;
+
+private:
+	bool BuyWeapon_Validate(class AMyCharacter* RequestCharacter , const int32 WeaponID) const;
+
+	UFUNCTION(Server, Reliable)
+	void Server_BuyWeapon(class AMyCharacter* RequestCharacter, const int32 WeaponID) const;
+
+	void ProcessBuy(class AMyCharacter* RequestCharacter, const int32 WeaponID) const;
 
 };
