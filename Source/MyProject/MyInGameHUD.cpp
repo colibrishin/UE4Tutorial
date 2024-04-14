@@ -3,6 +3,7 @@
 
 #include "MyProject/MyInGameHUD.h"
 
+#include "MyAmmoWidget.h"
 #include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
 #include "MyInGameWidget.h"
@@ -46,7 +47,7 @@ void AMyInGameHUD::BindBomb(const AMyC4* Bomb) const
 	}
 }
 
-void AMyInGameHUD::UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
+void AMyInGameHUD::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
 {
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
