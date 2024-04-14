@@ -97,6 +97,7 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 	else
 	{
 		LOG_FUNC(LogTemp, Warning, "PostInteract failed");
+		Drop();
 		return false;
 	}
 }
