@@ -17,6 +17,8 @@
 #include "Net/UnrealNetwork.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
+	: RoundProgress(EMyRoundProgress::Unknown),
+	  CurrentHandle(nullptr)
 {
 	// StaticClass, 컴파일 타임 타입
 	// GetClass, 런타임 타입 (Base class 포인터)
@@ -36,49 +38,58 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 
 	if (BP_PC.Succeeded()) { PlayerControllerClass = BP_PC.Class; }
 
-	GameStateClass = AMyGameState::StaticClass();
+	GameStateClass   = AMyGameState::StaticClass();
 	PlayerStateClass = AMyPlayerState::StaticClass();
+}
+
+void AMyProjectGameModeBase::NextRound()
+{
+	if (RoundProgress == EMyRoundProgress::PostRound)
+	{
+		TArray<AActor*> Players;
+		UGameplayStatics::GetAllActorsOfClass(this, AMyCharacter::StaticClass(), Players);
+
+		for (const auto& Player : Players)
+		{
+			const auto& MyController = Cast<AMyPlayerController>(
+				Player->GetNetOwningPlayer()->GetPlayerController(GetWorld()));
+
+			if (IsValid(MyController))
+			{
+				RestartPlayer(MyController);
+			}
+		}
+
+		GoToFreeze();
+	}
+}
+
+void AMyProjectGameModeBase::OnRoundTimeRanOut()
+{
+	if (RoundProgress == EMyRoundProgress::Playing)
+	{
+		GoToRoundEnd();
+	}
+}
+
+void AMyProjectGameModeBase::OnFreezeEnded()
+{
+	if (RoundProgress == EMyRoundProgress::FreezeTime)
+	{
+		GoToRound();
+	}
 }
 
 void AMyProjectGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// todo: not to start manually?
-
-	if (GetNumPlayers() == 2)
-	{
-		LOG_FUNC(LogTemp, Warning, "Starting match");
-		StartMatch();
-	}
+	GoToFreeze();
 }
 
 void AMyProjectGameModeBase::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
-
-	if (HasMatchStarted())
-	{
-		if (GetWorld()->GetGameState()->GetServerWorldTimeSeconds() >= AMyGameState::MatchRoundTime)
-		{
-			EndMatch();
-		}
-	}
-}
-
-void AMyProjectGameModeBase::HandleMatchHasStarted()
-{
-	Super::HandleMatchHasStarted();
-}
-
-void AMyProjectGameModeBase::HandleMatchHasEnded()
-{
-	Super::HandleMatchHasEnded();
-
-	// If Bomb has been exploded -> T win
-	// If Bomb has been defused -> CT win
-	// Ran out of time -> CT win
-	// Eliminate all enemies -> T or CT win
 }
 
 AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
@@ -109,4 +120,43 @@ AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Pl
 
 
 	return Super::ChoosePlayerStart_Implementation(Player);
+}
+
+void AMyProjectGameModeBase::GoToFreeze()
+{
+	LOG_FUNC(LogTemp, Warning, "Round goes to freeze");
+	TransitTo
+	(
+		EMyRoundProgress::FreezeTime,
+		OnFreezeStarted,
+		&AMyProjectGameModeBase::OnFreezeEnded,
+		MatchFreezeTime,
+		FreezeTimerHandle
+	);
+}
+
+void AMyProjectGameModeBase::GoToRound()
+{
+	LOG_FUNC(LogTemp, Warning, "Round goes to playing");
+	TransitTo
+	(
+		EMyRoundProgress::Playing,
+		OnRoundStarted,
+		&AMyProjectGameModeBase::OnRoundTimeRanOut,
+		MatchRoundTime,
+		RoundTimerHandle
+	);
+}
+
+void AMyProjectGameModeBase::GoToRoundEnd()
+{
+	LOG_FUNC(LogTemp, Warning, "Round goes to post round");
+	TransitTo
+	(
+		EMyRoundProgress::PostRound,
+		OnRoundEnded,
+		&AMyProjectGameModeBase::NextRound,
+		MatchRoundEndDelay,
+		RoundEndTimerHandle
+	);
 }

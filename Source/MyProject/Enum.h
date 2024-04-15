@@ -28,3 +28,13 @@ enum class EMyTeam : uint8
 	CT,
 	T
 };
+
+UENUM()
+enum class EMyRoundProgress : uint8
+{
+	Unknown,
+	FreezeTime,
+	Playing,
+	PostRound,
+	Max
+};
