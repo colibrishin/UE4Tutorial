@@ -20,3 +20,11 @@ enum class EMyCharacterState : uint8
 	Defusing,
 	Dead
 };
+
+UENUM()
+enum class EMyTeam : uint8
+{
+	Unknown,
+	CT,
+	T
+};
