@@ -37,6 +37,8 @@
 	DECL_BINDON_LOCAL_CONST(Delegate, __VA_ARGS__) \
 	DECL_UNBINDON(Delegate) \
 
+#define STRINGIFY(x) #x
+
 
 template <typename T>
 FORCEINLINE T PrintErrorAndReturnDefault(const FString& Message, const UObject* Object)
@@ -130,4 +132,11 @@ FORCEINLINE void ExecuteServer(
 	{
 		(static_cast<const T*>(ActorContext)->*ServerFunction)(Arguments...);
 	}
+}
+
+template<typename T>
+static FString EnumToString(const T Value)
+{
+	const UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, TEXT(STRINGIFY(T)));
+	return *(Enum ? Enum->GetNameStringByIndex(static_cast<uint8>(Value)) : "null");
 }

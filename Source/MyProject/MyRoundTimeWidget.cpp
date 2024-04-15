@@ -3,7 +3,7 @@
 
 #include "MyProject/MyRoundTimeWidget.h"
 
-#include "MyProjectGameModeBase.h"
+#include "MyGameState.h"
 
 #include "Components/TextBlock.h"
 
@@ -11,7 +11,7 @@
 
 void UMyRoundTimeWidget::UpdateTime() const
 {
-	const float Time = AMyProjectGameModeBase::MatchRoundTime - GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
+	const float Time = AMyGameState::MatchRoundTime - GetWorld()->GetGameState()->GetServerWorldTimeSeconds();
 
 	const int32 Minutes = FMath::FloorToInt(Time / 60);
 	const int32 Seconds = FMath::FloorToInt(FMath::Fmod(Time, 60));

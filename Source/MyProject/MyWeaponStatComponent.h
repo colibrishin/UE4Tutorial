@@ -76,7 +76,7 @@ private:
 	int32 TotalAmmoCount;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)
-	TEnumAsByte<EMyWeaponType> WeaponType;
+	EMyWeaponType WeaponType;
 
 	const struct FMyWeaponStatBase* WeaponStat;
 

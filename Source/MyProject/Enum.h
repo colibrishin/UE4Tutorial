@@ -3,7 +3,7 @@
 #include "Engine/DataTable.h"
 
 UENUM()
-enum EMyWeaponType
+enum class EMyWeaponType : uint8
 {
 	Unknown,
 	Range,
@@ -11,7 +11,7 @@ enum EMyWeaponType
 };
 
 UENUM()
-enum EMyCharacterState
+enum class EMyCharacterState : uint8
 {
 	Idle,
 	Running,
@@ -19,4 +19,12 @@ enum EMyCharacterState
 	Planting,
 	Defusing,
 	Dead
+};
+
+UENUM()
+enum class EMyTeam : uint8
+{
+	Unknown,
+	CT,
+	T
 };
