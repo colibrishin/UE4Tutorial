@@ -12,6 +12,8 @@
 #include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 
+#include "GameFramework/GameStateBase.h"
+
 AMyPlayerController::AMyPlayerController()
 {
 	PlayerCameraManagerClass = AMyCameraManager::StaticClass();
@@ -40,6 +42,12 @@ bool AMyPlayerController::BuyWeapon_Validate(AMyCharacter* RequestCharacter , co
 
 	// todo: discard buy if player has same weapon.
 
+	if (RequestCharacter->GetWeapon()->GetClass() == WeaponData->WeaponDataAsset->GetWeaponClass())
+	{
+		LOG_FUNC(LogTemp, Error, "Player already has the weapon");
+		return false;
+	}
+
 	if (WeaponData == nullptr)
 	{
 		LOG_FUNC(LogTemp, Error, "WeaponInfo is nullptr");
@@ -55,6 +63,12 @@ bool AMyPlayerController::BuyWeapon_Validate(AMyCharacter* RequestCharacter , co
 	if (RequestCharacter->GetStatComponent()->GetMoney() - WeaponStat.Price < 0)
 	{
 		LOG_FUNC(LogTemp, Error, "Player has money but not enough money to buy");
+		return false;
+	}
+
+	if (const auto& BuyTime = Cast<AMyProjectGameModeBase>(UGameplayStatics::GetGameMode(this))->HasBuyTimeEnded())
+	{
+		LOG_FUNC(LogTemp, Error, "MatchBuyTime is over");
 		return false;
 	}
 

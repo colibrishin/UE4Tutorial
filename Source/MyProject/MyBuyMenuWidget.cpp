@@ -61,6 +61,12 @@ void UMyBuyMenuWidget::Open()
 		return;
 	}
 
+	if (const auto BuyTime = Cast<AMyProjectGameModeBase>(UGameplayStatics::GetGameMode(this))->HasBuyTimeEnded())
+	{
+		LOG_FUNC(LogTemp, Error, "Cannot open buy menu after buy time is over");
+		return;
+	}
+
 	LOG_FUNC(LogTemp, Warning, "Opening");
 
 	if (!IsInViewport())

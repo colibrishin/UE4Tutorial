@@ -11,7 +11,10 @@
 
 #include "Kismet/GameplayStatics.h"
 
+#include "Net/UnrealNetwork.h"
+
 AMyProjectGameModeBase::AMyProjectGameModeBase()
+	: bHasBuyTimeEnded(false)
 {
 	// StaticClass, 컴파일 타임 타입
 	// GetClass, 런타임 타입 (Base class 포인터)
@@ -38,6 +41,15 @@ void AMyProjectGameModeBase::BeginPlay()
 
 	// todo: not to start manually?
 	StartMatch();
+
+	GetWorldTimerManager().SetTimer
+	(
+		BuyTimeHandle, 
+		this, 
+		&AMyProjectGameModeBase::BuyTimeEnded, 
+		MatchBuyTime, 
+		false
+	);
 }
 
 void AMyProjectGameModeBase::Tick(float DeltaSeconds)
@@ -51,6 +63,12 @@ void AMyProjectGameModeBase::Tick(float DeltaSeconds)
 			EndMatch();
 		}
 	}
+}
+
+void AMyProjectGameModeBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyProjectGameModeBase, bHasBuyTimeEnded);
 }
 
 void AMyProjectGameModeBase::HandleMatchHasStarted()
@@ -68,4 +86,10 @@ void AMyProjectGameModeBase::HandleMatchHasEnded()
 	// If Bomb has been defused -> CT win
 	// Ran out of time -> CT win
 	// Eliminate all enemies -> T or CT win
+}
+
+void AMyProjectGameModeBase::BuyTimeEnded()
+{
+	bHasBuyTimeEnded = true;
+	OnBuyTimeEnded.Broadcast();
 }

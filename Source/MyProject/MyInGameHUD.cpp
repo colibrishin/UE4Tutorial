@@ -87,12 +87,14 @@ void AMyInGameHUD::BeginPlay()
 	}
 
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
+	const auto& GameMode = Cast<AMyProjectGameModeBase>(UGameplayStatics::GetGameMode(this));
 
-	if (BuyMenuWidget)
+	if (BuyMenuWidget && GameMode)
 	{
 		BuyMenuWidget->Populate();
 		BuyMenuWidget->BindPlayer(Character);
 		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
+		GameMode->BindOnBuyTimeEnded(BuyMenuWidget, &UMyBuyMenuWidget::Close);
 	}
 }
 
