@@ -267,7 +267,8 @@ bool AMyC4::PreUse(AMyCharacter* Character)
 
 bool AMyC4::PostUse(AMyCharacter* Character)
 {
-	if (!IsPlanted)
+	FHitResult HitResult;
+	if (!IsPlanted && IsPlantable(HitResult))
 	{
 		SetPlanting(true);
 
