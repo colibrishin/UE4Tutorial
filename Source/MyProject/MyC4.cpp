@@ -8,6 +8,7 @@
 #include "MyBombProgressWidget.h"
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
+#include "MyInventoryComponent.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
@@ -230,12 +231,24 @@ bool AMyC4::PreInteract(AMyCharacter* Character)
 		}
 	}
 
-	return Super::Interact(Character);
+	return Super::PreInteract(Character);
 }
 
 bool AMyC4::PostInteract(AMyCharacter* Character)
 {
-	return TryDefuse(Character) && Super::PostInteract(Character);
+	if (IsPlanted)
+	{
+		return TryDefuse(Character);
+	}
+	else
+	{
+		return Super::PostInteract(Character);
+	}
+}
+
+bool AMyC4::TryAttachItem(const AMyCharacter* Character)
+{
+	return Character->GetInventory()->TryAddItem(this) && Super::TryAttachItem(Character);
 }
 
 bool AMyC4::PreUse(AMyCharacter* Character)
