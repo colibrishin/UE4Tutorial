@@ -29,6 +29,6 @@ protected:
 
 	virtual void HandleMatchHasEnded() override;
 
-private:
+	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
 };
