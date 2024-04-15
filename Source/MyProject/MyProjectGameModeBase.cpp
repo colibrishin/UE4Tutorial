@@ -81,8 +81,32 @@ void AMyProjectGameModeBase::HandleMatchHasEnded()
 	// Eliminate all enemies -> T or CT win
 }
 
-void AMyProjectGameModeBase::BuyTimeEnded()
+AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
 {
-	bHasBuyTimeEnded = true;
-	OnBuyTimeEnded.Broadcast();
+	if (IsValid(Player))
+	{
+		const auto& PlayerState = Cast<AMyPlayerState>(Player->PlayerState);
+		const auto& Team = PlayerState->GetTeam();
+
+		TArray<AActor*> PlayerStarts;
+
+		UGameplayStatics::GetAllActorsOfClass(this, TSubclassOf<APlayerStart>(), PlayerStarts);
+
+		for (const auto& PlayerStart : PlayerStarts)
+		{
+			const auto& Start = Cast<APlayerStart>(PlayerStart);
+
+			if (IsValid(Start))
+			{
+				if (Start->PlayerStartTag == *EnumToString(Team))
+				{
+					LOG_FUNC_PRINTF(LogTemp, Warning, "PlayerStartTag: %s", *Start->PlayerStartTag.ToString());
+					return Start;
+				}
+			}
+		}
+	}
+
+
+	return Super::ChoosePlayerStart_Implementation(Player);
 }
