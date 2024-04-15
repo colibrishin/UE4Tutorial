@@ -66,7 +66,7 @@ void UMyBuyMenuWidget::Open()
 
 	const auto BuyTime = Cast<AMyGameState>(UGameplayStatics::GetGameState(this));
 
-	if (!BuyTime)
+	if (!BuyTime->CanBuy())
 	{
 		LOG_FUNC(LogTemp, Error, "Cannot open buy menu after buy time is over");
 		return;
