@@ -6,7 +6,9 @@
 #include "MyAmmoWidget.h"
 #include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
+#include "MyGameState.h"
 #include "MyInGameWidget.h"
+#include "MyPlayerState.h"
 #include "MyStatComponent.h"
 
 #include "Components/WidgetComponent.h"
@@ -87,14 +89,14 @@ void AMyInGameHUD::BeginPlay()
 	}
 
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
-	const auto& GameMode = Cast<AMyProjectGameModeBase>(UGameplayStatics::GetGameMode(this));
+	const auto& GameState = Cast<AMyGameState>(UGameplayStatics::GetGameState(this));
 
-	if (BuyMenuWidget && GameMode)
+	if (BuyMenuWidget && GameState)
 	{
 		BuyMenuWidget->Populate();
 		BuyMenuWidget->BindPlayer(Character);
 		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
-		GameMode->BindOnBuyTimeEnded(BuyMenuWidget, &UMyBuyMenuWidget::Close);
+		GameState->BindOnBuyChanged(BuyMenuWidget, &UMyBuyMenuWidget::BuyTimeEnded);
 	}
 }
 

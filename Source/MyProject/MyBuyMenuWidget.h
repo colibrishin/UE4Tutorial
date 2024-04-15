@@ -23,10 +23,10 @@ public:
 	void             Open();
 	void             Close();
 	void             Toggle();
-	bool             Validate(const int32 ID, class AMyCharacter* const& Character) const;
 
 	FORCEINLINE bool IsOpened() const { return IsOpen; }
-	void             BindPlayer(AMyCharacter* Character);
+	void             BindPlayer(class AMyCharacter* Character);
+	void             BuyTimeEnded(bool NewBuyTime);
 
 private:
 	void ProcessBuy(const int32 ID) const;
