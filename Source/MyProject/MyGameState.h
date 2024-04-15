@@ -14,13 +14,11 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool)
  * 
  */
 UCLASS()
-class MYPROJECT_API AMyGameState : public AGameState
+class MYPROJECT_API AMyGameState : public AGameStateBase
 {
 	GENERATED_BODY()
 
 public:
-	static constexpr float MatchStartDelay = 5.f;
-	static constexpr float MatchRoundTime = 300.f;
 	static constexpr float MatchBuyTime = 25.f;
 
 	DECL_BINDON(OnBuyChanged, bool)
