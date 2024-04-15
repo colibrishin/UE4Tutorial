@@ -41,6 +41,7 @@ public:
 
 	class UMyInventoryComponent* GetInventory() const { return Inventory; }
 	class UMyStatComponent*      GetStatComponent() const { return StatComponent; }
+	const class AMyWeapon*       GetWeapon() const { return Weapon; }
 
 protected:
 	// Called when the game starts or when spawned
