@@ -75,6 +75,11 @@ bool AMyCollectable::TryAttachItem(const AMyCharacter* Character)
 		))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+
+		const auto& MyCharacter = GetItemOwner();
+
+		OnInteractInterruptedHandle = MyCharacter->BindOnInteractInterrupted(this, &AMyCollectable::InteractInterrupted);
+		OnUseInterruptedHandle = MyCharacter->BindOnUseInterrupted(this, &AMyCollectable::UseInterrupted);
 		return true;
 	}
 	else
@@ -163,47 +168,50 @@ void AMyCollectable::UseInterrupted()
 
 bool AMyCollectable::Drop()
 {
-	// todo: Move to the player
-	if (IsBelongToCharacter())
+	if (!IsBelongToCharacter())
 	{
-		FVector PreviousLocation = GetActorLocation();
-
-		FHitResult HitResult;
-		FCollisionQueryParams Params {NAME_None, false, this};
-
-		const auto& Result = GetWorld()->LineTraceSingleByProfile
-		(
-			HitResult,
-			PreviousLocation,
-			PreviousLocation - FVector::UpVector * 1000.f,
-			TEXT("IgnoreOnlyPawn"),
-			Params
-		);
-
-		GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-
-		if (Result)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Drop success"));
-			UE_LOG(LogTemp, Warning, TEXT("HitResult.Location: %s"), *HitResult.ImpactPoint.ToString());
-			UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
-			SetActorLocation(HitResult.Location);
-			SetActorRotation(FRotator::ZeroRotator);
-		}
-		else
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Drop Fallbacked"));
-			UE_LOG(LogTemp, Warning, TEXT("PreviousLocation: %s"), *PreviousLocation.ToString());
-			SetActorLocation(PreviousLocation);
-			SetActorRotation(FRotator::ZeroRotator);
-		}
-
-		Show();
-		//GetMesh()->SetSimulatePhysics(true);
-		return true;
+		return false;
 	}
 
-	return false;
+	const auto& MyCharacter = GetItemOwner();
+	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
+	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
+
+	FVector PreviousLocation = GetActorLocation();
+
+	FHitResult HitResult;
+	FCollisionQueryParams Params {NAME_None, false, this};
+
+	const auto& Result = GetWorld()->LineTraceSingleByProfile
+	(
+		HitResult,
+		PreviousLocation,
+		PreviousLocation - FVector::UpVector * 1000.f,
+		TEXT("IgnoreOnlyPawn"),
+		Params
+	);
+
+	GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+	if (Result)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Drop success"));
+		UE_LOG(LogTemp, Warning, TEXT("HitResult.Location: %s"), *HitResult.ImpactPoint.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
+		SetActorLocation(HitResult.Location);
+		SetActorRotation(FRotator::ZeroRotator);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Drop Fallbacked"));
+		UE_LOG(LogTemp, Warning, TEXT("PreviousLocation: %s"), *PreviousLocation.ToString());
+		SetActorLocation(PreviousLocation);
+		SetActorRotation(FRotator::ZeroRotator);
+	}
+
+	Show();
+	//GetMesh()->SetSimulatePhysics(true);
+	return true;
 }
 
 void AMyCollectable::Hide() const
@@ -218,7 +226,7 @@ void AMyCollectable::Show() const
 
 bool AMyCollectable::IsBelongToCharacter() const
 {
-	return IsValid(GetOwner());
+	return IsValid(GetAttachParentActor());
 }
 
 // Called every frame

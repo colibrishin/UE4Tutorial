@@ -30,13 +30,17 @@ void UMyInventoryComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 bool UMyInventoryComponent::TryAddItem(AMyCollectable* Item)
 {
+	LOG_FUNC_PRINTF(LogTemp, Warning, "Trying add the item : %s", *Item->GetName())
+
 	if (Inventory.Num() < InventorySize)
 	{
+		LOG_FUNC(LogTemp, Warning, "Item added to inventory");
 		Inventory.Add(Item);
 		return true;
 	}
 	else
 	{
+		LOG_FUNC(LogTemp, Warning, "Inventory is full");
 		UE_LOG(LogTemp, Warning, TEXT("Inventory is full"));
 		return false;
 	}
