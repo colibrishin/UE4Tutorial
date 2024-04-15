@@ -4,17 +4,19 @@
 #include "MyProjectGameModeBase.h"
 
 #include "MyCharacter.h"
+#include "MyGameState.h"
 #include "MyInGameHUD.h"
 #include "MyPlayerController.h"
+#include "MyPlayerState.h"
 
 #include "GameFramework/GameStateBase.h"
+#include "GameFramework/PlayerStart.h"
 
 #include "Kismet/GameplayStatics.h"
 
 #include "Net/UnrealNetwork.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
-	: bHasBuyTimeEnded(false)
 {
 	// StaticClass, 컴파일 타임 타입
 	// GetClass, 런타임 타입 (Base class 포인터)
@@ -33,6 +35,9 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 		(TEXT("Blueprint'/Game/Blueprints/BPMyPlayerController.BPMyPlayerController_C'"));
 
 	if (BP_PC.Succeeded()) { PlayerControllerClass = BP_PC.Class; }
+
+	GameStateClass = AMyGameState::StaticClass();
+	PlayerStateClass = AMyPlayerState::StaticClass();
 }
 
 void AMyProjectGameModeBase::BeginPlay()
@@ -40,16 +45,12 @@ void AMyProjectGameModeBase::BeginPlay()
 	Super::BeginPlay();
 
 	// todo: not to start manually?
-	StartMatch();
 
-	GetWorldTimerManager().SetTimer
-	(
-		BuyTimeHandle, 
-		this, 
-		&AMyProjectGameModeBase::BuyTimeEnded, 
-		MatchBuyTime, 
-		false
-	);
+	if (GetNumPlayers() == 2)
+	{
+		LOG_FUNC(LogTemp, Warning, "Starting match");
+		StartMatch();
+	}
 }
 
 void AMyProjectGameModeBase::Tick(float DeltaSeconds)
@@ -58,24 +59,16 @@ void AMyProjectGameModeBase::Tick(float DeltaSeconds)
 
 	if (HasMatchStarted())
 	{
-		if (GetWorld()->GetGameState()->GetServerWorldTimeSeconds() >= MatchRoundTime)
+		if (GetWorld()->GetGameState()->GetServerWorldTimeSeconds() >= AMyGameState::MatchRoundTime)
 		{
 			EndMatch();
 		}
 	}
 }
 
-void AMyProjectGameModeBase::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMyProjectGameModeBase, bHasBuyTimeEnded);
-}
-
 void AMyProjectGameModeBase::HandleMatchHasStarted()
 {
 	Super::HandleMatchHasStarted();
-
-	// Spawnpoints
 }
 
 void AMyProjectGameModeBase::HandleMatchHasEnded()
@@ -88,8 +81,32 @@ void AMyProjectGameModeBase::HandleMatchHasEnded()
 	// Eliminate all enemies -> T or CT win
 }
 
-void AMyProjectGameModeBase::BuyTimeEnded()
+AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
 {
-	bHasBuyTimeEnded = true;
-	OnBuyTimeEnded.Broadcast();
+	if (IsValid(Player))
+	{
+		const auto& PlayerState = Cast<AMyPlayerState>(Player->PlayerState);
+		const auto& Team = PlayerState->GetTeam();
+
+		TArray<AActor*> PlayerStarts;
+
+		UGameplayStatics::GetAllActorsOfClass(this, TSubclassOf<APlayerStart>(), PlayerStarts);
+
+		for (const auto& PlayerStart : PlayerStarts)
+		{
+			const auto& Start = Cast<APlayerStart>(PlayerStart);
+
+			if (IsValid(Start))
+			{
+				if (Start->PlayerStartTag == *EnumToString(Team))
+				{
+					LOG_FUNC_PRINTF(LogTemp, Warning, "PlayerStartTag: %s", *Start->PlayerStartTag.ToString());
+					return Start;
+				}
+			}
+		}
+	}
+
+
+	return Super::ChoosePlayerStart_Implementation(Player);
 }
