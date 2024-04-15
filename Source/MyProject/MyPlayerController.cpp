@@ -3,10 +3,12 @@
 
 #include "MyProject/MyPlayerController.h"
 
+#include "CommonBuy.hpp"
 #include "Data.h"
 #include "MyCameraManager.h"
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
+#include "MyPlayerState.h"
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
 #include "MyWeaponDataAsset.h"
@@ -27,52 +29,6 @@ void AMyPlayerController::BeginPlay()
 void AMyPlayerController::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-}
-
-bool AMyPlayerController::BuyWeapon_Validate(AMyCharacter* RequestCharacter , const int32 WeaponID) const
-{
-	if (!IsValid(RequestCharacter))
-	{
-		LOG_FUNC(LogTemp, Error, "Player is invalid");
-		return false;
-	}
-
-	const auto& WeaponData = GetWeaponData(this, WeaponID);
-	const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
-
-	// todo: discard buy if player has same weapon.
-
-	if (RequestCharacter->GetWeapon()->GetClass() == WeaponData->WeaponDataAsset->GetWeaponClass())
-	{
-		LOG_FUNC(LogTemp, Error, "Player already has the weapon");
-		return false;
-	}
-
-	if (WeaponData == nullptr)
-	{
-		LOG_FUNC(LogTemp, Error, "WeaponInfo is nullptr");
-		return false;
-	}
-
-	if (RequestCharacter->GetStatComponent()->GetMoney() <= 0)
-	{
-		LOG_FUNC(LogTemp, Error, "Player => Not enough money");
-		return false;
-	}
-
-	if (RequestCharacter->GetStatComponent()->GetMoney() - WeaponStat.Price < 0)
-	{
-		LOG_FUNC(LogTemp, Error, "Player has money but not enough money to buy");
-		return false;
-	}
-
-	if (const auto& BuyTime = Cast<AMyProjectGameModeBase>(UGameplayStatics::GetGameMode(this))->HasBuyTimeEnded())
-	{
-		LOG_FUNC(LogTemp, Error, "MatchBuyTime is over");
-		return false;
-	}
-
-	return true;
 }
 
 void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32 WeaponID) const
@@ -108,7 +64,7 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 
 void AMyPlayerController::Server_BuyWeapon_Implementation(AMyCharacter* RequestCharacter, const int32 WeaponID) const
 {
-	if (!BuyWeapon_Validate(RequestCharacter, WeaponID))
+	if (!ValidateBuyRequest(WeaponID, RequestCharacter))
 	{
 		LOG_FUNC(LogTemp, Error, "BuyWeapon_Validate failed");
 		return;
@@ -133,7 +89,7 @@ void AMyPlayerController::BuyWeapon(const int32 WeaponID) const
 		return;
 	}
 
-	if (!BuyWeapon_Validate(RequestCharacter, WeaponID))
+	if (!ValidateBuyRequest(WeaponID, RequestCharacter))
 	{
 		LOG_FUNC(LogTemp, Error, "BuyWeapon_Validate failed");
 		return;

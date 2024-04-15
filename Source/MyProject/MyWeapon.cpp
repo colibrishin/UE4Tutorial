@@ -83,7 +83,7 @@ bool AMyWeapon::Attack()
 {
 	if (CanAttack)
 	{
-		if (GetWeaponStatComponent()->GetWeaponType() == Range)
+		if (GetWeaponStatComponent()->GetWeaponType() == EMyWeaponType::Range)
 		{
 			GetWorld()->GetTimerManager().SetTimer
 			(
@@ -94,7 +94,7 @@ bool AMyWeapon::Attack()
 				false
 			);
 		}
-		else if (GetWeaponStatComponent()->GetWeaponType() == Melee)
+		else if (GetWeaponStatComponent()->GetWeaponType() == EMyWeaponType::Melee)
 		{
 			LOG_FUNC(LogTemp, Warning, "Melee attack, Not implemented");
 			return AttackImpl();
@@ -112,7 +112,7 @@ bool AMyWeapon::Reload()
 {
 	if (CanReload)
 	{
-		if (GetWeaponStatComponent()->GetWeaponType() == Range)
+		if (GetWeaponStatComponent()->GetWeaponType() == EMyWeaponType::Range)
 		{
 			GetWorld()->GetTimerManager().SetTimer
 			(
@@ -123,7 +123,7 @@ bool AMyWeapon::Reload()
 				 false
 			);
 		}
-		else if (GetWeaponStatComponent()->GetWeaponType() == Melee)
+		else if (GetWeaponStatComponent()->GetWeaponType() == EMyWeaponType::Melee)
 		{
 			LOG_FUNC(LogTemp, Warning, "Melee reload, Not implemented");
 			return ReloadImpl();
