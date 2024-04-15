@@ -49,6 +49,7 @@ protected:
 
 	virtual bool PreInteract(AMyCharacter* Character) override;
 	virtual bool PostInteract(AMyCharacter* Character) override;
+	virtual bool TryAttachItem(const AMyCharacter* Character) override;
 
 	virtual bool PreUse(AMyCharacter* Character) override;
 	virtual bool PostUse(AMyCharacter* Character) override;
