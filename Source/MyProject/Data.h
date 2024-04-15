@@ -77,7 +77,7 @@ struct FMyWeaponStat : public FTableRowBase
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TEnumAsByte<EMyWeaponType> WeaponType;
+	EMyWeaponType WeaponType;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FString Name;
