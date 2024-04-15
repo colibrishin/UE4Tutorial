@@ -3,13 +3,16 @@
 
 #include "MyProject/MyBuyMenuWidget.h"
 
+#include "CommonBuy.hpp"
 #include "ConstantFVector.hpp"
 #include "Data.h"
 #include "MyBuyMenuWeaponWidget.h"
 #include "MyCharacter.h"
 #include "MyGameInstance.h"
+#include "MyGameState.h"
 #include "MyInGameHUD.h"
 #include "MyPlayerController.h"
+#include "MyPlayerState.h"
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
 #include "MyWeaponDataAsset.h"
@@ -61,7 +64,9 @@ void UMyBuyMenuWidget::Open()
 		return;
 	}
 
-	if (const auto BuyTime = Cast<AMyProjectGameModeBase>(UGameplayStatics::GetGameMode(this))->HasBuyTimeEnded())
+	const auto BuyTime = Cast<AMyGameState>(UGameplayStatics::GetGameState(this));
+
+	if (!BuyTime)
 	{
 		LOG_FUNC(LogTemp, Error, "Cannot open buy menu after buy time is over");
 		return;
@@ -132,36 +137,18 @@ void UMyBuyMenuWidget::Toggle()
 	}
 }
 
-bool UMyBuyMenuWidget::Validate(const int32 ID, AMyCharacter* const& Character) const
-{
-	const auto& Instance   = Cast<UMyGameInstance>(GetGameInstance());
-	const auto& WeaponData = GetWeaponData(this, ID);
-	const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
-
-	if (WeaponData == nullptr)
-	{
-		LOG_FUNC(LogTemp, Error, "WeaponInfo is nullptr");
-		return false;
-	}
-
-	if (Character->GetStatComponent()->GetMoney() <= 0)
-	{
-		LOG_FUNC(LogTemp, Error, "Player => Not enough money");
-		return false;
-	}
-
-	if (Character->GetStatComponent()->GetMoney() - WeaponStat.Price < 0)
-	{
-		LOG_FUNC(LogTemp, Error, "Player has money but have not enough money to buy");
-		return false;
-	}
-
-	return true;
-}
-
 void UMyBuyMenuWidget::BindPlayer(AMyCharacter* Character)
 {
 	Character->GetStatComponent()->BindOnMoneyChanged(this, &UMyBuyMenuWidget::UpdateMoney);
+}
+
+void UMyBuyMenuWidget::BuyTimeEnded(bool NewBuyTime)
+{
+	if (!NewBuyTime)
+	{
+		LOG_FUNC(LogTemp, Warning, "Buy time ended");
+		Close();
+	}
 }
 
 void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
@@ -176,7 +163,7 @@ void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 
 	if (IsValid(Character))
 	{
-		if (!Validate(ID, Character)) 
+		if (!ValidateBuyRequest(ID, Character)) 
 		{
 			return;
 		}
