@@ -39,11 +39,11 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 		const auto& WeaponClass       = WeaponData->WeaponDataAsset->GetWeaponClass();
 		const auto& CharacterLocation = RequestCharacter->GetActorLocation();
 
-		RequestCharacter->GetStatComponent()->AddMoney
+		GetPlayerState<AMyPlayerState>()->AddMoney
 			(
 			 -WeaponData->WeaponDataAsset->GetWeaponStat().Price
 			);
-
+		
 		const auto& GeneratedWeapon = GetWorld()->SpawnActor
 			(
 			 WeaponClass,

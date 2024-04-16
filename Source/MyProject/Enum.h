@@ -13,9 +13,8 @@ enum class EMyWeaponType : uint8
 UENUM()
 enum class EMyCharacterState : uint8
 {
-	Idle,
-	Running,
-	Attacking,
+	Unknown,
+	Alive,
 	Planting,
 	Defusing,
 	Dead

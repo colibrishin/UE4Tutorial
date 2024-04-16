@@ -3,16 +3,17 @@
 
 #include "MyProject/MyCharacterWidget.h"
 
+#include "MyPlayerState.h"
 #include "MyStatComponent.h"
 
 #include "Components/ProgressBar.h"
 
-void UMyCharacterWidget::BindHp(UMyStatComponent* Component)
+void UMyCharacterWidget::BindHp(AMyPlayerState* State)
 {
-	Component->BindOnHPChanged(this, &UMyCharacterWidget::UpdateHpRatio);
+	State->BindOnHPChanged(this, &UMyCharacterWidget::UpdateHpRatio);
 }
 
-void UMyCharacterWidget::UpdateHpRatio(float Value) const
+void UMyCharacterWidget::UpdateHpRatio(const int32 PlayerId, const float Value) const
 {
 	if (!IsValid(HPProgressBar)) return;
 

@@ -40,24 +40,34 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	UPROPERTY(EditAnywhere)
-	class USoundWave* RoundStartSound;
-
 	void BuyTimeEnded();
 
 	UFUNCTION()
-	void OnRep_RoundProgress() const;
+	void OnRep_RoundProgress();
 
 	UFUNCTION()
 	void OnRep_CanBuy() const;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
-	bool bCanBuy;
+	void HandlePlayerStateChanged(const EMyTeam Team, const EMyCharacterState State);
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_RoundProgress)
 	EMyRoundProgress RoundProgress;
 
+	UPROPERTY(EditAnywhere)
+	class USoundWave* RoundStartSound;
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
+	bool bCanBuy;
+
 	FOnBuyChanged OnBuyChanged;
 
 	FTimerHandle BuyTimeHandle;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	int32 AliveCT;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	int32 AliveT;
+
+	TMap<int32, FDelegateHandle> PlayerStateDelegateHandles;
 };
