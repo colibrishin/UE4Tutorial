@@ -122,6 +122,33 @@ AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Pl
 	return Super::ChoosePlayerStart_Implementation(Player);
 }
 
+void AMyProjectGameModeBase::TransitTo(
+	const EMyRoundProgress NextProgress, const TMulticastDelegate<void()>& NextDelegate,
+	void(AMyProjectGameModeBase::* NextFunction)(), const float Delay, FTimerHandle& NextHandle
+)
+{
+	RoundProgress = NextProgress;
+
+	if (CurrentHandle != nullptr)
+	{
+		GetWorldTimerManager().ClearTimer(*CurrentHandle);
+	}
+
+	NextDelegate.Broadcast();
+
+	GetWorldTimerManager().SetTimer
+		(
+		 NextHandle, 
+		 this, 
+		 NextFunction, 
+		 Delay, 
+		 false
+		);
+
+	GetGameState<AMyGameState>()->SetRoundProgress(NextProgress);
+	CurrentHandle = &NextHandle;
+}
+
 void AMyProjectGameModeBase::GoToFreeze()
 {
 	LOG_FUNC(LogTemp, Warning, "Round goes to freeze");
