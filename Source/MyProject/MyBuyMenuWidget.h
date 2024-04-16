@@ -6,6 +6,7 @@
 
 #include "CoreMinimal.h"
 #include "InputCoreTypes.h"
+#include "MyPlayerState.h"
 
 #include "Blueprint/UserWidget.h"
 #include "MyBuyMenuWidget.generated.h"
@@ -25,7 +26,7 @@ public:
 	void             Toggle();
 
 	FORCEINLINE bool IsOpened() const { return IsOpen; }
-	void             BindPlayer(class AMyCharacter* Character);
+	void             BindPlayer(AMyPlayerState* State);
 	void             BuyTimeEnded(bool NewBuyTime);
 
 private:

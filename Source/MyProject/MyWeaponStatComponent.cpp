@@ -4,7 +4,9 @@
 #include "MyWeaponStatComponent.h"
 
 #include "Data.h"
+#include "MyCharacter.h"
 #include "MyGameInstance.h"
+#include "MyPlayerState.h"
 #include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 

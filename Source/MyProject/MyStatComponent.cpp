@@ -6,6 +6,7 @@
 #include "Data.h"
 #include "MyGameInstance.h"
 #include "MyInGameHUD.h"
+#include "MyPlayerState.h"
 
 #include "Engine/World.h"
 
@@ -17,9 +18,7 @@
 UMyStatComponent::UMyStatComponent()
 	: Level(1),
 	  Damage(0),
-	  Health(0),
-	  MaxHealth(0),
-	  Money(18000)
+	  MaxHealth(0)
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -28,23 +27,12 @@ UMyStatComponent::UMyStatComponent()
 	bWantsInitializeComponent = true;
 }
 
-void UMyStatComponent::AddMoney(const int32 MoneyAmount)
-{
-	Money += MoneyAmount;
-
-	// Server does not participate in the replication.
-	if (GetOwner()->HasAuthority())
-	{
-		OnMoneyChanged.Broadcast(Money);
-	}
-}
 // Called when the game starts
 void UMyStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
 	// ...
-	
 }
 
 void UMyStatComponent::InitializeComponent()
@@ -62,18 +50,6 @@ void UMyStatComponent::InitializeComponent()
 		Level     = Data->Level;
 		Damage    = Data->Damage;
 		MaxHealth = Data->MaxHealth;
-		SetHP(Data->MaxHealth);
 	}
 
-}
-
-void UMyStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UMyStatComponent, Money);
-}
-
-void UMyStatComponent::OnRep_MoneyChanged() const
-{
-	OnMoneyChanged.Broadcast(Money);
 }
