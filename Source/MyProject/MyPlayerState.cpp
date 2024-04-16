@@ -6,22 +6,70 @@
 #include "Utilities.hpp"
 
 #include "GameFramework/GameStateBase.h"
+#include "MyCharacter.h"
+#include "MyInGameHUD.h"
+#include "MyInventoryComponent.h"
+#include "MyPlayerController.h"
+#include "MyStatComponent.h"
 
 #include "Net/UnrealNetwork.h"
 
 std::mutex AMyPlayerState::TeamAssignMutex;
 
 AMyPlayerState::AMyPlayerState()
-	: Team(EMyTeam::Unknown),
+	: State(EMyCharacterState::Unknown),
+	  Team(EMyTeam::Unknown),
 	  Kill(0),
 	  Death(0),
-	  Assist(0)
+	  Assist(0),
+	  Health(0),
+	  Money(0),
+      Weapon(nullptr),
+      CurrentItem(nullptr)
 {
+	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
+	InventoryComponent = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("InventoryComponent"));
 }
 
 void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (HasLocalNetOwner())
+	{
+		const auto& PlayerController = Cast<AMyPlayerController>(GetOwner());
+
+		if (!IsValid(PlayerController))
+		{
+			LOG_FUNC(LogTemp, Error, "PlayerController is not valid");
+			return;
+		}
+
+		const auto& HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD());
+
+		if (IsValid(HUD))
+		{
+			LOG_FUNC(LogTemp, Warning, "Bind Player");
+			HUD->BindPlayer(this);
+		}
+		else
+		{
+			LOG_FUNC(LogTemp, Error, "HUD is not valid");
+		}
+	}
+}
+
+float AMyPlayerState::TakeDamage(
+	float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser
+)
+{
+	SetHP(Health - DamageAmount);
+	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+}
+
+int32 AMyPlayerState::GetDamage() const
+{
+	return StatComponent->GetDamage();
 }
 
 void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -31,6 +79,28 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, Kill);
 	DOREPLIFETIME(AMyPlayerState, Death);
 	DOREPLIFETIME(AMyPlayerState, Assist);
+	DOREPLIFETIME(AMyPlayerState, State);
+	DOREPLIFETIME(AMyPlayerState, Health);
+	DOREPLIFETIME(AMyPlayerState, Money);
+	DOREPLIFETIME(AMyPlayerState, InventoryComponent);
+	DOREPLIFETIME(AMyPlayerState, StatComponent);
+	DOREPLIFETIME(AMyPlayerState, Weapon);
+	DOREPLIFETIME(AMyPlayerState, CurrentItem);
+}
+
+void AMyPlayerState::OnRep_StateChanged() const
+{
+	OnStateChanged.Broadcast(Team, State);
+}
+
+void AMyPlayerState::OnRep_HealthChanged() const
+{
+	OnHPChanged.Broadcast(GetPlayerId(), GetHPRatio());
+}
+
+void AMyPlayerState::OnRep_MoneyChanged() const
+{
+	OnMoneyChanged.Broadcast(Money);
 }
 
 void AMyPlayerState::AssignTeam()
@@ -83,3 +153,52 @@ void AMyPlayerState::AssignTeam()
 
 	SetTeam(NewTeam);
 }
+
+void AMyPlayerState::Use(const int32 Index)
+{
+	CurrentItem = InventoryComponent->Use(Index);
+}
+
+void AMyPlayerState::SetState(const EMyCharacterState NewState)
+{
+	State = NewState;
+
+	if (HasAuthority())
+	{
+		OnStateChanged.Broadcast(Team, State);
+	}
+}
+
+float AMyPlayerState::GetHPRatio() const
+{
+	return FMath::Clamp((float)Health / (float)StatComponent->GetMaxHealth(), 0.f, 1.f);
+}
+
+void AMyPlayerState::SetHP(const int32 NewHP)
+{
+	LOG_FUNC_PRINTF(LogTemp, Warning, "SetHP: %d", NewHP);
+	Health = FMath::Clamp(NewHP, 0, StatComponent->GetMaxHealth());
+
+	if (HasAuthority())
+	{
+		OnHPChanged.Broadcast(GetPlayerId(), GetHPRatio());
+	}
+	
+}
+
+void AMyPlayerState::AddMoney(const int32 Amount)
+{
+	Money += Amount;
+
+	// Server does not participate in the replication.
+	if (HasAuthority())
+	{
+		OnMoneyChanged.Broadcast(Money);
+	}
+}
+
+void AMyPlayerState::SetWeapon(AMyWeapon* NewWeapon)
+{
+	Weapon = NewWeapon;
+}
+	
