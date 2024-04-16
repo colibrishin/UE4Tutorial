@@ -23,7 +23,13 @@ class MYPROJECT_API AMyPlayerState : public APlayerState
 public:
 	AMyPlayerState();
 
-	EMyTeam GetTeam() const { return Team; }
+	EMyTeam GetTeam() const
+	{
+		std::lock_guard<std::mutex> Lock(TeamAssignMutex);
+		return Team;
+	}
+
+	void AssignTeam();
 
 protected:
 	virtual void BeginPlay() override;
@@ -31,9 +37,14 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	void AssignTeam();
 
-	std::mutex TeamAssignMutex;
+	void SetTeam(const EMyTeam NewTeam)
+	{
+		std::lock_guard<std::mutex> Lock(TeamAssignMutex);
+		Team = NewTeam;
+	}
+
+	static std::mutex TeamAssignMutex;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	EMyTeam Team;
