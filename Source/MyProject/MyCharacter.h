@@ -39,9 +39,10 @@ public:
 	DECL_BINDON(OnUseInterrupted)
 	DECL_BINDON(OnInteractInterrupted)
 
-	class UMyInventoryComponent* GetInventory() const { return Inventory; }
-	class UMyStatComponent*      GetStatComponent() const { return StatComponent; }
-	const class AMyWeapon*       GetWeapon() const { return Weapon; }
+	class UMyInventoryComponent* GetInventory() const;
+	class UMyStatComponent* GetStatComponent() const;
+	class AMyWeapon* GetWeapon() const;
+	class AMyCollectable* GetCurrentItem() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -50,8 +51,6 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:	
 	// Called every frame
@@ -63,7 +62,7 @@ public:
 	float GetForwardInput() const { return ForwardInput; }
 	float GetRightInput() const { return RightInput; }
 
-	bool TryPickWeapon(AMyWeapon* NewWeapon);
+	bool TryPickWeapon(AMyWeapon* NewWeapon) const;
 
 	void Attack(const float Value);
 
@@ -186,18 +185,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* AnimInstance;
-
-	UPROPERTY(Replicated, VisibleAnywhere)
-	class AMyWeapon* Weapon;
-
-	UPROPERTY(VisibleAnywhere)
-	class UMyStatComponent* StatComponent;
-
-	UPROPERTY(VisibleAnywhere)
-	class UMyInventoryComponent* Inventory;
-
-	UPROPERTY(Replicated, VisibleAnywhere)
-	class AMyCollectable* CurrentItem;
 
 	FOnAttackEnded OnAttackEnded;
 
