@@ -84,7 +84,7 @@ void UMyBuyMenuWidget::Open()
 
 	if (IsValid(Character))
 	{
-		UpdateMoney(Character->GetStatComponent()->GetMoney());
+		UpdateMoney(Character->GetPlayerState<AMyPlayerState>()->GetMoney());
 	}
 
 	if (Controller->IsInState("Dead"))
@@ -137,9 +137,9 @@ void UMyBuyMenuWidget::Toggle()
 	}
 }
 
-void UMyBuyMenuWidget::BindPlayer(AMyCharacter* Character)
+void UMyBuyMenuWidget::BindPlayer(AMyPlayerState* State)
 {
-	Character->GetStatComponent()->BindOnMoneyChanged(this, &UMyBuyMenuWidget::UpdateMoney);
+	State->BindOnMoneyChanged(this, &UMyBuyMenuWidget::UpdateMoney);
 }
 
 void UMyBuyMenuWidget::BuyTimeEnded(bool NewBuyTime)

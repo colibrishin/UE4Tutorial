@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyProjectGameModeBase.h"
 
 #include "GameFramework/HUD.h"
 #include "MyInGameHUD.generated.h"
@@ -23,6 +22,7 @@ public:
 	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
 	bool IsBuyMenuOpened() const;
+	void BindPlayer(class AMyPlayerState* PlayerState) const;
 
 protected:
 	virtual void BeginPlay() override;

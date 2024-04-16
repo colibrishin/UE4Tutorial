@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyPlayerState.h"
+
 #include "Blueprint/UserWidget.h"
 #include "MyCharacterWidget.generated.h"
 
@@ -15,10 +17,10 @@ class MYPROJECT_API UMyCharacterWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void BindHp(class UMyStatComponent* Component);
+	void BindHp(AMyPlayerState* State);
 
 private:
-	void UpdateHpRatio(float Value) const;
+	void UpdateHpRatio(const int32 PlayerId, const float Value) const;
 
 	UPROPERTY(Meta=(BindWidget))
 	class UProgressBar* HPProgressBar;

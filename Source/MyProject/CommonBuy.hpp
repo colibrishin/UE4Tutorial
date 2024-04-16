@@ -21,13 +21,13 @@ inline bool ValidateBuyRequest(const int32 ID, AMyCharacter* const& Character)
 		return false;
 	}
 
-	if (Character->GetStatComponent()->GetMoney() <= 0)
+	if (Character->GetPlayerState<AMyPlayerState>()->GetMoney() <= 0)
 	{
 		LOG_FUNC(LogTemp, Error, "Player => Not enough money");
 		return false;
 	}
 
-	if (Character->GetStatComponent()->GetMoney() - WeaponStat.Price < 0)
+	if (Character->GetPlayerState<AMyPlayerState>()->GetMoney() - WeaponStat.Price < 0)
 	{
 		LOG_FUNC(LogTemp, Error, "Player has money but have not enough money to buy");
 		return false;
