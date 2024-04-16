@@ -48,8 +48,6 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
-	Inventory = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("Inventory"));
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -67,11 +65,39 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 
 	AttackIndex = 0;
 
-	Weapon = nullptr;
-
 	AIControllerClass = AMyAIController::StaticClass();
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+}
+
+UMyInventoryComponent* AMyCharacter::GetInventory() const
+{
+	const auto& State = GetPlayerState<AMyPlayerState>();
+	return State->GetInventoryComponent();
+}
+
+UMyStatComponent*      AMyCharacter::GetStatComponent() const
+{
+	const auto& State = GetPlayerState<AMyPlayerState>();
+	return State->GetStatComponent();
+}
+
+AMyWeapon* AMyCharacter::GetWeapon() const
+{
+	const auto& State = GetPlayerState<AMyPlayerState>();
+
+	if (!IsValid(State))
+	{
+		return nullptr;
+	}
+
+	return State->GetWeapon();
+}
+
+AMyCollectable* AMyCharacter::GetCurrentItem() const
+{
+	const auto& State = GetPlayerState<AMyPlayerState>();
+	return State->GetCurrentItem();
 }
 
 // Called when the game starts or when spawned
@@ -79,7 +105,6 @@ void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	GetMesh()->SetOwnerNoSee(true);
-
 }
 
 void AMyCharacter::PostInitializeComponents()
@@ -100,16 +125,19 @@ float AMyCharacter::TakeDamage(
 	float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser
 )
 {
-	StatComponent->OnDamage(Damage);
-	UE_LOG(LogTemp, Warning, TEXT("Damage: %f"), Damage);
-	return Damage;
-}
+	if (HasAuthority())
+	{
+		GetPlayerState<AMyPlayerState>()->TakeDamage
+		(
+			Damage,
+			DamageEvent,
+			EventInstigator,
+			DamageCauser
+		);
+		UE_LOG(LogTemp, Warning, TEXT("Damage: %f"), Damage);
+	}
 
-void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMyCharacter, CurrentItem);
-	DOREPLIFETIME(AMyCharacter, Weapon);
+	return Damage;
 }
 
 // Called every frame
@@ -147,9 +175,11 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 }
 
-bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
+bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon) const
 {
-	if (IsValid(Weapon))
+	const auto& State = GetPlayerState<AMyPlayerState>();
+
+	if (IsValid(State->GetWeapon()))
 	{
 		LOG_FUNC(LogTemp, Warning, "Already has weapon");
 		return false;
@@ -158,7 +188,7 @@ bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon)
 	if (IsValid(NewWeapon))
 	{
 		LOG_FUNC(LogTemp, Warning, "Weapon is valid");
-		Weapon = NewWeapon;
+		State->SetWeapon(NewWeapon);
 		return true;
 	}
 	else
@@ -175,7 +205,7 @@ void AMyCharacter::Server_Attack_Implementation(const float Value)
 		return;
 	}
 
-	if (IsValid(Weapon) && !Weapon->CanDoAttack())
+	if (IsValid(GetWeapon()) && !GetWeapon()->CanDoAttack())
 	{
 		return;
 	}
@@ -209,12 +239,12 @@ void AMyCharacter::Reload()
 
 void AMyCharacter::Server_Reload_Implementation()
 {
-	if (!IsValid(Weapon))
+	if (!IsValid(GetWeapon()))
 	{
 		return;
 	}
 
-	if (!Weapon->CanBeReloaded())
+	if (!GetWeapon()->CanBeReloaded())
 	{
 		return;
 	}
@@ -237,7 +267,7 @@ void AMyCharacter::HitscanAttack()
 	FVector EndVector = 
 		Camera->GetComponentLocation() + 
 		Camera->GetForwardVector() * 
-		Weapon->GetWeaponStatComponent()->GetRange();
+		GetWeapon()->GetWeaponStatComponent()->GetRange();
 
 	const auto& Result = GetWorld()->LineTraceSingleByChannel
 		(
@@ -308,13 +338,13 @@ void AMyCharacter::Multi_Reload_Implementation()
 
 void AMyCharacter::ReloadStart() const
 {
-	if (!IsValid(Weapon))
+	if (!IsValid(GetWeapon()))
 	{
 		return;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Reload"));
-	Weapon->Reload();
+	GetWeapon()->Reload();
 }
 
 void AMyCharacter::UpDown(const float Value)
@@ -337,12 +367,12 @@ void AMyCharacter::Aim()
 		return;
 	}
 
-	if (!IsValid(Weapon))
+	if (!IsValid(GetWeapon()))
 	{
 		return;
 	}
 
-	if (!Weapon->IsA<AMyAimableWeapon>())
+	if (!GetWeapon()->IsA<AMyAimableWeapon>())
 	{
 		return;
 	}
@@ -424,11 +454,11 @@ void AMyCharacter::AttackStart(const float Value)
 
 	constexpr int32 MaxAttackIndex = 3;
 
-	if (IsValid(Weapon))
+	if (IsValid(GetWeapon()))
 	{
 		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack with weapon, Is Client? : %d"), !HasAuthority()));
 
-		if (!Weapon->Attack())
+		if (!GetWeapon()->Attack())
 		{
 			LOG_FUNC(LogTemp, Error, "Failed to attack");
 			return;
@@ -436,14 +466,14 @@ void AMyCharacter::AttackStart(const float Value)
 
 		// todo: process client before sending rpc to server.
 
-		switch (Weapon->GetWeaponStatComponent()->GetWeaponType())
+		switch (GetWeapon()->GetWeaponStatComponent()->GetWeaponType())
 		{
 		case EMyWeaponType::Range:
 			UE_LOG(LogTemp, Warning, TEXT("Range Attack"));
 			// todo: unbind the fire when player drops.
-			OnAttackEndedHandle = Weapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+			OnAttackEndedHandle = GetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
 
-			if (Weapon->GetWeaponStatComponent()->IsHitscan())
+			if (GetWeapon()->GetWeaponStatComponent()->IsHitscan())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
 				HitscanAttack();
@@ -475,7 +505,7 @@ void AMyCharacter::ResetAttack()
 	OnAttackEnded.Broadcast();
 
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
-	Weapon->UnbindOnFireReady(OnAttackEndedHandle);
+	GetWeapon()->UnbindOnFireReady(OnAttackEndedHandle);
 }
 
 void AMyCharacter::Server_Interactive_Implementation()
@@ -575,13 +605,13 @@ void AMyCharacter::Multi_Use_Implementation()
 
 void AMyCharacter::UseStart()
 {
-	if (IsValid(CurrentItem))
+	if (IsValid(GetCurrentItem()))
 	{
-		CurrentItem->Use(this);
+		GetCurrentItem()->Use(this);
 	}
 	else
 	{
-		CurrentItem = Inventory->Use(0);
+		GetPlayerState<AMyPlayerState>()->Use(0);
 	}
 }
 
@@ -613,12 +643,14 @@ void AMyCharacter::UseInterruptStart() const
 
 int32 AMyCharacter::GetDamage() const
 {
-	if (IsValid(Weapon))
+	const auto& State = GetPlayerState<AMyPlayerState>();
+
+	if (IsValid(GetWeapon()))
 	{
-		return StatComponent->GetDamage() + Weapon->GetDamage();
+		return State->GetDamage() + GetWeapon()->GetDamage();
 	}
 
-	return StatComponent->GetDamage();
+	return State->GetDamage();
 }
 
 void AMyCharacter::OnAttackAnimNotify()

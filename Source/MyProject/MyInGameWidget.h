@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyPlayerState.h"
+
 #include "Blueprint/UserWidget.h"
 #include "MyInGameWidget.generated.h"
 
@@ -15,7 +17,7 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void BindPlayer(const class AMyCharacter* Player) const;
+	void BindPlayer(AMyPlayerState* State) const;
 	void BindBomb(const class AMyC4* Bomb) const;
 	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
