@@ -8,6 +8,7 @@
 #include "MyInGameHUD.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
+#include "MyStatComponent.h"
 
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerStart.h"
@@ -90,6 +91,19 @@ void AMyProjectGameModeBase::BeginPlay()
 void AMyProjectGameModeBase::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+}
+
+void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
+{
+	Super::PostLogin(NewPlayer);
+
+	const auto& State = NewPlayer->GetPlayerState<AMyPlayerState>();
+
+	if (IsValid(State))
+	{
+		State->SetHP(State->GetStatComponent()->GetMaxHealth());
+		State->AddMoney(18000);
+	}
 }
 
 AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
