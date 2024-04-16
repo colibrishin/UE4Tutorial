@@ -26,6 +26,13 @@ public:
 	AMyGameState();
 
 	bool CanBuy() const { return bCanBuy; }
+	void SetRoundProgress(const EMyRoundProgress NewProgress)
+	{
+		if (HasAuthority())
+		{
+			RoundProgress = NewProgress;
+		}
+	}
 
 protected:
 	virtual void BeginPlay() override;
@@ -33,13 +40,22 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	UPROPERTY(EditAnywhere)
+	class USoundWave* RoundStartSound;
+
 	void BuyTimeEnded();
+
+	UFUNCTION()
+	void OnRep_RoundProgress() const;
 
 	UFUNCTION()
 	void OnRep_CanBuy() const;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
 	bool bCanBuy;
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_RoundProgress)
+	EMyRoundProgress RoundProgress;
 
 	FOnBuyChanged OnBuyChanged;
 

@@ -9,6 +9,8 @@
 
 #include "Net/UnrealNetwork.h"
 
+std::mutex AMyPlayerState::TeamAssignMutex;
+
 AMyPlayerState::AMyPlayerState()
 	: Team(EMyTeam::Unknown),
 	  Kill(0),
@@ -20,11 +22,6 @@ AMyPlayerState::AMyPlayerState()
 void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (HasAuthority())
-	{
-		AssignTeam();
-	}
 }
 
 void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -38,8 +35,6 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void AMyPlayerState::AssignTeam()
 {
-	std::lock_guard<std::mutex> Lock(TeamAssignMutex);
-
 	if (!HasAuthority())
 	{
 		LOG_FUNC(LogTemp, Error, "This function should be called on server");
@@ -55,22 +50,24 @@ void AMyPlayerState::AssignTeam()
 	{
 		const auto& PlayerState = Cast<AMyPlayerState>(Player);
 
-		if (PlayerState->Team == EMyTeam::CT)
+		if (PlayerState->GetTeam() == EMyTeam::CT)
 		{
 			CTCount++;
 		}
-		else if (PlayerState->Team == EMyTeam::T)
+		else if (PlayerState->GetTeam() == EMyTeam::T)
 		{
 			TCount++;
 		}
 	}
 
+	LOG_FUNC_PRINTF(LogTemp, Warning, "CT: %d, T: %d", CTCount, TCount);
+
 	EMyTeam NewTeam = EMyTeam::Unknown;
 
 	if (CTCount == TCount)
 	{
-		LOG_FUNC(LogTemp, Warning, "Randomly assign team");
-		NewTeam = FMath::RandBool() ? EMyTeam::CT : EMyTeam::T;
+		NewTeam = static_cast<EMyTeam>(FMath::RandRange(1, 2));
+		LOG_FUNC_PRINTF(LogTemp, Warning, "Assign team randomly : %d, %s", NewTeam, *EnumToString(NewTeam));
 	}
 
 	if (CTCount < TCount)
@@ -84,5 +81,5 @@ void AMyPlayerState::AssignTeam()
 		NewTeam = EMyTeam::T;
 	}
 
-	Team = NewTeam;
+	SetTeam(NewTeam);
 }

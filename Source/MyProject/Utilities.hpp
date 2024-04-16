@@ -135,8 +135,17 @@ FORCEINLINE void ExecuteServer(
 }
 
 template<typename T>
-static FString EnumToString(const T Value)
+inline static FString EnumToString(const T Value)
 {
-	const UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, TEXT(STRINGIFY(T)));
+	std::string TypeName = typeid(T).name();
+	TypeName = TypeName.substr(TypeName.find_last_of(' ') + 1);
+
+	if (const auto& Namespace = TypeName.find_last_of(':'))
+	{
+		TypeName = TypeName.substr(Namespace + 1);
+	}
+
+	const std::wstring TypeNameW = std::wstring(TypeName.begin(), TypeName.end());
+	const UEnum* Enum = FindObject<UEnum>(ANY_PACKAGE, TypeNameW.c_str());
 	return *(Enum ? Enum->GetNameStringByIndex(static_cast<uint8>(Value)) : "null");
 }

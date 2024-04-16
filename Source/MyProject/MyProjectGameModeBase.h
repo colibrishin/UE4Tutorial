@@ -51,28 +51,7 @@ private:
 		void (AMyProjectGameModeBase::*   NextFunction)(),
 		const float                       Delay,
 		FTimerHandle&                     NextHandle
-	)
-	{
-		RoundProgress = NextProgress;
-
-		if (CurrentHandle != nullptr)
-		{
-			GetWorldTimerManager().ClearTimer(*CurrentHandle);
-		}
-
-		NextDelegate.Broadcast();
-
-		GetWorldTimerManager().SetTimer
-		(
-			NextHandle, 
-			this, 
-			NextFunction, 
-			Delay, 
-			false
-		);
-
-		CurrentHandle = &NextHandle;
-	}
+	);
 
 	UPROPERTY(VisibleAnywhere)
 	EMyRoundProgress RoundProgress;
