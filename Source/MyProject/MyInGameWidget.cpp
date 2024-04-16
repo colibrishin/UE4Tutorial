@@ -10,13 +10,13 @@
 #include "MyCharacterWidget.h"
 #include "MyRoundTimeWidget.h"
 
-void UMyInGameWidget::BindPlayer(const AMyCharacter* Player) const
+void UMyInGameWidget::BindPlayer(AMyPlayerState* State) const
 {
-	if (IsValid(Player))
+	if (IsValid(State))
 	{
 		if (CharacterWidget)
 		{
-			CharacterWidget->BindHp(Player->GetStatComponent());
+			CharacterWidget->BindHp(State);
 		}
 	}
 }

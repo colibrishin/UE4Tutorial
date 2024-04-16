@@ -72,6 +72,18 @@ bool AMyInGameHUD::IsBuyMenuOpened() const
 	return false;
 }
 
+void AMyInGameHUD::BindPlayer(AMyPlayerState* PlayerState) const
+{
+	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
+	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
+	
+	if (Widget)
+	{
+		Widget->BindPlayer(PlayerState);
+		BuyMenuWidget->BindPlayer(PlayerState);
+	}
+}
+
 void AMyInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -80,21 +92,20 @@ void AMyInGameHUD::BeginPlay()
 	EnableInput(Controller);
 	const auto& Character = Cast<AMyCharacter>(GetOwningPawn());
 
+	const auto& PlayerState = Cast<AMyPlayerState>(Controller->PlayerState);
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
-
-	if (Widget)
-	{
-		Widget->AddToViewport();
-		Widget->BindPlayer(Cast<AMyCharacter>(GetOwningPawn()));
-	}
 
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
 	const auto& GameState = Cast<AMyGameState>(UGameplayStatics::GetGameState(this));
 
+	if (Widget)
+	{
+		Widget->AddToViewport();
+	}
+
 	if (BuyMenuWidget && GameState)
 	{
 		BuyMenuWidget->Populate();
-		BuyMenuWidget->BindPlayer(Character);
 		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
 		GameState->BindOnBuyChanged(BuyMenuWidget, &UMyBuyMenuWidget::BuyTimeEnded);
 	}
