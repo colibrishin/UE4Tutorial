@@ -97,11 +97,19 @@ AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Pl
 	if (IsValid(Player))
 	{
 		const auto& PlayerState = Cast<AMyPlayerState>(Player->PlayerState);
-		const auto& Team = PlayerState->GetTeam();
+		auto Team = PlayerState->GetTeam();
+
+		if (HasAuthority() && Team == EMyTeam::Unknown)
+		{
+			PlayerState->AssignTeam();
+			Team = PlayerState->GetTeam();
+		}
 
 		TArray<AActor*> PlayerStarts;
+		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
 
-		UGameplayStatics::GetAllActorsOfClass(this, TSubclassOf<APlayerStart>(), PlayerStarts);
+		LOG_FUNC_PRINTF(LogTemp, Warning, "PlayerStarts Count: %d", PlayerStarts.Num());
+		LOG_FUNC_PRINTF(LogTemp, Warning, "Player Team: %s", *EnumToString(Team));
 
 		for (const auto& PlayerStart : PlayerStarts)
 		{
@@ -120,6 +128,33 @@ AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Pl
 
 
 	return Super::ChoosePlayerStart_Implementation(Player);
+}
+
+void AMyProjectGameModeBase::TransitTo(
+	const EMyRoundProgress NextProgress, const TMulticastDelegate<void()>& NextDelegate,
+	void(AMyProjectGameModeBase::* NextFunction)(), const float Delay, FTimerHandle& NextHandle
+)
+{
+	RoundProgress = NextProgress;
+
+	if (CurrentHandle != nullptr)
+	{
+		GetWorldTimerManager().ClearTimer(*CurrentHandle);
+	}
+
+	NextDelegate.Broadcast();
+
+	GetWorldTimerManager().SetTimer
+		(
+		 NextHandle, 
+		 this, 
+		 NextFunction, 
+		 Delay, 
+		 false
+		);
+
+	GetGameState<AMyGameState>()->SetRoundProgress(NextProgress);
+	CurrentHandle = &NextHandle;
 }
 
 void AMyProjectGameModeBase::GoToFreeze()
