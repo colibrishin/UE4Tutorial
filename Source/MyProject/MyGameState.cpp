@@ -3,11 +3,16 @@
 
 #include "MyProject/MyGameState.h"
 
+#include "MyProjectGameModeBase.h"
+
 #include "Net/UnrealNetwork.h"
 
 AMyGameState::AMyGameState()
-	: bCanBuy(false)
+	: bCanBuy(false),
+	  RoundProgress(EMyRoundProgress::Unknown)
 {
+	static ConstructorHelpers::FObjectFinder<USoundWave> RoundStartSoundFinder(TEXT("SoundWave'/Game/Models/sounds/moveout.moveout'"));
+	RoundStartSound = RoundStartSoundFinder.Object;
 }
 
 void AMyGameState::BuyTimeEnded()
@@ -17,6 +22,14 @@ void AMyGameState::BuyTimeEnded()
 	if (HasAuthority())
 	{
 		OnBuyChanged.Broadcast(bCanBuy);
+	}
+}
+
+void AMyGameState::OnRep_RoundProgress() const
+{
+	if (RoundProgress == EMyRoundProgress::Playing)
+	{
+		UGameplayStatics::PlaySound2D(this, RoundStartSound);
 	}
 }
 
@@ -48,4 +61,5 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyGameState, bCanBuy);
+	DOREPLIFETIME(AMyGameState, RoundProgress);
 }
