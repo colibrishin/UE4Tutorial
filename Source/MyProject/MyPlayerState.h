@@ -60,17 +60,14 @@ public:
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	int32         GetDamage() const;
 
+	virtual void Reset() override;
+
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	void HandleRoundProgress(EMyRoundProgress RoundProgress) const;
-
-	UFUNCTION(Server, Reliable)
-	void Server_HandleRoundProgress(class AMyCharacter* Character) const;
-
 	UFUNCTION()
 	void OnRep_StateChanged() const;
 
