@@ -3,6 +3,7 @@
 
 #include "MyProjectGameModeBase.h"
 
+#include "CommonRoundProgress.hpp"
 #include "MyCharacter.h"
 #include "MyGameState.h"
 #include "MyInGameHUD.h"
@@ -18,8 +19,7 @@
 #include "Net/UnrealNetwork.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
-	: RoundProgress(EMyRoundProgress::Unknown),
-	  CurrentHandle(nullptr)
+	: CurrentHandle(nullptr)
 {
 	// StaticClass, 컴파일 타임 타입
 	// GetClass, 런타임 타입 (Base class 포인터)
@@ -45,7 +45,9 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 
 void AMyProjectGameModeBase::NextRound()
 {
-	if (RoundProgress == EMyRoundProgress::PostRound)
+	const auto& MyGameState = GetGameState<AMyGameState>();
+
+	if (MyGameState->GetState() == EMyRoundProgress::PostRound)
 	{
 		TArray<AActor*> Players;
 		UGameplayStatics::GetAllActorsOfClass(this, AMyCharacter::StaticClass(), Players);
@@ -67,7 +69,9 @@ void AMyProjectGameModeBase::NextRound()
 
 void AMyProjectGameModeBase::OnRoundTimeRanOut()
 {
-	if (RoundProgress == EMyRoundProgress::Playing)
+	const auto& MyGameState = GetGameState<AMyGameState>();
+
+	if (MyGameState->GetState() == EMyRoundProgress::Playing)
 	{
 		GoToRoundEnd();
 	}
@@ -75,7 +79,9 @@ void AMyProjectGameModeBase::OnRoundTimeRanOut()
 
 void AMyProjectGameModeBase::OnFreezeEnded()
 {
-	if (RoundProgress == EMyRoundProgress::FreezeTime)
+	const auto& MyGameState = GetGameState<AMyGameState>();
+
+	if (MyGameState->GetState() == EMyRoundProgress::FreezeTime)
 	{
 		GoToRound();
 	}
@@ -97,21 +103,34 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
 
-	const auto& State = NewPlayer->GetPlayerState<AMyPlayerState>();
+	const auto& PlayerState = NewPlayer->GetPlayerState<AMyPlayerState>();
 
-	if (IsValid(State))
+	if (!IsValid(PlayerState))
 	{
-		State->SetHP(State->GetStatComponent()->GetMaxHealth());
-		State->AddMoney(18000);
+		LOG_FUNC(LogTemp, Error, "PlayerState is not valid");
+		return;
 	}
+
+	PlayerState->SetHP(PlayerState->GetStatComponent()->GetMaxHealth());
+	PlayerState->AddMoney(18000);
+
+	const auto& MyGameState = GetGameState<AMyGameState>();
+
+	if (!IsValid(MyGameState))
+	{
+		LOG_FUNC(LogTemp, Error, "GameState is not valid");
+		return;
+	}
+
+	HandleRoundProgressChanged(Cast<AMyCharacter>(NewPlayer->GetCharacter()), MyGameState->GetState());
 }
 
-AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
+AActor* AMyProjectGameModeBase::PickPlayerStart(AController* Player) const
 {
 	if (IsValid(Player))
 	{
 		const auto& PlayerState = Cast<AMyPlayerState>(Player->PlayerState);
-		auto Team = PlayerState->GetTeam();
+		auto        Team        = PlayerState->GetTeam();
 
 		if (HasAuthority() && Team == EMyTeam::Unknown)
 		{
@@ -140,8 +159,14 @@ AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Pl
 		}
 	}
 
+	return nullptr;
+}
 
-	return Super::ChoosePlayerStart_Implementation(Player);
+AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Player)
+{
+	const auto& Start = PickPlayerStart(Player);
+
+	return IsValid(Start) ? Start : Super::ChoosePlayerStart_Implementation(Player);
 }
 
 void AMyProjectGameModeBase::TransitTo(
@@ -149,8 +174,6 @@ void AMyProjectGameModeBase::TransitTo(
 	void(AMyProjectGameModeBase::* NextFunction)(), const float Delay, FTimerHandle& NextHandle
 )
 {
-	RoundProgress = NextProgress;
-
 	if (CurrentHandle != nullptr)
 	{
 		GetWorldTimerManager().ClearTimer(*CurrentHandle);
