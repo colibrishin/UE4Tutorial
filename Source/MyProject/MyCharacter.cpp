@@ -440,6 +440,18 @@ void AMyCharacter::Attack(const float Value)
 		);
 }
 
+void AMyCharacter::Respawn()
+{
+	LOG_FUNC(LogTemp, Warning, "Destroy Character");
+	Destroy();
+
+	if (const auto& GameMode = GetWorld()->GetAuthGameMode<AMyProjectGameModeBase>())
+	{
+		LOG_FUNC(LogTemp, Warning, "Respawn");
+		GameMode->RestartPlayer(Controller);
+	}
+}
+
 void AMyCharacter::Multi_Attack_Implementation(const float Value)
 {
 	AttackStart(Value);
@@ -644,6 +656,11 @@ void AMyCharacter::UseInterruptStart() const
 int32 AMyCharacter::GetDamage() const
 {
 	const auto& State = GetPlayerState<AMyPlayerState>();
+
+	if (!IsValid(State))
+	{
+		return 0;
+	}
 
 	if (IsValid(GetWeapon()))
 	{
