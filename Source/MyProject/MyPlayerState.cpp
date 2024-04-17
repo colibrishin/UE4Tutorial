@@ -3,7 +3,6 @@
 
 #include "MyProject/MyPlayerState.h"
 
-#include "CommonRoundProgress.hpp"
 #include "Utilities.hpp"
 
 #include "GameFramework/GameStateBase.h"
@@ -60,17 +59,6 @@ void AMyPlayerState::BeginPlay()
 		{
 			LOG_FUNC(LogTemp, Error, "HUD is not valid");
 		}
-
-		const auto& GameState = GetWorld()->GetGameState<AMyGameState>();
-
-		if (IsValid(GameState))
-		{
-			GameState->BindOnRoundProgressChanged(this, &AMyPlayerState::HandleRoundProgress);
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Error, "GameState is not valid");
-		}
 	}
 }
 
@@ -87,6 +75,23 @@ int32 AMyPlayerState::GetDamage() const
 	return StatComponent->GetDamage();
 }
 
+void AMyPlayerState::Reset()
+{
+	Super::Reset();
+
+	LOG_FUNC(LogTemp, Warning, "Reset PlayerState");
+
+	if (State != EMyCharacterState::Alive)
+	{
+		Weapon = nullptr;
+		CurrentItem = nullptr;
+	}
+
+	SetState(EMyCharacterState::Alive);
+	SetHP(StatComponent->GetMaxHealth());
+	// todo: Add money by winning or losing
+}
+
 void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -101,36 +106,6 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, StatComponent);
 	DOREPLIFETIME(AMyPlayerState, Weapon);
 	DOREPLIFETIME(AMyPlayerState, CurrentItem);
-}
-
-void AMyPlayerState::HandleRoundProgress(EMyRoundProgress RoundProgress) const
-{
-	const auto& MyController = Cast<AMyPlayerController>(GetOwner());
-	const auto& MyCharacter = Cast<AMyCharacter>(MyController->GetPawn());
-
-	if (!HasAuthority())
-	{
-		Server_HandleRoundProgress(MyCharacter);
-	}
-	else
-	{
-		const auto& GameState = GetWorld()->GetGameState<AMyGameState>();
-
-		if (!IsValid(GameState))
-		{
-			LOG_FUNC(LogTemp, Error, "GameState is not valid");
-			return;
-		}
-
-		HandleRoundProgressChanged(MyCharacter, GameState->GetState());
-	}
-}
-
-void AMyPlayerState::Server_HandleRoundProgress_Implementation(AMyCharacter* Character) const
-{
-	const auto& GameState = GetWorld()->GetGameState<AMyGameState>();
-
-	HandleRoundProgressChanged(Character, GameState->GetState());
 }
 
 void AMyPlayerState::OnRep_StateChanged() const
@@ -226,6 +201,12 @@ void AMyPlayerState::SetHP(const int32 NewHP)
 
 	if (HasAuthority())
 	{
+		if (Health <= 0 && State != EMyCharacterState::Dead)
+		{
+			Death++;
+			SetState(EMyCharacterState::Dead);
+		}
+
 		OnHPChanged.Broadcast(GetPlayerId(), GetHPRatio());
 	}
 	

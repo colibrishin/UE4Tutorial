@@ -3,7 +3,7 @@
 
 #include "MyProjectGameModeBase.h"
 
-#include "CommonRoundProgress.hpp"
+#include "AIController.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
 #include "MyInGameHUD.h"
@@ -19,7 +19,6 @@
 #include "Net/UnrealNetwork.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
-	: CurrentHandle(nullptr)
 {
 	// StaticClass, 컴파일 타임 타입
 	// GetClass, 런타임 타입 (Base class 포인터)
@@ -43,55 +42,10 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 	PlayerStateClass = AMyPlayerState::StaticClass();
 }
 
-void AMyProjectGameModeBase::NextRound()
-{
-	const auto& MyGameState = GetGameState<AMyGameState>();
-
-	if (MyGameState->GetState() == EMyRoundProgress::PostRound)
-	{
-		TArray<AActor*> Players;
-		UGameplayStatics::GetAllActorsOfClass(this, AMyCharacter::StaticClass(), Players);
-
-		for (const auto& Player : Players)
-		{
-			const auto& MyController = Cast<AMyPlayerController>(
-				Player->GetNetOwningPlayer()->GetPlayerController(GetWorld()));
-
-			if (IsValid(MyController))
-			{
-				RestartPlayer(MyController);
-			}
-		}
-
-		GoToFreeze();
-	}
-}
-
-void AMyProjectGameModeBase::OnRoundTimeRanOut()
-{
-	const auto& MyGameState = GetGameState<AMyGameState>();
-
-	if (MyGameState->GetState() == EMyRoundProgress::Playing)
-	{
-		GoToRoundEnd();
-	}
-}
-
-void AMyProjectGameModeBase::OnFreezeEnded()
-{
-	const auto& MyGameState = GetGameState<AMyGameState>();
-
-	if (MyGameState->GetState() == EMyRoundProgress::FreezeTime)
-	{
-		GoToRound();
-	}
-}
 
 void AMyProjectGameModeBase::BeginPlay()
 {
 	Super::BeginPlay();
-
-	GoToFreeze();
 }
 
 void AMyProjectGameModeBase::Tick(float DeltaSeconds)
@@ -122,7 +76,28 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	HandleRoundProgressChanged(Cast<AMyCharacter>(NewPlayer->GetCharacter()), MyGameState->GetState());
+	PlayerState->BindOnStateChanged(MyGameState, &AMyGameState::HandlePlayerStateChanged);
+	PlayerState->SetState(EMyCharacterState::Alive);
+
+	if (!IsValid(MyGameState))
+	{
+		LOG_FUNC(LogTemp, Error, "GameState is not valid");
+		return;
+	}
+
+	if (MyGameState->GetState() == EMyRoundProgress::Unknown &&
+		 MyGameState->GetCTCount() > 0 &&
+		 MyGameState->GetTCount() > 0)
+	{
+		LOG_FUNC(LogTemp, Warning, "Restart Round");
+		MyGameState->Reset();
+		MyGameState->RestartRound();
+	}
+}
+
+void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
+{
+	Super::RestartPlayer(NewPlayer);
 }
 
 AActor* AMyProjectGameModeBase::PickPlayerStart(AController* Player) const
@@ -169,66 +144,3 @@ AActor* AMyProjectGameModeBase::ChoosePlayerStart_Implementation(AController* Pl
 	return IsValid(Start) ? Start : Super::ChoosePlayerStart_Implementation(Player);
 }
 
-void AMyProjectGameModeBase::TransitTo(
-	const EMyRoundProgress NextProgress, const TMulticastDelegate<void()>& NextDelegate,
-	void(AMyProjectGameModeBase::* NextFunction)(), const float Delay, FTimerHandle& NextHandle
-)
-{
-	if (CurrentHandle != nullptr)
-	{
-		GetWorldTimerManager().ClearTimer(*CurrentHandle);
-	}
-
-	NextDelegate.Broadcast();
-
-	GetWorldTimerManager().SetTimer
-		(
-		 NextHandle, 
-		 this, 
-		 NextFunction, 
-		 Delay, 
-		 false
-		);
-
-	GetGameState<AMyGameState>()->SetRoundProgress(NextProgress);
-	CurrentHandle = &NextHandle;
-}
-
-void AMyProjectGameModeBase::GoToFreeze()
-{
-	LOG_FUNC(LogTemp, Warning, "Round goes to freeze");
-	TransitTo
-	(
-		EMyRoundProgress::FreezeTime,
-		OnFreezeStarted,
-		&AMyProjectGameModeBase::OnFreezeEnded,
-		MatchFreezeTime,
-		FreezeTimerHandle
-	);
-}
-
-void AMyProjectGameModeBase::GoToRound()
-{
-	LOG_FUNC(LogTemp, Warning, "Round goes to playing");
-	TransitTo
-	(
-		EMyRoundProgress::Playing,
-		OnRoundStarted,
-		&AMyProjectGameModeBase::OnRoundTimeRanOut,
-		MatchRoundTime,
-		RoundTimerHandle
-	);
-}
-
-void AMyProjectGameModeBase::GoToRoundEnd()
-{
-	LOG_FUNC(LogTemp, Warning, "Round goes to post round");
-	TransitTo
-	(
-		EMyRoundProgress::PostRound,
-		OnRoundEnded,
-		&AMyProjectGameModeBase::NextRound,
-		MatchRoundEndDelay,
-		RoundEndTimerHandle
-	);
-}
