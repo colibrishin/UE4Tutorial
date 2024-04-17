@@ -66,6 +66,11 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	void HandleRoundProgress(EMyRoundProgress RoundProgress) const;
+
+	UFUNCTION(Server, Reliable)
+	void Server_HandleRoundProgress(class AMyCharacter* Character) const;
+
 	UFUNCTION()
 	void OnRep_StateChanged() const;
 
