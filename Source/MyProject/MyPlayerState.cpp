@@ -3,14 +3,18 @@
 
 #include "MyProject/MyPlayerState.h"
 
+#include "CommonRoundProgress.hpp"
 #include "Utilities.hpp"
 
 #include "GameFramework/GameStateBase.h"
 #include "MyCharacter.h"
+#include "MyGameState.h"
 #include "MyInGameHUD.h"
 #include "MyInventoryComponent.h"
 #include "MyPlayerController.h"
 #include "MyStatComponent.h"
+
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -56,6 +60,17 @@ void AMyPlayerState::BeginPlay()
 		{
 			LOG_FUNC(LogTemp, Error, "HUD is not valid");
 		}
+
+		const auto& GameState = GetWorld()->GetGameState<AMyGameState>();
+
+		if (IsValid(GameState))
+		{
+			GameState->BindOnRoundProgressChanged(this, &AMyPlayerState::HandleRoundProgress);
+		}
+		else
+		{
+			LOG_FUNC(LogTemp, Error, "GameState is not valid");
+		}
 	}
 }
 
@@ -86,6 +101,36 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, StatComponent);
 	DOREPLIFETIME(AMyPlayerState, Weapon);
 	DOREPLIFETIME(AMyPlayerState, CurrentItem);
+}
+
+void AMyPlayerState::HandleRoundProgress(EMyRoundProgress RoundProgress) const
+{
+	const auto& MyController = Cast<AMyPlayerController>(GetOwner());
+	const auto& MyCharacter = Cast<AMyCharacter>(MyController->GetPawn());
+
+	if (!HasAuthority())
+	{
+		Server_HandleRoundProgress(MyCharacter);
+	}
+	else
+	{
+		const auto& GameState = GetWorld()->GetGameState<AMyGameState>();
+
+		if (!IsValid(GameState))
+		{
+			LOG_FUNC(LogTemp, Error, "GameState is not valid");
+			return;
+		}
+
+		HandleRoundProgressChanged(MyCharacter, GameState->GetState());
+	}
+}
+
+void AMyPlayerState::Server_HandleRoundProgress_Implementation(AMyCharacter* Character) const
+{
+	const auto& GameState = GetWorld()->GetGameState<AMyGameState>();
+
+	HandleRoundProgressChanged(Character, GameState->GetState());
 }
 
 void AMyPlayerState::OnRep_StateChanged() const
