@@ -8,11 +8,6 @@
 #include "GameFramework/GameMode.h"
 #include "MyProjectGameModeBase.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnFreezeStarted)
-DECLARE_MULTICAST_DELEGATE(FOnRoundStarted)
-DECLARE_MULTICAST_DELEGATE(FOnRoundEnded)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged, EMyRoundProgress)
-
 /**
  * 
  */
@@ -28,49 +23,19 @@ public:
 
 	AMyProjectGameModeBase();
 
-	DECL_BINDON(OnRoundProgressChanged, EMyRoundProgress)
-	DECL_BINDON(OnFreezeStarted)
-	DECL_BINDON(OnRoundStarted)
-	DECL_BINDON(OnRoundEnded)
+	virtual void RestartPlayer(AController* NewPlayer) override;
 
 protected:
-	void         NextRound();
-	void         OnRoundTimeRanOut();
-	void         OnFreezeEnded();
-
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaSeconds) override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
+
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
 private:
 	AActor*      PickPlayerStart(AController* Player) const;
-
-	FORCEINLINE void TransitTo
-	(
-		const EMyRoundProgress            NextProgress,
-		const TMulticastDelegate<void()>& NextDelegate,
-		void (AMyProjectGameModeBase::*   NextFunction)(),
-		const float                       Delay,
-		FTimerHandle&                     NextHandle
-	);
-
-	FOnRoundProgressChanged OnRoundProgressChanged;
-
-	FOnFreezeStarted OnFreezeStarted;
-	FOnRoundStarted OnRoundStarted;
-	FOnRoundEnded OnRoundEnded;
-
-	FTimerHandle* CurrentHandle;
-	FTimerHandle FreezeTimerHandle;
-	FTimerHandle RoundTimerHandle;
-	FTimerHandle RoundEndTimerHandle;
-
-	void GoToFreeze();
-	void GoToRound();
-	void GoToRoundEnd();
 
 };

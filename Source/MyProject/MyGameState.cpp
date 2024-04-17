@@ -11,18 +11,47 @@
 #include "MyStatComponent.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/PlayerStart.h"
 
 #include "Net/UnrealNetwork.h"
 
 AMyGameState::AMyGameState()
 	: RoundProgress(EMyRoundProgress::Unknown),
+	  Winner(EMyTeam::Unknown),
+	  CTWinCount(0),
+	  TWinCount(0),
+	  CTRoundWinSound(nullptr),
+	  TRoundWinSound(nullptr),
 	  bCanBuy(false),
+	  LastRoundInWorldTime(0),
 	  AliveCT(0),
-	  AliveT(0)
+	  AliveT(0),
+	  CurrentHandle(nullptr)
 {
 	static ConstructorHelpers::FObjectFinder<USoundWave> RoundStartSoundFinder
 		(TEXT("SoundWave'/Game/Models/sounds/moveout.moveout'"));
-	RoundStartSound = RoundStartSoundFinder.Object;
+
+	if (RoundStartSoundFinder.Succeeded()) { RoundStartSound = RoundStartSoundFinder.Object; }
+
+	static ConstructorHelpers::FObjectFinder<USoundWave> CTRoundWinSoundFinder
+		(
+		 TEXT
+		 (
+		  "SoundWave'/Game/Models/sounds/counter-terrorist-win-cs-go-sound-effect-made-with-Voicemod.counter-terrorist-win-cs-go-sound-effect-made-with-Voicemod'"
+		 )
+		);
+
+	if (CTRoundWinSoundFinder.Succeeded()) { CTRoundWinSound = CTRoundWinSoundFinder.Object; }
+
+	static ConstructorHelpers::FObjectFinder<USoundWave> TRoundWinSoundFinder
+		(
+		 TEXT
+		 (
+		  "SoundWave'/Game/Models/sounds/terrorists-win-cs-go-sound-effect-made-with-Voicemod.terrorists-win-cs-go-sound-effect-made-with-Voicemod'"
+		 )
+		);
+
+	if (TRoundWinSoundFinder.Succeeded()) { TRoundWinSound = TRoundWinSoundFinder.Object; }
 }
 
 void AMyGameState::BuyTimeEnded()
@@ -35,11 +64,21 @@ void AMyGameState::BuyTimeEnded()
 	}
 }
 
+void AMyGameState::OnRep_WinnerSet()
+{
+	if (Winner != EMyTeam::Unknown)
+	{
+		UGameplayStatics::PlaySound2D(this, Winner == EMyTeam::CT ? CTRoundWinSound : TRoundWinSound);
+	}
+
+	OnWinnerSet.Broadcast(Winner);
+}
+
 void AMyGameState::OnRep_RoundProgress()
 {
 	if (RoundProgress == EMyRoundProgress::Playing)
 	{
-		UGameplayStatics::PlaySound2D(this , RoundStartSound);
+		UGameplayStatics::PlaySound2D(this, RoundStartSound);
 	}
 
 	OnRoundProgressChanged.Broadcast(RoundProgress);
@@ -59,13 +98,11 @@ void AMyGameState::HandlePlayerStateChanged(const EMyTeam Team, const EMyCharact
 		case EMyCharacterState::Alive:
 			switch (Team)
 			{
-			case EMyTeam::CT: ++AliveCT;
-				break;
-			case EMyTeam::T: ++AliveT;
-				break;
-			case EMyTeam::Unknown: break;
-			}
-			break;
+			case EMyTeam::CT: ++AliveCT; break;
+			case EMyTeam::T: ++AliveT; break;
+			case EMyTeam::Unknown:
+			default: break;
+			}	
 		case EMyCharacterState::Planting: 
 			break;
 		case EMyCharacterState::Defusing: 
@@ -83,6 +120,64 @@ void AMyGameState::HandlePlayerStateChanged(const EMyTeam Team, const EMyCharact
 		case EMyCharacterState::Unknown:
 		default: break;
 		}
+
+		LOG_FUNC_PRINTF(LogTemp, Warning, "AliveCT: %d, AliveT: %d", AliveCT, AliveT);
+
+		if (RoundProgress == EMyRoundProgress::Playing && AliveCT <= 0)
+		{
+			SetWinner(EMyTeam::T);
+			SetRoundProgress(EMyRoundProgress::PostRound);
+		}
+		else if (RoundProgress == EMyRoundProgress::Playing && AliveT <= 0)
+		{
+			SetWinner(EMyTeam::CT);
+			SetRoundProgress(EMyRoundProgress::PostRound);
+		}
+	}
+}
+
+void AMyGameState::HandleRoundProgress() const
+{
+	if (HasAuthority())
+	{
+		if (RoundProgress == EMyRoundProgress::FreezeTime)
+		{
+			LOG_FUNC(LogTemp, Warning, "FreezeTime");
+
+			for (const auto& Player : PlayerArray)
+			{
+				const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
+				const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
+
+				if (!IsValid(Character))
+				{
+					continue;
+				}
+
+				LOG_FUNC(LogTemp, Warning, "SetMovementMode to None");
+				Character->GetCharacterMovement()->SetMovementMode(MOVE_None);
+			}
+		}
+		else if (RoundProgress == EMyRoundProgress::Playing)
+		{
+			UGameplayStatics::PlaySound2D(this, RoundStartSound);
+
+			LOG_FUNC(LogTemp, Warning, "Playing");
+
+			for (const auto& Player : PlayerArray)
+			{
+				const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
+				const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
+
+				if (!IsValid(Character))
+				{
+					continue;
+				}
+
+				LOG_FUNC(LogTemp, Warning, "SetMovementMode to Walking");
+				Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+			}
+		}
 	}
 }
 
@@ -91,6 +186,7 @@ void AMyGameState::SetRoundProgress(const EMyRoundProgress NewProgress)
 	if (HasAuthority())
 	{
 		RoundProgress = NewProgress;
+		HandleRoundProgress();
 
 		OnRoundProgressChanged.Broadcast(RoundProgress);
 	}
@@ -102,19 +198,19 @@ void AMyGameState::BeginPlay()
 
 	if (HasAuthority())
 	{
-		bCanBuy = true;
-
-		GetWorldTimerManager().SetTimer
-		(
-			BuyTimeHandle, 
-			this, 
-			&AMyGameState::BuyTimeEnded, 
-			MatchBuyTime, 
-			false
-		);
+		Reset();
 	}
+}
 
-	//SetLifeSpan(AMyProjectGameModeBase::MatchRoundTime);
+void AMyGameState::Reset()
+{
+	Super::Reset();
+	RoundProgress = EMyRoundProgress::Unknown;
+	CTWinCount = 0;
+	TWinCount = 0;
+	Winner = EMyTeam::Unknown;
+	bCanBuy = true;
+	LastRoundInWorldTime = GetServerWorldTimeSeconds();
 }
 
 void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -124,4 +220,154 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AMyGameState, RoundProgress);
 	DOREPLIFETIME(AMyGameState, AliveCT);
 	DOREPLIFETIME(AMyGameState, AliveT);
+	DOREPLIFETIME(AMyGameState, LastRoundInWorldTime);
+	DOREPLIFETIME(AMyGameState, Winner);
+	DOREPLIFETIME(AMyGameState, CTWinCount);
+	DOREPLIFETIME(AMyGameState, TWinCount);
+}
+
+void AMyGameState::RestartRound()
+{
+	if (!HasAuthority())
+	{
+		LOG_FUNC(LogTemp, Error, "This function should be called on server");
+		return;
+	}
+
+	LOG_FUNC(LogTemp, Warning, "Restarting Round");
+	SetWinner(EMyTeam::Unknown);
+
+	AliveCT = 0;
+	AliveT = 0;
+
+	for (const auto& Player : PlayerArray)
+	{
+		const auto& PlayerState = Cast<AMyPlayerState>(Player);
+		const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
+		const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
+
+		PlayerState->Reset();
+		//Character->Respawn();
+	}
+
+	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
+	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);
+	GetWorldTimerManager().ClearTimer(BuyTimeHandle);
+
+	GetWorldTimerManager().SetTimer
+	(
+		BuyTimeHandle,
+		this,
+		&AMyGameState::BuyTimeEnded,
+		MatchBuyTime,
+		false
+	);
+
+	bCanBuy = true;
+
+	GoToFreeze();
+}
+
+void AMyGameState::SetWinner(const EMyTeam NewWinner)
+{
+	if (HasAuthority())
+	{
+		Winner = NewWinner;
+
+		if (Winner != EMyTeam::Unknown)
+		{
+			LOG_FUNC_PRINTF(LogTemp, Warning, "Winner: %s", *EnumToString(Winner));
+
+			UGameplayStatics::PlaySound2D(this, Winner == EMyTeam::CT ? CTRoundWinSound : TRoundWinSound);
+			(Winner == EMyTeam::CT ? CTWinCount : TWinCount)++;
+			OnWinnerSet.Broadcast(Winner);
+			GoToRoundEnd();
+		}
+	}
+}
+
+void AMyGameState::NextRound()
+{
+	if (GetState() == EMyRoundProgress::PostRound)
+	{
+		RecordRoundTime();
+		RestartRound();
+	}
+}
+
+void AMyGameState::OnRoundTimeRanOut()
+{
+	if (GetState() == EMyRoundProgress::Playing)
+	{
+		GoToRoundEnd();
+	}
+}
+
+void AMyGameState::OnFreezeEnded()
+{
+	if (GetState() == EMyRoundProgress::FreezeTime)
+	{
+		GoToRound();
+	}
+}
+
+void AMyGameState::TransitTo
+(
+	const EMyRoundProgress NextProgress,
+	void(AMyGameState::* NextFunction)(), 
+	const float Delay, 
+	FTimerHandle& NextHandle
+)
+{
+	if (CurrentHandle != nullptr)
+	{
+		GetWorldTimerManager().ClearTimer(*CurrentHandle);
+	}
+
+	GetWorldTimerManager().SetTimer
+		(
+		 NextHandle, 
+		 this, 
+		 NextFunction, 
+		 Delay, 
+		 false
+		);
+
+	SetRoundProgress(NextProgress);
+	CurrentHandle = &NextHandle;
+}
+
+void AMyGameState::GoToFreeze()
+{
+	TransitTo
+	(
+		EMyRoundProgress::FreezeTime,
+		&AMyGameState::OnFreezeEnded,
+		AMyProjectGameModeBase::MatchFreezeTime,
+		FreezeTimerHandle
+	);
+}
+
+void AMyGameState::GoToRound()
+{
+	LOG_FUNC(LogTemp, Warning, "Round goes to playing");
+	TransitTo
+	(
+		EMyRoundProgress::Playing,
+		&AMyGameState::OnRoundTimeRanOut,
+		AMyProjectGameModeBase::MatchRoundTime,
+		RoundTimerHandle
+	);
+}
+
+void AMyGameState::GoToRoundEnd()
+{
+	LOG_FUNC(LogTemp, Warning, "Round goes to post round");
+	TransitTo
+	(
+		EMyRoundProgress::PostRound,
+		&AMyGameState::NextRound,
+		AMyProjectGameModeBase::MatchRoundEndDelay,
+		RoundEndTimerHandle
+	);
 }
