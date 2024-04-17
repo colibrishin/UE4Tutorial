@@ -5,6 +5,18 @@
 
 #include "Kismet/GameplayStatics.h"
 
+#define DECL_BINDON_NATIVE(Delegate, ...) \
+	FDelegateHandle Bind##Delegate(TMulticastDelegate<void(__VA_ARGS__)>::FDelegate& Func) \
+	{ \
+			return Delegate.Add(Func); \
+	}
+
+#define DECL_BINDON_NATIVE_CONST(Delegate, ...) \
+	FDelegateHandle Bind##Delegate(const TMulticastDelegate<void(__VA_ARGS__)>::FDelegate& Func) \
+	{ \
+			return Delegate.Add(Func); \
+	}
+
 #define DECL_BINDON_LAMBDA(Delegate, ...) \
 	FDelegateHandle Bind##Delegate(const std::function<void(__VA_ARGS__)>& Func) \
 	{ \
@@ -35,6 +47,8 @@
 	DECL_BINDON_LAMBDA(Delegate, __VA_ARGS__) \
 	DECL_BINDON_LOCAL(Delegate, __VA_ARGS__) \
 	DECL_BINDON_LOCAL_CONST(Delegate, __VA_ARGS__) \
+	DECL_BINDON_NATIVE(Delegate, __VA_ARGS__) \
+	DECL_BINDON_NATIVE_CONST(Delegate, __VA_ARGS__) \
 	DECL_UNBINDON(Delegate) \
 
 #define STRINGIFY(x) #x

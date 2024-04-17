@@ -11,6 +11,7 @@
 DECLARE_MULTICAST_DELEGATE(FOnFreezeStarted)
 DECLARE_MULTICAST_DELEGATE(FOnRoundStarted)
 DECLARE_MULTICAST_DELEGATE(FOnRoundEnded)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged, EMyRoundProgress)
 
 /**
  * 
@@ -27,6 +28,7 @@ public:
 
 	AMyProjectGameModeBase();
 
+	DECL_BINDON(OnRoundProgressChanged, EMyRoundProgress)
 	DECL_BINDON(OnFreezeStarted)
 	DECL_BINDON(OnRoundStarted)
 	DECL_BINDON(OnRoundEnded)
@@ -45,6 +47,8 @@ protected:
 	virtual AActor* ChoosePlayerStart_Implementation(AController* Player) override;
 
 private:
+	AActor*      PickPlayerStart(AController* Player) const;
+
 	FORCEINLINE void TransitTo
 	(
 		const EMyRoundProgress            NextProgress,
@@ -54,8 +58,7 @@ private:
 		FTimerHandle&                     NextHandle
 	);
 
-	UPROPERTY(VisibleAnywhere)
-	EMyRoundProgress RoundProgress;
+	FOnRoundProgressChanged OnRoundProgressChanged;
 
 	FOnFreezeStarted OnFreezeStarted;
 	FOnRoundStarted OnRoundStarted;

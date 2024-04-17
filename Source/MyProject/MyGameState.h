@@ -8,6 +8,7 @@
 #include "GameFramework/GameState.h"
 #include "MyGameState.generated.h"
 
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged, EMyRoundProgress)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool)
 
 /**
@@ -22,17 +23,13 @@ public:
 	static constexpr float MatchBuyTime = 25.f;
 
 	DECL_BINDON(OnBuyChanged, bool)
+	DECL_BINDON(OnRoundProgressChanged, EMyRoundProgress)
+	EMyRoundProgress GetState() const { return RoundProgress; }
 
 	AMyGameState();
 
 	bool CanBuy() const { return bCanBuy; }
-	void SetRoundProgress(const EMyRoundProgress NewProgress)
-	{
-		if (HasAuthority())
-		{
-			RoundProgress = NewProgress;
-		}
-	}
+	void SetRoundProgress(const EMyRoundProgress NewProgress);
 
 protected:
 	virtual void BeginPlay() override;
@@ -62,6 +59,8 @@ private:
 	FOnBuyChanged OnBuyChanged;
 
 	FTimerHandle BuyTimeHandle;
+
+	FOnRoundProgressChanged OnRoundProgressChanged;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int32 AliveCT;
