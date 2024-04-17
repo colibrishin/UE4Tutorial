@@ -3,10 +3,14 @@
 
 #include "MyProject/MyGameState.h"
 
+#include "MyCharacter.h"
 #include "MyInGameHUD.h"
+#include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
 #include "MyStatComponent.h"
+
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -35,32 +39,10 @@ void AMyGameState::OnRep_RoundProgress()
 {
 	if (RoundProgress == EMyRoundProgress::Playing)
 	{
-		UGameplayStatics::PlaySound2D(this, RoundStartSound);
-		const auto& Players = GetWorld()->GetGameState()->PlayerArray;
-
-		for (const auto& Player : Players)
-		{
-			const auto& MyPlayerState = Cast<AMyPlayerState>(Player);
-
-			if (IsValid(MyPlayerState))
-			{
-				switch (MyPlayerState->GetTeam())
-				{
-				case EMyTeam::CT: 
-					++AliveCT;
-					break;
-				case EMyTeam::T:
-					++AliveT;
-					break;
-				case EMyTeam::Unknown:
-				default: break;
-				}
-
-				const auto& Handle = MyPlayerState->BindOnStateChanged(this, &AMyGameState::HandlePlayerStateChanged);
-				PlayerStateDelegateHandles.Add(Player->GetPlayerId(), Handle);
-			}
-		}
+		UGameplayStatics::PlaySound2D(this , RoundStartSound);
 	}
+
+	OnRoundProgressChanged.Broadcast(RoundProgress);
 }
 
 void AMyGameState::OnRep_CanBuy() const
@@ -70,34 +52,47 @@ void AMyGameState::OnRep_CanBuy() const
 
 void AMyGameState::HandlePlayerStateChanged(const EMyTeam Team, const EMyCharacterState State)
 {
-	switch (State)
+	if (HasAuthority())
 	{
-	case EMyCharacterState::Alive:
-		switch (Team)
+		switch (State)
 		{
-		case EMyTeam::CT: ++AliveCT;
-			break;
-		case EMyTeam::T: ++AliveT;
-			break;
-		case EMyTeam::Unknown: break;
-		}
-		break;
-	case EMyCharacterState::Planting: 
-		break;
-	case EMyCharacterState::Defusing: 
-		break;
-	case EMyCharacterState::Dead:
-		switch (Team)
-		{
-			case EMyTeam::CT: --AliveCT;
-			break;
-			case EMyTeam::T: --AliveT;
-			break;
+		case EMyCharacterState::Alive:
+			switch (Team)
+			{
+			case EMyTeam::CT: ++AliveCT;
+				break;
+			case EMyTeam::T: ++AliveT;
+				break;
 			case EMyTeam::Unknown: break;
+			}
+			break;
+		case EMyCharacterState::Planting: 
+			break;
+		case EMyCharacterState::Defusing: 
+			break;
+		case EMyCharacterState::Dead:
+			switch (Team)
+			{
+				case EMyTeam::CT: --AliveCT;
+				break;
+				case EMyTeam::T: --AliveT;
+				break;
+				case EMyTeam::Unknown: break;
+			}
+			break;
+		case EMyCharacterState::Unknown:
+		default: break;
 		}
-		break;
-	case EMyCharacterState::Unknown:
-	default: break;
+	}
+}
+
+void AMyGameState::SetRoundProgress(const EMyRoundProgress NewProgress)
+{
+	if (HasAuthority())
+	{
+		RoundProgress = NewProgress;
+
+		OnRoundProgressChanged.Broadcast(RoundProgress);
 	}
 }
 
