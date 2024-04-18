@@ -20,13 +20,17 @@
 #include "Net/UnrealNetwork.h"
 
 AMyGameState::AMyGameState()
-	: RoundProgress(EMyRoundProgress::Unknown),
+	: RoundC4(nullptr),
+	  RoundProgress(EMyRoundProgress::Unknown),
 	  Winner(EMyTeam::Unknown),
 	  CTWinCount(0),
 	  TWinCount(0),
 	  CTRoundWinSound(nullptr),
 	  TRoundWinSound(nullptr),
 	  bCanBuy(false),
+	  bBombPlanted(false),
+	  bBombDefused(false),
+	  bBombExploded(false),
 	  LastRoundInWorldTime(0),
 	  AliveCT(0),
 	  AliveT(0),
@@ -276,6 +280,10 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AMyGameState, Winner);
 	DOREPLIFETIME(AMyGameState, CTWinCount);
 	DOREPLIFETIME(AMyGameState, TWinCount);
+	DOREPLIFETIME(AMyGameState, RoundC4);
+	DOREPLIFETIME(AMyGameState, bBombPlanted);
+	DOREPLIFETIME(AMyGameState, bBombDefused);
+	DOREPLIFETIME(AMyGameState, bBombExploded);
 }
 
 void AMyGameState::OnBombPlanted()
@@ -312,6 +320,15 @@ void AMyGameState::RestartRound()
 
 	AliveCT = 0;
 	AliveT = 0;
+
+	RoundC4->UnbindOnBombPlantedDelegate(OnBombPlantedHandle);
+	RoundC4->UnbindOnBombDefusedDelegate(OnBombDefusedHandle);
+	RoundC4->UnbindOnBombExplodedDelegate(OnBombExplodedHandle);
+
+	if (RoundC4)
+	{
+		RoundC4->Destroy(true);
+	}
 
 	bBombPlanted = false;
 	bBombDefused = false;
@@ -389,9 +406,9 @@ void AMyGameState::RestartRound()
 
 	RoundC4 = Cast<AMyC4>(C4);
 
-	RoundC4->BindOnBombPlantedDelegate(this, &AMyGameState::OnBombPlanted);
-	RoundC4->BindOnBombDefusedDelegate(this, &AMyGameState::OnBombDefused);
-	RoundC4->BindOnBombExplodedDelegate(this, &AMyGameState::OnBombExploded);
+	OnBombPlantedHandle = RoundC4->BindOnBombPlantedDelegate(this, &AMyGameState::OnBombPlanted);
+	OnBombDefusedHandle = RoundC4->BindOnBombDefusedDelegate(this, &AMyGameState::OnBombDefused);
+	OnBombExplodedHandle = RoundC4->BindOnBombExplodedDelegate(this, &AMyGameState::OnBombExploded);
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);
