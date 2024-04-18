@@ -154,16 +154,19 @@ void AMyC4::OnBombExplodedImpl()
 
 	OnBombExplodedDelegate.Broadcast();
 	UE_LOG(LogTemp, Warning, TEXT("Bomb Exploded"));
-	GetWorldTimerManager().ClearTimer(OnBombTicking);
+	GetWorldTimerManager().ClearTimer(OnBombExploded);
 }
 
 void AMyC4::OnBombPlantedImpl()
 {
-	if (!IsValid(GetItemOwner()))
+	if (HasAuthority() || IsRunningDedicatedServer())
 	{
-		LOG_FUNC(LogTemp, Warning, "Item owner is not valid");
-		PlantingTime = 0.f;
-		return;
+		if (!IsValid(GetItemOwner()))
+		{
+			LOG_FUNC(LogTemp, Warning, "Item owner is not valid");
+			PlantingTime = 0.f;
+			return;
+		}
 	}
 
 	FHitResult  HitResult;
@@ -189,7 +192,7 @@ void AMyC4::OnBombPlantedImpl()
 	GetWorldTimerManager().ClearTimer(OnBombPlanted);
 
 	GetWorldTimerManager().SetTimer(
-		OnBombTicking,
+		OnBombExploded,
 		this,
 		&AMyC4::OnBombExplodedImpl,
 		FullExplodingTime,
@@ -219,8 +222,27 @@ void AMyC4::OnBombDefusedImpl()
 
 	UE_LOG(LogTemp, Warning, TEXT("Bomb defused"));
 	OnBombDefusedDelegate.Broadcast();
-	GetWorldTimerManager().ClearTimer(OnBombTicking);
+	GetWorldTimerManager().ClearTimer(OnBombExploded);
 	GetWorldTimerManager().ClearTimer(OnBombDefusing);
+}
+
+void AMyC4::Destroyed()
+{
+	Super::Destroyed();
+
+	GetWorldTimerManager().ClearTimer(OnBombPlanted);
+	GetWorldTimerManager().ClearTimer(OnBombDefusing);
+	GetWorldTimerManager().ClearTimer(OnBombExploded);
+
+	if (GetItemOwner())
+	{
+		HideBombProgressWidget(GetItemOwner());
+	}
+
+	if (GetDefusingCharacter())
+	{
+		HideBombProgressWidget(GetDefusingCharacter());	
+	}
 }
 
 bool AMyC4::PreInteract(AMyCharacter* Character)
@@ -251,9 +273,11 @@ bool AMyC4::TDefuseGuard(AMyCharacter* Character) const
 			LOG_FUNC(LogTemp, Warning, "T can't defuse a bomb or pick up a bomb after planted");
 			return false;
 		}
+
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool AMyC4::CTPickPlantGuard(AMyCharacter* Character) const
@@ -265,9 +289,11 @@ bool AMyC4::CTPickPlantGuard(AMyCharacter* Character) const
 			LOG_FUNC(LogTemp, Warning, "CT can't pick a bomb or plant");
 			return false;
 		}
+
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 bool AMyC4::PostInteract(AMyCharacter* Character)
@@ -349,7 +375,6 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 		return false;
 	}
 
-	// todo: need to know character is defusable
 	SetDefusing(true, Character);
 
 	if (IsDefusable())
