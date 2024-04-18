@@ -5,11 +5,14 @@
 
 #include "AIController.h"
 #include "MyCharacter.h"
+#include "MyCollectable.h"
 #include "MyGameState.h"
 #include "MyInGameHUD.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
+#include "MySpectatorPawn.h"
 #include "MyStatComponent.h"
+#include "MyWeapon.h"
 
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerStart.h"
@@ -67,6 +70,7 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 	}
 
 	PlayerState->SetHP(PlayerState->GetStatComponent()->GetMaxHealth());
+	PlayerState->SetState(EMyCharacterState::Alive);
 	PlayerState->AddMoney(18000);
 
 	const auto& MyGameState = GetGameState<AMyGameState>();
@@ -106,6 +110,29 @@ AActor* AMyProjectGameModeBase::FindPlayerStart_Implementation(AController* Play
 void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
+
+	if (const auto& PlayerState = Cast<AMyPlayerState>(NewPlayer->PlayerState))
+	{
+		const auto& Character = Cast<AMyCharacter>(NewPlayer->GetPawn());
+
+		if (const auto& Weapon = PlayerState->GetWeapon())
+		{
+			if (IsValid(Character))
+			{
+				Weapon->TryAttachItem(Character);
+			}
+		}
+
+		if (const auto& Item = PlayerState->GetCurrentItem())
+		{
+			if (IsValid(Character))
+			{
+				// todo: need to be attaching to character
+				Item->Interact(Character);
+			}
+		}
+	}
+
 }
 
 AActor* AMyProjectGameModeBase::PickPlayerStart(AController* Player) const
