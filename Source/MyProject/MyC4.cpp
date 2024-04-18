@@ -9,6 +9,7 @@
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
 #include "MyInventoryComponent.h"
+#include "MyPlayerState.h"
 
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
@@ -231,18 +232,51 @@ bool AMyC4::PreInteract(AMyCharacter* Character)
 		}
 	}
 
+	if (IsPlanted)
+	{
+		return TDefuseGuard(Character) && Super::PreInteract(Character);
+	}
+
 	return Super::PreInteract(Character);
+}
+
+bool AMyC4::TDefuseGuard(AMyCharacter* Character) const
+{
+	if (const auto& PlayerState = Character->GetPlayerState<AMyPlayerState>())
+	{
+		if (PlayerState->GetTeam() == EMyTeam::T)
+		{
+			LOG_FUNC(LogTemp, Warning, "T can't defuse a bomb or pick up a bomb after planted");
+			return false;
+		}
+	}
+
+	return true;
+}
+
+bool AMyC4::CTPickPlantGuard(AMyCharacter* Character) const
+{
+	if (const auto& PlayerState = Character->GetPlayerState<AMyPlayerState>())
+	{
+		if (PlayerState->GetTeam() == EMyTeam::CT)
+		{
+			LOG_FUNC(LogTemp, Warning, "CT can't pick a bomb or plant");
+			return false;
+		}
+	}
+
+	return true;
 }
 
 bool AMyC4::PostInteract(AMyCharacter* Character)
 {
 	if (IsPlanted)
 	{
-		return TryDefuse(Character);
+		return TDefuseGuard(Character) && TryDefuse(Character);
 	}
 	else
 	{
-		return Super::PostInteract(Character);
+		return CTPickPlantGuard(Character) && Super::PostInteract(Character);
 	}
 }
 
@@ -260,6 +294,8 @@ bool AMyC4::PreUse(AMyCharacter* Character)
 			UE_LOG(LogTemp, Warning, TEXT("Bomb is exploded or defused"));
 			return false;
 		}
+
+		return CTPickPlantGuard(Character);
 	}
 
 	return Super::PreUse(Character);
