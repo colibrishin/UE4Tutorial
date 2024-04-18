@@ -129,13 +129,13 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
 	bool bCanBuy;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bBombPlanted;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bBombDefused;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bBombExploded;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -167,4 +167,8 @@ private:
 	FTimerHandle FreezeTimerHandle;
 	FTimerHandle RoundTimerHandle;
 	FTimerHandle RoundEndTimerHandle;
+
+	FDelegateHandle OnBombPlantedHandle;
+	FDelegateHandle OnBombDefusedHandle;
+	FDelegateHandle OnBombExplodedHandle;
 };
