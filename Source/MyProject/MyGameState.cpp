@@ -3,6 +3,7 @@
 
 #include "MyProject/MyGameState.h"
 
+#include "MyC4.h"
 #include "MyCharacter.h"
 #include "MyCollectable.h"
 #include "MyInGameHUD.h"
@@ -55,6 +56,13 @@ AMyGameState::AMyGameState()
 		);
 
 	if (TRoundWinSoundFinder.Succeeded()) { TRoundWinSound = TRoundWinSoundFinder.Object; }
+
+	static ConstructorHelpers::FClassFinder<AMyC4> BP_C4 (TEXT("Blueprint'/Game/Blueprints/BPMyC4.BPMyC4_C'"));
+
+	if (BP_C4.Succeeded())
+	{
+		C4BluePrint = BP_C4.Class;
+	}
 }
 
 void AMyGameState::BuyTimeEnded()
@@ -330,6 +338,18 @@ void AMyGameState::RestartRound()
 			CastedCollectable->Destroy(true);
 		}
 	}
+
+	const auto& TSpawnPoint = GetWorld()->GetAuthGameMode<AMyProjectGameModeBase>()->GetTSpawnPoint();
+	const auto& SpawnPointLocation = TSpawnPoint->GetActorLocation();
+
+	const auto& C4 = GetWorld()->SpawnActor(
+		C4BluePrint,
+		&SpawnPointLocation,
+		&FRotator::ZeroRotator
+	);
+
+	C4->SetReplicateMovement(true);
+	C4->SetReplicates(true);
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);

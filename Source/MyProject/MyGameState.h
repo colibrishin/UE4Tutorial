@@ -94,6 +94,9 @@ private:
 	UFUNCTION()
 	void OnRep_CanBuy() const;
 
+	UPROPERTY(VisibleAnywhere)
+	TSubclassOf<class AMyC4> C4BluePrint;
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_RoundProgress)
 	EMyRoundProgress RoundProgress;
 
