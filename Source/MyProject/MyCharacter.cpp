@@ -127,14 +127,17 @@ float AMyCharacter::TakeDamage(
 {
 	if (HasAuthority())
 	{
-		GetPlayerState<AMyPlayerState>()->TakeDamage
-		(
-			Damage,
-			DamageEvent,
-			EventInstigator,
-			DamageCauser
-		);
-		UE_LOG(LogTemp, Warning, TEXT("Damage: %f"), Damage);
+		if (const auto& MyPlayerState = GetPlayerState<AMyPlayerState>())
+		{
+			MyPlayerState->TakeDamage
+			(
+				Damage,
+				DamageEvent,
+				EventInstigator,
+				DamageCauser
+			);
+			UE_LOG(LogTemp, Warning, TEXT("Damage: %f"), Damage);
+		}
 	}
 
 	return Damage;
@@ -440,17 +443,6 @@ void AMyCharacter::Attack(const float Value)
 		);
 }
 
-void AMyCharacter::Respawn()
-{
-	LOG_FUNC(LogTemp, Warning, "Destroy Character");
-	Destroy();
-
-	if (const auto& GameMode = GetWorld()->GetAuthGameMode<AMyProjectGameModeBase>())
-	{
-		LOG_FUNC(LogTemp, Warning, "Respawn");
-		GameMode->RestartPlayer(Controller);
-	}
-}
 
 void AMyCharacter::Multi_Attack_Implementation(const float Value)
 {

@@ -66,8 +66,6 @@ public:
 
 	void Attack(const float Value);
 
-	void Respawn();
-
 private:
 
 	// ============ Attacking ============
