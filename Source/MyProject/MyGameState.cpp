@@ -4,11 +4,14 @@
 #include "MyProject/MyGameState.h"
 
 #include "MyCharacter.h"
+#include "MyCollectable.h"
 #include "MyInGameHUD.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
+#include "MySpectatorPawn.h"
 #include "MyStatComponent.h"
+#include "MyWeapon.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
@@ -314,6 +317,19 @@ void AMyGameState::RestartRound()
 		}
 	}
 
+	// Cleanup collectables
+	TArray<AActor*> Collectables;
+	UGameplayStatics::GetAllActorsOfClass(this, AMyCollectable::StaticClass(), Collectables);
+
+	for (const auto& Collectable : Collectables)
+	{
+		const auto& CastedCollectable = Cast<AMyCollectable>(Collectable);
+
+		if (!CastedCollectable->GetItemOwner())
+		{
+			CastedCollectable->Destroy(true);
+		}
+	}
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);
