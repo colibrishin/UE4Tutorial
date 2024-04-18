@@ -10,6 +10,8 @@
 #include "MyC4.generated.h"
 
 DECLARE_MULTICAST_DELEGATE(FOnBombPlanted)
+DECLARE_MULTICAST_DELEGATE(FOnBombDefused)
+DECLARE_MULTICAST_DELEGATE(FOnBombExploded)
 
 UCLASS()
 class MYPROJECT_API AMyC4 : public AMyItem
@@ -39,11 +41,13 @@ public:
 	virtual void UseInterrupted() override;
 
 	DECL_BINDON(OnBombPlantedDelegate)
+	DECL_BINDON(OnBombDefusedDelegate)
+	DECL_BINDON(OnBombExplodedDelegate)
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	void         OnBombTickingImpl();
+	void         OnBombExplodedImpl();
 	void         OnBombPlantedImpl();
 	void         OnBombDefusedImpl();
 
@@ -98,6 +102,10 @@ private:
 	FDelegateHandle DefuserOnInteractInterruptedHandle;
 
 	FOnBombPlanted OnBombPlantedDelegate;
+
+	FOnBombDefused OnBombDefusedDelegate;
+
+	FOnBombExploded OnBombExplodedDelegate;
 
 	FTimerHandle OnBombDefusing;
 
