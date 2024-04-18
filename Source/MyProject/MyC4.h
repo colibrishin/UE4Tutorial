@@ -51,6 +51,8 @@ protected:
 	void         OnBombPlantedImpl();
 	void         OnBombDefusedImpl();
 
+	virtual void Destroyed() override;
+
 	virtual bool PreInteract(AMyCharacter* Character) override;
 	virtual bool PostInteract(AMyCharacter* Character) override;
 	virtual bool TryAttachItem(const AMyCharacter* Character) override;
@@ -109,7 +111,7 @@ private:
 
 	FTimerHandle OnBombDefusing;
 
-	FTimerHandle OnBombTicking;
+	FTimerHandle OnBombExploded;
 
 	FTimerHandle OnBombPlanted;
 
