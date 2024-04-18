@@ -142,7 +142,7 @@ void AMyC4::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AMyC4::OnBombTickingImpl()
+void AMyC4::OnBombExplodedImpl()
 {
 	IsPlanted = false;
 	IsExploded = true;
@@ -152,6 +152,7 @@ void AMyC4::OnBombTickingImpl()
 		SetDefusing(false, nullptr);
 	}
 
+	OnBombExplodedDelegate.Broadcast();
 	UE_LOG(LogTemp, Warning, TEXT("Bomb Exploded"));
 	GetWorldTimerManager().ClearTimer(OnBombTicking);
 }
@@ -190,7 +191,7 @@ void AMyC4::OnBombPlantedImpl()
 	GetWorldTimerManager().SetTimer(
 		OnBombTicking,
 		this,
-		&AMyC4::OnBombTickingImpl,
+		&AMyC4::OnBombExplodedImpl,
 		FullExplodingTime,
 		false);
 }
@@ -217,6 +218,7 @@ void AMyC4::OnBombDefusedImpl()
 	DefusingCharacter = nullptr;
 
 	UE_LOG(LogTemp, Warning, TEXT("Bomb defused"));
+	OnBombDefusedDelegate.Broadcast();
 	GetWorldTimerManager().ClearTimer(OnBombTicking);
 	GetWorldTimerManager().ClearTimer(OnBombDefusing);
 }
