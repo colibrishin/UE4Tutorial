@@ -12,6 +12,7 @@
 #include "MyInventoryComponent.h"
 #include "MyPlayerController.h"
 #include "MyStatComponent.h"
+#include "MyWeapon.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
 
@@ -83,8 +84,17 @@ void AMyPlayerState::Reset()
 
 	if (State != EMyCharacterState::Alive)
 	{
-		Weapon = nullptr;
-		CurrentItem = nullptr;
+		if (Weapon && !Weapon->GetItemOwner())
+		{
+			Weapon->Destroy();
+			Weapon = nullptr;
+		}
+
+		if (CurrentItem && !CurrentItem->GetItemOwner())
+		{
+			CurrentItem->Destroy();
+			CurrentItem = nullptr;
+		}
 	}
 
 	SetState(EMyCharacterState::Alive);
