@@ -25,7 +25,12 @@ public:
 
 	virtual void RestartPlayer(AController* NewPlayer) override;
 
+	class APlayerStart* GetTSpawnPoint() const { return TSpawnPoint; }
+	class APlayerStart* GetCTSpawnPoint() const { return CTSpawnPoint; }
+
 protected:
+	virtual void InitStartSpot_Implementation(AActor* StartSpot, AController* NewPlayer) override;
+
 	virtual void BeginPlay() override;
 
 	virtual void Tick(float DeltaSeconds) override;
@@ -39,4 +44,9 @@ protected:
 private:
 	AActor*      PickPlayerStart(AController* Player) const;
 
+	UPROPERTY()
+	class APlayerStart* TSpawnPoint;
+
+	UPROPERTY()
+	class APlayerStart* CTSpawnPoint;
 };

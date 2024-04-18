@@ -22,6 +22,8 @@
 #include "Net/UnrealNetwork.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
+	: TSpawnPoint(nullptr),
+	  CTSpawnPoint(nullptr)
 {
 	// StaticClass, 컴파일 타임 타입
 	// GetClass, 런타임 타입 (Base class 포인터)
@@ -43,7 +45,7 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 
 	GameStateClass   = AMyGameState::StaticClass();
 	PlayerStateClass = AMyPlayerState::StaticClass();
-	SpectatorClass = AMySpectatorPawn::StaticClass();
+	SpectatorClass   = AMySpectatorPawn::StaticClass();
 }
 
 
@@ -135,6 +137,31 @@ void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 
 }
 
+void AMyProjectGameModeBase::InitStartSpot_Implementation(AActor* StartSpot, AController* NewPlayer)
+{
+	Super::InitStartSpot_Implementation(StartSpot, NewPlayer);
+
+	TArray<AActor*> PlayerStarts;
+	UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
+
+	for (const auto& PlayerStart : PlayerStarts)
+	{
+		const auto& Start = Cast<APlayerStart>(PlayerStart);
+
+		if (IsValid(Start))
+		{
+			if (Start->PlayerStartTag == "T")
+			{
+				TSpawnPoint = Start;
+			}
+			else if (Start->PlayerStartTag == "CT")
+			{
+				CTSpawnPoint = Start;
+			}
+		}
+	}
+}
+
 AActor* AMyProjectGameModeBase::PickPlayerStart(AController* Player) const
 {
 	if (IsValid(Player))
@@ -148,24 +175,13 @@ AActor* AMyProjectGameModeBase::PickPlayerStart(AController* Player) const
 			Team = PlayerState->GetTeam();
 		}
 
-		TArray<AActor*> PlayerStarts;
-		UGameplayStatics::GetAllActorsOfClass(this, APlayerStart::StaticClass(), PlayerStarts);
-
-		LOG_FUNC_PRINTF(LogTemp, Warning, "PlayerStarts Count: %d", PlayerStarts.Num());
-		LOG_FUNC_PRINTF(LogTemp, Warning, "Player Team: %s", *EnumToString(Team));
-
-		for (const auto& PlayerStart : PlayerStarts)
+		if (Team == EMyTeam::CT)
 		{
-			const auto& Start = Cast<APlayerStart>(PlayerStart);
-
-			if (IsValid(Start))
-			{
-				if (Start->PlayerStartTag == *EnumToString(Team))
-				{
-					LOG_FUNC_PRINTF(LogTemp, Warning, "PlayerStartTag: %s", *Start->PlayerStartTag.ToString());
-					return Start;
-				}
-			}
+			return CTSpawnPoint;
+		}
+		else
+		{
+			return TSpawnPoint;
 		}
 	}
 
