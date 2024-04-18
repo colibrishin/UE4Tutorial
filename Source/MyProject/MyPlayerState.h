@@ -11,7 +11,7 @@
 #include "GameFramework/PlayerState.h"
 #include "MyPlayerState.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStateChanged, EMyTeam, EMyCharacterState)
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHPChanged, int32, float)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, int32)
 
@@ -53,7 +53,7 @@ public:
 
 	DECL_BINDON(OnHPChanged, int32, float)
 	DECL_BINDON(OnMoneyChanged, int32)
-	DECL_BINDON(OnStateChanged, EMyTeam, EMyCharacterState)
+	DECL_BINDON(OnStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
 
 	FORCEINLINE int32 GetMoney() const { return Money; }
 

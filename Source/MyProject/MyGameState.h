@@ -43,7 +43,7 @@ public:
 
 	AMyGameState();
 
-	void HandlePlayerStateChanged(const EMyTeam Team, const EMyCharacterState State);
+	void HandlePlayerStateChanged(class AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State);
 
 	void RestartRound();
 
