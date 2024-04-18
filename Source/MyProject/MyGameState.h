@@ -55,6 +55,11 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	void OnBombPlanted();
+
+	void OnBombDefused();
+
+	void OnBombExploded();
 
 	void SetRoundProgress(const EMyRoundProgress NewProgress);
 
@@ -97,6 +102,9 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<class AMyC4> C4BluePrint;
 
+	UPROPERTY(VisibleAnywhere, Replicated)
+	class AMyC4* RoundC4;
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_RoundProgress)
 	EMyRoundProgress RoundProgress;
 
@@ -120,6 +128,15 @@ private:
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
 	bool bCanBuy;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bBombPlanted;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bBombDefused;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bBombExploded;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	float LastRoundInWorldTime;
