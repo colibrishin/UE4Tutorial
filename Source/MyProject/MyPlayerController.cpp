@@ -9,6 +9,7 @@
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
 #include "MyPlayerState.h"
+#include "MySpectatorPawn.h"
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
 #include "MyWeaponDataAsset.h"
@@ -105,4 +106,16 @@ void AMyPlayerController::BuyWeapon(const int32 WeaponID) const
 			WeaponID);
 	}
 
+}
+
+void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)
+{
+	UnPossess();
+	Possess(Spectator);
+}
+
+
+void AMyPlayerController::Client_SetSpectator_Implementation(AMySpectatorPawn* Spectator)
+{
+	SetSpectator(Spectator);
 }
