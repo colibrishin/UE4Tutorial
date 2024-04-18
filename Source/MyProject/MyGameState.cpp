@@ -164,15 +164,19 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 
 		LOG_FUNC_PRINTF(LogTemp, Warning, "AliveCT: %d, AliveT: %d", AliveCT, AliveT);
 
-		if (RoundProgress == EMyRoundProgress::Playing && AliveCT <= 0)
+		// Elimination
+		if (!bBombPlanted)
 		{
-			SetWinner(EMyTeam::T);
-			SetRoundProgress(EMyRoundProgress::PostRound);
-		}
-		else if (RoundProgress == EMyRoundProgress::Playing && AliveT <= 0)
-		{
-			SetWinner(EMyTeam::CT);
-			SetRoundProgress(EMyRoundProgress::PostRound);
+			if (RoundProgress == EMyRoundProgress::Playing && AliveCT <= 0)
+			{
+				SetWinner(EMyTeam::T);
+				GoToRoundEnd();
+			}
+			else if (RoundProgress == EMyRoundProgress::Playing && AliveT <= 0)
+			{
+				SetWinner(EMyTeam::CT);
+				GoToRoundEnd();
+			}
 		}
 	}
 }
@@ -219,6 +223,10 @@ void AMyGameState::HandleRoundProgress() const
 				Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 			}
 		}
+		else if (RoundProgress == EMyRoundProgress::PostRound)
+		{
+			
+		}
 	}
 }
 
@@ -251,6 +259,9 @@ void AMyGameState::Reset()
 	TWinCount = 0;
 	Winner = EMyTeam::Unknown;
 	bCanBuy = true;
+	bBombPlanted = false;
+	bBombDefused = false;
+	bBombExploded = false;
 	LastRoundInWorldTime = GetServerWorldTimeSeconds();
 }
 
@@ -267,6 +278,27 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AMyGameState, TWinCount);
 }
 
+void AMyGameState::OnBombPlanted()
+{
+	bBombPlanted = true;
+}
+
+void AMyGameState::OnBombDefused()
+{
+	bBombDefused = true;
+
+	SetWinner(EMyTeam::CT);
+	GoToRoundEnd();
+}
+
+void AMyGameState::OnBombExploded()
+{
+	bBombExploded = true;
+
+	SetWinner(EMyTeam::T);
+	GoToRoundEnd();
+}
+
 void AMyGameState::RestartRound()
 {
 	if (!HasAuthority())
@@ -280,6 +312,10 @@ void AMyGameState::RestartRound()
 
 	AliveCT = 0;
 	AliveT = 0;
+
+	bBombPlanted = false;
+	bBombDefused = false;
+	bBombExploded = false;
 
 	for (const auto& Player : PlayerArray)
 	{
@@ -351,6 +387,12 @@ void AMyGameState::RestartRound()
 	C4->SetReplicateMovement(true);
 	C4->SetReplicates(true);
 
+	RoundC4 = Cast<AMyC4>(C4);
+
+	RoundC4->BindOnBombPlantedDelegate(this, &AMyGameState::OnBombPlanted);
+	RoundC4->BindOnBombDefusedDelegate(this, &AMyGameState::OnBombDefused);
+	RoundC4->BindOnBombExplodedDelegate(this, &AMyGameState::OnBombExploded);
+
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);
 	GetWorldTimerManager().ClearTimer(BuyTimeHandle);
@@ -400,6 +442,7 @@ void AMyGameState::OnRoundTimeRanOut()
 {
 	if (GetState() == EMyRoundProgress::Playing)
 	{
+		SetWinner(EMyTeam::CT);
 		GoToRoundEnd();
 	}
 }
