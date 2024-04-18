@@ -36,6 +36,8 @@ public:
 	virtual bool Attack() final;
 	virtual bool Reload() final;
 
+	virtual bool TryAttachItem(const AMyCharacter* Character) override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -45,7 +47,6 @@ protected:
 	virtual bool AttackImpl() PURE_VIRTUAL(AMyWeapon::AttackImpl, return false;);
 	virtual bool ReloadImpl() PURE_VIRTUAL(AMyWeapon::ReloadImpl, return false;);
 
-	virtual bool TryAttachItem(const AMyCharacter* Character) override;
 	virtual bool PostInteract(AMyCharacter* Character) override;
 
 	virtual void OnFireRateTimed();
