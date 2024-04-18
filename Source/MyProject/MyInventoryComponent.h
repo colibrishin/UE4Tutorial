@@ -55,13 +55,19 @@ public:
 		}
 	}
 
+	void Remove(AMyCollectable* MyCollectable);
+
+	bool Find(AMyCollectable* MyCollectable) const;
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
+	UFUNCTION()
+	void HandleItemDestroy(AActor* ToBeDestroyed);
 
 	UPROPERTY(Replicated, VisibleAnywhere)
-	TArray<class AMyCollectable*> Inventory;
+	TArray<TWeakObjectPtr<class AMyCollectable>> Inventory;
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	int32 InventorySize;
