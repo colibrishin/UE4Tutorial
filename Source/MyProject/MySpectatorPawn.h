@@ -13,5 +13,15 @@ UCLASS()
 class MYPROJECT_API AMySpectatorPawn : public ASpectatorPawn
 {
 	GENERATED_BODY()
-	
+
+
+public:
+	AMySpectatorPawn();
+
+	void SetPreviousCharacter(class AMyCharacter* NewPreviousCharacter);
+	TWeakObjectPtr<class AMyCharacter> GetPreviousCharacter() const;
+
+private:
+	TWeakObjectPtr<class AMyCharacter> PreviousCharacter;
+
 };
