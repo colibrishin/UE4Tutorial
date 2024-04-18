@@ -96,6 +96,13 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
+AActor* AMyProjectGameModeBase::FindPlayerStart_Implementation(AController* Player, const FString& IncomingName)
+{
+	const auto& Start = PickPlayerStart(Player);
+
+	return IsValid(Start) ? Start : Super::FindPlayerStart_Implementation(Player, IncomingName);
+}
+
 void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
