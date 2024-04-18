@@ -40,6 +40,7 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 
 	GameStateClass   = AMyGameState::StaticClass();
 	PlayerStateClass = AMyPlayerState::StaticClass();
+	SpectatorClass = AMySpectatorPawn::StaticClass();
 }
 
 
