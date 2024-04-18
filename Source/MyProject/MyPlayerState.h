@@ -61,6 +61,7 @@ public:
 	int32         GetDamage() const;
 
 	virtual void Reset() override;
+	EMyCharacterState GetState() const { return State; }
 
 protected:
 	virtual void BeginPlay() override;
