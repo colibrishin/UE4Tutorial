@@ -5,7 +5,6 @@
 #include <mutex>
 
 #include "CoreMinimal.h"
-#include "MyProjectGameModeBase.h"
 #include "Utilities.hpp"
 
 #include "GameFramework/PlayerController.h"
@@ -23,6 +22,10 @@ public:
 	AMyPlayerController();
 
 	void BuyWeapon(const int32 WeaponID) const;
+	void SetSpectator(class AMySpectatorPawn* Spectator);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetSpectator(class AMySpectatorPawn* Spectator);
 
 protected:
 	virtual void BeginPlay() override;

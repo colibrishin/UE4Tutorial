@@ -110,7 +110,7 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void AMyPlayerState::OnRep_StateChanged() const
 {
-	OnStateChanged.Broadcast(Team, State);
+	OnStateChanged.Broadcast(Cast<AMyPlayerController>(GetOwner()), Team, State);
 }
 
 void AMyPlayerState::OnRep_HealthChanged() const
@@ -185,7 +185,7 @@ void AMyPlayerState::SetState(const EMyCharacterState NewState)
 
 	if (HasAuthority())
 	{
-		OnStateChanged.Broadcast(Team, State);
+		OnStateChanged.Broadcast(Cast<AMyPlayerController>(GetOwner()), Team, State);
 	}
 }
 

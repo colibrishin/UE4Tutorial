@@ -89,7 +89,7 @@ void AMyGameState::OnRep_CanBuy() const
 	OnBuyChanged.Broadcast(bCanBuy);
 }
 
-void AMyGameState::HandlePlayerStateChanged(const EMyTeam Team, const EMyCharacterState State)
+void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State)
 {
 	if (HasAuthority())
 	{
@@ -119,6 +119,36 @@ void AMyGameState::HandlePlayerStateChanged(const EMyTeam Team, const EMyCharact
 			break;
 		case EMyCharacterState::Unknown:
 		default: break;
+		}
+
+		if (State == EMyCharacterState::Dead)
+		{
+			const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
+
+			const auto& Spectator = GetWorld()->SpawnActor<AMySpectatorPawn>(
+				Character->GetActorLocation(),
+				FRotator::ZeroRotator
+			);
+
+			if (Character)
+			{
+				if (const auto& Weapon = Character->GetWeapon())
+				{
+					Weapon->Drop();
+				}
+				if (const auto& Item = Character->GetCurrentItem())
+				{
+					Item->Drop();	
+				}
+			}
+
+			Spectator->SetPreviousCharacter(Cast<AMyCharacter>(PlayerController->GetCharacter()));
+			PlayerController->SetSpectator(Spectator);
+
+			if (!PlayerController->HasAuthority())
+			{
+				PlayerController->Client_SetSpectator(Spectator);
+			}
 		}
 
 		LOG_FUNC_PRINTF(LogTemp, Warning, "AliveCT: %d, AliveT: %d", AliveCT, AliveT);
@@ -247,8 +277,43 @@ void AMyGameState::RestartRound()
 		const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
 
 		PlayerState->Reset();
-		//Character->Respawn();
+
+		if (IsValid(Character))
+		{
+			Character->Destroy(true);
+		}
+		else
+		{
+			const auto& Spectator = Cast<AMySpectatorPawn>(PlayerController->GetPawn());
+			const auto& MainCharacter = Spectator->GetPreviousCharacter();
+
+			if (MainCharacter.IsValid())
+			{
+				MainCharacter->Destroy(true);
+			}
+
+			if (IsValid(Spectator))
+			{
+				Spectator->Destroy(true);
+			}
+			
+
+			if (PlayerController->HasAuthority())
+			{
+				PlayerController->SetSpectator(nullptr);
+			}
+			else
+			{
+				PlayerController->Client_SetSpectator(nullptr);
+			}
+		}
+
+		if (const auto& GameMode = GetWorld()->GetAuthGameMode<AMyProjectGameModeBase>())
+		{
+			GameMode->RestartPlayer(PlayerController);
+		}
 	}
+
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);
