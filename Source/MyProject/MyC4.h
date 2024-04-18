@@ -59,6 +59,9 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 private:
+	bool TDefuseGuard(AMyCharacter* Character) const;
+	bool CTPickPlantGuard(AMyCharacter* Character) const;
+
 	void SetDefusing(const bool NewDefusing, class AMyCharacter* Character);
 	void SetPlanting(const bool NewPlanting);
 	void ShowBombProgressWidget(const AMyCharacter* Character) const;
