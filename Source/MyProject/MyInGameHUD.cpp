@@ -40,16 +40,6 @@ AMyInGameHUD::AMyInGameHUD()
 	BuyMenu->SetWidgetSpace(EWidgetSpace::Screen);
 }
 
-void AMyInGameHUD::BindBomb(const AMyC4* Bomb) const
-{
-	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
-
-	if (Widget)
-	{
-		Widget->BindBomb(Bomb);
-	}
-}
-
 void AMyInGameHUD::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
 {
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
@@ -98,12 +88,18 @@ void AMyInGameHUD::BeginPlay()
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
 	const auto& GameState = Cast<AMyGameState>(UGameplayStatics::GetGameState(this));
 
+	if (!IsValid(GameState))
+	{
+		UE_LOG(LogTemp, Error, TEXT("GameState is not valid"));
+	}
+
 	if (Widget)
 	{
+		Widget->BindGameState(GameState);
 		Widget->AddToViewport();
 	}
 
-	if (BuyMenuWidget && GameState)
+	if (BuyMenuWidget)
 	{
 		BuyMenuWidget->Populate();
 		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
