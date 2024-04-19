@@ -158,10 +158,9 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AMyCharacter::Jump);
 
 	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Pressed, this, &AMyCharacter::Interactive);
-	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Repeat, this, &AMyCharacter::Interactive);
 	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Released, this, &AMyCharacter::InteractInterrupted);
 
-	PlayerInputComponent->BindAction(TEXT("Use"), IE_Repeat, this, &AMyCharacter::Use);
+	PlayerInputComponent->BindAction(TEXT("Use"), IE_Pressed, this, &AMyCharacter::Use);
 	PlayerInputComponent->BindAction(TEXT("Use"), IE_Released, this, &AMyCharacter::UseInterrupt);
 
 	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Repeat, this, &AMyCharacter::Aim);
