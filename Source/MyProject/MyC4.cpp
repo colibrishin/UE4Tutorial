@@ -310,7 +310,7 @@ bool AMyC4::PostInteract(AMyCharacter* Character)
 
 bool AMyC4::TryAttachItem(const AMyCharacter* Character)
 {
-	return Character->GetInventory()->TryAddItem(this) && Super::TryAttachItem(Character);
+	return Super::TryAttachItem(Character);
 }
 
 bool AMyC4::PreUse(AMyCharacter* Character)
