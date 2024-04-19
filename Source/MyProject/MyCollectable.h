@@ -21,12 +21,6 @@ public:
 	class UBoxComponent* GetCollider() const { return Collider; }
 	class AMyCharacter* GetItemOwner() const;
 
-	virtual bool Interact(class AMyCharacter* Character) override final;
-	virtual bool Use(class AMyCharacter* Character) override final;
-
-	virtual void InteractInterrupted() override;
-	virtual void UseInterrupted() override;
-
 	virtual bool Drop();
 
 	void Hide() const;
@@ -42,6 +36,12 @@ protected:
 		UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 		int32 OtherBodyIndex, bool bFromSweep, class AMyCharacter* Character, const FHitResult& SweepResult
 	);
+
+	virtual void InteractImpl(class AMyCharacter* Character) override;
+	virtual void UseImpl(class AMyCharacter* Character) override;
+
+	virtual void InteractInterruptedImpl() override;
+	virtual void UseInterruptedImpl() override;
 
 	virtual bool PreInteract(class AMyCharacter* Character);
 	virtual bool TryAttachItem(const AMyCharacter* Character);
