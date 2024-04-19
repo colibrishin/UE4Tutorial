@@ -18,7 +18,6 @@ class MYPROJECT_API AMyInGameHUD : public AHUD
 public:
 	AMyInGameHUD();
 
-	void BindBomb(const class AMyC4* Bomb) const;
 	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
 	bool IsBuyMenuOpened() const;

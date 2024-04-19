@@ -8,6 +8,7 @@
 #include "MyC4.h"
 #include "MyCharacter.h"
 #include "MyCharacterWidget.h"
+#include "MyGameState.h"
 #include "MyRoundTimeWidget.h"
 
 void UMyInGameWidget::BindPlayer(AMyPlayerState* State) const
@@ -21,13 +22,13 @@ void UMyInGameWidget::BindPlayer(AMyPlayerState* State) const
 	}
 }
 
-void UMyInGameWidget::BindBomb(const AMyC4* Bomb) const
+void UMyInGameWidget::BindGameState(AMyGameState* State) const
 {
-	if (IsValid(Bomb))
+	if (IsValid(State))
 	{
 		if (BombProgressWidget)
 		{
-			BombProgressWidget->BindBomb(Bomb);
+			BombProgressWidget->BindGameState(State);
 		}
 	}
 }
