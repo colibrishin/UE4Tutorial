@@ -412,7 +412,7 @@ void AMyCharacter::Interactive()
 	(
 	 this,
 		 &AMyCharacter::Server_Interactive,
-		 &AMyCharacter::Multi_Interactive
+		 &AMyCharacter::InteractiveImpl
 	);
 }
 
@@ -513,15 +513,10 @@ void AMyCharacter::ResetAttack()
 
 void AMyCharacter::Server_Interactive_Implementation()
 {
-	Multi_Interactive();
+	InteractiveImpl();
 }
 
-void AMyCharacter::Multi_Interactive_Implementation()
-{
-	InteractiveStart();
-}
-
-void AMyCharacter::InteractiveStart()
+void AMyCharacter::InteractiveImpl()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Interactive"));
 	FHitResult HitResult;
@@ -546,8 +541,9 @@ void AMyCharacter::InteractiveStart()
 
 			if (IsValid(Interactive))
 			{
-				if (Interactive->GetItemOwner() != this && Interactive->Interact(this))
+				if (Interactive->GetItemOwner() != this)
 				{
+					Interactive->Interact(this);
 					break;
 				}
 			}
@@ -561,21 +557,16 @@ void AMyCharacter::InteractInterrupted()
 		(
 		 this,
 		 &AMyCharacter::Server_InteractInterrupted,
-		 &AMyCharacter::Multi_InteractInterrupted
+		 &AMyCharacter::InteractInterruptedImpl
 		);
 }
 
 void AMyCharacter::Server_InteractInterrupted_Implementation()
 {
-	Multi_InteractInterrupted();
+	InteractInterruptedImpl();
 }
 
-void AMyCharacter::Multi_InteractInterrupted_Implementation()
-{
-	InteractInterruptedStart();
-}
-
-void AMyCharacter::InteractInterruptedStart() const
+void AMyCharacter::InteractInterruptedImpl()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Interact Interrupted"));
 	OnInteractInterrupted.Broadcast();
@@ -592,21 +583,16 @@ void AMyCharacter::Use()
 		(
 		 this,
 		 &AMyCharacter::Server_Use,
-		 &AMyCharacter::Multi_Use
+		 &AMyCharacter::UseImpl
 		);
 }
 
 void AMyCharacter::Server_Use_Implementation()
 {
-	Multi_Use();
+	UseImpl();
 }
 
-void AMyCharacter::Multi_Use_Implementation()
-{
-	UseStart();
-}
-
-void AMyCharacter::UseStart()
+void AMyCharacter::UseImpl()
 {
 	if (IsValid(GetCurrentItem()))
 	{
@@ -624,21 +610,16 @@ void AMyCharacter::UseInterrupt()
 		(
 		 this,
 		 &AMyCharacter::Server_UseInterrupt,
-		 &AMyCharacter::Multi_UseInterrupt
+		 &AMyCharacter::UseInterruptImpl
 		);
 }
 
 void AMyCharacter::Server_UseInterrupt_Implementation()
 {
-	Multi_UseInterrupt();
+	UseInterruptImpl();
 }
 
-void AMyCharacter::Multi_UseInterrupt_Implementation()
-{
-	UseInterruptStart();
-}
-
-void AMyCharacter::UseInterruptStart() const
+void AMyCharacter::UseInterruptImpl()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Use Interrupted"));
 	OnUseInterrupted.Broadcast();
