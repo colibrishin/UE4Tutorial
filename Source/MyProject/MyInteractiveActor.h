@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Utilities.hpp"
+
 #include "GameFramework/Actor.h"
 #include "MyInteractiveActor.generated.h"
 
@@ -15,9 +17,40 @@ public:
 	// Sets default values for this actor's properties
 	AMyInteractiveActor();
 
-	virtual bool Interact(class AMyCharacter* Character) PURE_VIRTUAL(AMyInteractiveActor::Interact, return false;);
-	virtual bool Use(class AMyCharacter* Character) PURE_VIRTUAL(AMyInteractiveActor::Use, return false;);
+	virtual void Interact(class AMyCharacter* Character);
 
-	virtual void InteractInterrupted() PURE_VIRTUAL(AMyInteractiveActor::Recycle, );
-	virtual void UseInterrupted() PURE_VIRTUAL(AMyInteractiveActor::Recycle, );
+	virtual void Use(class AMyCharacter* Character);
+
+	virtual void InteractInterrupted();
+
+	virtual void UseInterrupted();
+
+
+protected:
+	virtual void UseImpl(class AMyCharacter* Character);
+
+	virtual void InteractImpl(class AMyCharacter* Character);
+
+	virtual void ClientInteractImpl(class AMyCharacter* Character);
+
+	virtual void InteractInterruptedImpl();
+
+	virtual void UseInterruptedImpl();
+
+private:
+	UFUNCTION(Server, Reliable)
+	void Server_Interact(class AMyCharacter* Character);
+
+	UFUNCTION(Client, Reliable)
+	void Client_Interact(class AMyCharacter* Character);
+
+	UFUNCTION(Server, Reliable)
+	void Server_Use(class AMyCharacter* Character);
+
+	UFUNCTION(Server, Reliable)
+	void Server_InteractInterrupted();
+
+	UFUNCTION(Server, Reliable)
+	void Server_UseInterrupted();
+
 };
