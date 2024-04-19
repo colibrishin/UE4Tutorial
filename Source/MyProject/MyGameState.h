@@ -12,6 +12,8 @@
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged, EMyRoundProgress)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnWinnerSet, EMyTeam)
+DECLARE_MULTICAST_DELEGATE(FOnBombProgressChanging)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombProgressChanged, EMyBombState)
 
 /**
  * 
@@ -26,6 +28,8 @@ public:
 
 	DECL_BINDON(OnBuyChanged, bool)
 	DECL_BINDON(OnRoundProgressChanged, EMyRoundProgress)
+	DECL_BINDON(OnWinnerSet, EMyTeam)
+	DECL_BINDON(OnBombProgressChanged, EMyBombState)
 
 	EMyRoundProgress GetState() const { return RoundProgress; }
 	int32 GetCTCount() const { return AliveCT; }
@@ -41,6 +45,9 @@ public:
 		return AMyProjectGameModeBase::MatchRoundTime - GetRoundTime();
 	}
 
+	class AMyC4* GetC4() const { return RoundC4; }
+	EMyBombState          GetBombState() const { return BombState; }
+
 	AMyGameState();
 
 	void HandlePlayerStateChanged(class AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State);
@@ -55,11 +62,7 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	void OnBombPlanted();
-
-	void OnBombDefused();
-
-	void OnBombExploded();
+	void OnBombStateChanged(const EMyBombState NewState);
 
 	void SetRoundProgress(const EMyRoundProgress NewProgress);
 
@@ -99,6 +102,9 @@ private:
 	UFUNCTION()
 	void OnRep_CanBuy() const;
 
+	UFUNCTION()
+	void OnRep_BombState();
+
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<class AMyC4> C4BluePrint;
 
@@ -129,14 +135,8 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
 	bool bCanBuy;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool bBombPlanted;
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool bBombDefused;
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	bool bBombExploded;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_BombState)
+	EMyBombState BombState;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	float LastRoundInWorldTime;
@@ -148,6 +148,8 @@ private:
 	FTimerHandle BuyTimeHandle;
 
 	FOnRoundProgressChanged OnRoundProgressChanged;
+
+	FOnBombProgressChanged OnBombProgressChanged;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int32 AliveCT;
@@ -168,7 +170,5 @@ private:
 	FTimerHandle RoundTimerHandle;
 	FTimerHandle RoundEndTimerHandle;
 
-	FDelegateHandle OnBombPlantedHandle;
-	FDelegateHandle OnBombDefusedHandle;
-	FDelegateHandle OnBombExplodedHandle;
+	FDelegateHandle OnBombStateChangedHandle;
 };
