@@ -9,9 +9,7 @@
 #include "GameFramework/Actor.h"
 #include "MyC4.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnBombPlanted)
-DECLARE_MULTICAST_DELEGATE(FOnBombDefused)
-DECLARE_MULTICAST_DELEGATE(FOnBombExploded)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombStateChanged, EMyBombState)
 
 UCLASS()
 class MYPROJECT_API AMyC4 : public AMyItem
@@ -29,24 +27,38 @@ public:
 	float GetPlantingRatio() const { return PlantingTime / FullPlantingTime; }
 	float GetDefusingRatio() const { return DefusingTime / FullDefusingTime; }
 
-	bool BeingPlanted() const { return IsPlanting; }
-	bool BeingDefused() const { return IsDefusing; }
+	bool IsPlanting() const { return BombState == EMyBombState::Planting; }
+	bool IsDefusing() const { return BombState == EMyBombState::Defusing; }
+	bool IsPlanted() const { return BombState == EMyBombState::Planted; }
+	bool IsDefused() const { return BombState == EMyBombState::Defused; }
+	bool IsExploded() const { return BombState == EMyBombState::Exploded; }
 
-	bool  IsPlantable(OUT FHitResult& OutResult) const;
-	bool  IsDefusable() const;
+	bool IsPlantable() const;
+	bool IsDefusable() const;
 
 	const AMyCharacter* GetDefusingCharacter() const { return DefusingCharacter.Get(); }
+
+
+	void SetState(const EMyBombState NewState)
+	{
+		LOG_FUNC_PRINTF(LogTemp, Warning, "SetState: %s", *EnumToString(NewState));
+		BombState = NewState;
+		OnBombStateChanged.Broadcast(BombState);
+	}
 
 	virtual void InteractInterrupted() override;
 	virtual void UseInterrupted() override;
 
-	DECL_BINDON(OnBombPlantedDelegate)
-	DECL_BINDON(OnBombDefusedDelegate)
-	DECL_BINDON(OnBombExplodedDelegate)
+	DECL_BINDON(OnBombStateChanged, EMyBombState)
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual void ClientInteractImpl(AMyCharacter* Character) override;
+
 	void         OnBombExplodedImpl();
 	void         OnBombPlantedImpl();
 	void         OnBombDefusedImpl();
@@ -68,51 +80,34 @@ private:
 	bool TDefuseGuard(AMyCharacter* Character) const;
 	bool CTPickPlantGuard(AMyCharacter* Character) const;
 
-	void SetDefusing(const bool NewDefusing, class AMyCharacter* Character);
+	void SetDefusing(AMyCharacter* Character);
 	void SetPlanting(const bool NewPlanting);
-	void ShowBombProgressWidget(const AMyCharacter* Character) const;
-	void HideBombProgressWidget(const AMyCharacter* Character) const;
 	bool TryDefuse(class AMyCharacter* Character);
+	bool TryPlant(class AMyCharacter* Character);
 
-	UPROPERTY(VisibleAnywhere)
-	bool IsPlanted;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	EMyBombState BombState;
 
-	UPROPERTY(VisibleAnywhere)
-	bool IsPlanting;
-
-	UPROPERTY(VisibleAnywhere)
-	bool IsDefusing;
-
-	UPROPERTY(VisibleAnywhere)
-	bool IsExploded;
-
-	UPROPERTY(VisibleAnywhere)
-	bool IsDefused;
-
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	float Elapsed;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	float PlantingTime;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	float DefusingTime;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	TWeakObjectPtr<class AMyCharacter> DefusingCharacter;
 
 	FDelegateHandle DefuserOnInteractInterruptedHandle;
 
-	FOnBombPlanted OnBombPlantedDelegate;
+	FOnBombStateChanged OnBombStateChanged;
 
-	FOnBombDefused OnBombDefusedDelegate;
+	FTimerHandle OnBombDefusingHandle;
 
-	FOnBombExploded OnBombExplodedDelegate;
+	FTimerHandle OnBombExplodedHandle;
 
-	FTimerHandle OnBombDefusing;
-
-	FTimerHandle OnBombExploded;
-
-	FTimerHandle OnBombPlanted;
+	FTimerHandle OnBombPlantingHandle;
 
 };
