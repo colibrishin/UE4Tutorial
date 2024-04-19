@@ -37,3 +37,15 @@ enum class EMyRoundProgress : uint8
 	PostRound,
 	Max
 };
+
+UENUM()
+enum class EMyBombState : uint8
+{
+	Unknown,
+	Idle,
+	Planting,
+	Planted,
+	Defusing,
+	Defused,
+	Exploded
+};
