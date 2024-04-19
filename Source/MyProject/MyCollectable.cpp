@@ -125,43 +125,43 @@ AMyCharacter* AMyCollectable::GetItemOwner() const
 	return Cast<AMyCharacter>(CollectableOwner);
 }
 
-bool AMyCollectable::Interact(class AMyCharacter* Character)
+void AMyCollectable::InteractImpl(class AMyCharacter* Character)
 {
 	LOG_FUNC(LogTemp, Warning, "Interact");
 
 	if (!PreInteract(Character))
 	{
-		return false;
+		return;
 	}
 	if (!PostInteract(Character))
 	{
-		return false;
+		return;
 	}
 
-	return true;
+	return;
 }
 
-bool AMyCollectable::Use(AMyCharacter* Character)
+void AMyCollectable::UseImpl(AMyCharacter* Character)
 {
 	if (!PreUse(Character))
 	{
-		return false;
+		return;
 	}
 
 	if (!PostUse(Character))
 	{
-		return false;
+		return;
 	}
 
-	return true;
+	return;
 }
 
-void AMyCollectable::InteractInterrupted()
+void AMyCollectable::InteractInterruptedImpl()
 {
 	LOG_FUNC(LogTemp, Warning, "InteractInterrupted");
 }
 
-void AMyCollectable::UseInterrupted()
+void AMyCollectable::UseInterruptedImpl()
 {
 	LOG_FUNC(LogTemp, Warning, "UseInterrupted");
 }
