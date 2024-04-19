@@ -24,15 +24,15 @@
 	}
 
 #define DECL_BINDON_LOCAL(Delegate, ...) \
-	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>> \
-	FDelegateHandle Bind##Delegate(T* Object, void (T::*Func)(__VA_ARGS__)) \
+	template <typename Derived, typename Base, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, Derived>>, typename ULock = std::enable_if_t<std::is_base_of_v<Base, Derived>>> \
+	FDelegateHandle Bind##Delegate(Derived* Object, void (Base::*Func)(__VA_ARGS__)) \
 	{ \
 		return Delegate.AddUObject(Object, Func); \
 	}
 
 #define DECL_BINDON_LOCAL_CONST(Delegate, ...) \
-	template <typename T, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, T>>> \
-	FDelegateHandle Bind##Delegate(const T* Object, void (T::*Func)(__VA_ARGS__) const) \
+	template <typename Derived, typename Base, typename ObjectLock = std::enable_if_t<std::is_base_of_v<UObject, Derived>>, typename ULock = std::enable_if_t<std::is_base_of_v<Base, Derived>>> \
+	FDelegateHandle Bind##Delegate(const Derived* Object, void (Base::*Func)(__VA_ARGS__) const) \
 	{ \
 		return Delegate.AddUObject(Object, Func); \
 	}
