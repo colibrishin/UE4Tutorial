@@ -28,9 +28,7 @@ AMyGameState::AMyGameState()
 	  CTRoundWinSound(nullptr),
 	  TRoundWinSound(nullptr),
 	  bCanBuy(false),
-	  bBombPlanted(false),
-	  bBombDefused(false),
-	  bBombExploded(false),
+	  BombState(EMyBombState::Unknown),
 	  LastRoundInWorldTime(0),
 	  AliveCT(0),
 	  AliveT(0),
@@ -61,12 +59,9 @@ AMyGameState::AMyGameState()
 
 	if (TRoundWinSoundFinder.Succeeded()) { TRoundWinSound = TRoundWinSoundFinder.Object; }
 
-	static ConstructorHelpers::FClassFinder<AMyC4> BP_C4 (TEXT("Blueprint'/Game/Blueprints/BPMyC4.BPMyC4_C'"));
+	static ConstructorHelpers::FClassFinder<AMyC4> BP_C4(TEXT("Blueprint'/Game/Blueprints/BPMyC4.BPMyC4_C'"));
 
-	if (BP_C4.Succeeded())
-	{
-		C4BluePrint = BP_C4.Class;
-	}
+	if (BP_C4.Succeeded()) { C4BluePrint = BP_C4.Class; }
 }
 
 void AMyGameState::BuyTimeEnded()
@@ -102,6 +97,11 @@ void AMyGameState::OnRep_RoundProgress()
 void AMyGameState::OnRep_CanBuy() const
 {
 	OnBuyChanged.Broadcast(bCanBuy);
+}
+
+void AMyGameState::OnRep_BombState()
+{
+	OnBombStateChanged(BombState);
 }
 
 void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State)
@@ -169,7 +169,7 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 		LOG_FUNC_PRINTF(LogTemp, Warning, "AliveCT: %d, AliveT: %d", AliveCT, AliveT);
 
 		// Elimination
-		if (!bBombPlanted)
+		if (BombState != EMyBombState::Planted)
 		{
 			if (RoundProgress == EMyRoundProgress::Playing && AliveCT <= 0)
 			{
@@ -263,9 +263,7 @@ void AMyGameState::Reset()
 	TWinCount = 0;
 	Winner = EMyTeam::Unknown;
 	bCanBuy = true;
-	bBombPlanted = false;
-	bBombDefused = false;
-	bBombExploded = false;
+	BombState = EMyBombState::Unknown;
 	LastRoundInWorldTime = GetServerWorldTimeSeconds();
 }
 
@@ -281,30 +279,30 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AMyGameState, CTWinCount);
 	DOREPLIFETIME(AMyGameState, TWinCount);
 	DOREPLIFETIME(AMyGameState, RoundC4);
-	DOREPLIFETIME(AMyGameState, bBombPlanted);
-	DOREPLIFETIME(AMyGameState, bBombDefused);
-	DOREPLIFETIME(AMyGameState, bBombExploded);
+	DOREPLIFETIME(AMyGameState, BombState);
 }
 
-void AMyGameState::OnBombPlanted()
+void AMyGameState::OnBombStateChanged(const EMyBombState NewState)
 {
-	bBombPlanted = true;
-}
+	LOG_FUNC_PRINTF(LogTemp, Warning, "BombState: %s", *EnumToString(NewState));
 
-void AMyGameState::OnBombDefused()
-{
-	bBombDefused = true;
+	if (HasAuthority())
+	{
+		BombState = NewState;
+	}
 
-	SetWinner(EMyTeam::CT);
-	GoToRoundEnd();
-}
+	OnBombProgressChanged.Broadcast(BombState);
 
-void AMyGameState::OnBombExploded()
-{
-	bBombExploded = true;
-
-	SetWinner(EMyTeam::T);
-	GoToRoundEnd();
+	if (BombState == EMyBombState::Defused)
+	{
+		SetWinner(EMyTeam::CT);
+		GoToRoundEnd();
+	}
+	else if (BombState == EMyBombState::Exploded)
+	{
+		SetWinner(EMyTeam::T);
+		GoToRoundEnd();
+	}
 }
 
 void AMyGameState::RestartRound()
@@ -321,18 +319,14 @@ void AMyGameState::RestartRound()
 	AliveCT = 0;
 	AliveT = 0;
 
-	RoundC4->UnbindOnBombPlantedDelegate(OnBombPlantedHandle);
-	RoundC4->UnbindOnBombDefusedDelegate(OnBombDefusedHandle);
-	RoundC4->UnbindOnBombExplodedDelegate(OnBombExplodedHandle);
+	RoundC4->UnbindOnBombStateChanged(OnBombStateChangedHandle);
 
 	if (RoundC4)
 	{
 		RoundC4->Destroy(true);
 	}
 
-	bBombPlanted = false;
-	bBombDefused = false;
-	bBombExploded = false;
+	BombState = EMyBombState::Unknown;
 
 	for (const auto& Player : PlayerArray)
 	{
@@ -395,10 +389,15 @@ void AMyGameState::RestartRound()
 	const auto& TSpawnPoint = GetWorld()->GetAuthGameMode<AMyProjectGameModeBase>()->GetTSpawnPoint();
 	const auto& SpawnPointLocation = TSpawnPoint->GetActorLocation();
 
+	FActorSpawnParameters SpawnParameters;
+
+	SpawnParameters.Owner = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+
 	const auto& C4 = GetWorld()->SpawnActor(
 		C4BluePrint,
 		&SpawnPointLocation,
-		&FRotator::ZeroRotator
+		&FRotator::ZeroRotator,
+		SpawnParameters
 	);
 
 	C4->SetReplicateMovement(true);
@@ -406,9 +405,8 @@ void AMyGameState::RestartRound()
 
 	RoundC4 = Cast<AMyC4>(C4);
 
-	OnBombPlantedHandle = RoundC4->BindOnBombPlantedDelegate(this, &AMyGameState::OnBombPlanted);
-	OnBombDefusedHandle = RoundC4->BindOnBombDefusedDelegate(this, &AMyGameState::OnBombDefused);
-	OnBombExplodedHandle = RoundC4->BindOnBombExplodedDelegate(this, &AMyGameState::OnBombExploded);
+	OnBombStateChangedHandle = RoundC4->BindOnBombStateChanged(this, &AMyGameState::OnBombStateChanged);
+	BombState = EMyBombState::Idle;
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);
