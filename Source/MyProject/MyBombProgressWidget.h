@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Enum.h"
+
 #include "Blueprint/UserWidget.h"
 #include "MyBombProgressWidget.generated.h"
 
@@ -16,15 +18,15 @@ class MYPROJECT_API UMyBombProgressWidget : public UUserWidget
 
 public:
 	void SetValue(const float Value) const;
-	void BindBomb(const class AMyC4* NewBomb);
+	void BindGameState(class AMyGameState* GameState);
 
-protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
+	void OnBombStateChanged(const EMyBombState NewState);
+
 	UPROPERTY(Meta=(BindWidget))
 	class UProgressBar* ProgressBar;
 
-	TWeakObjectPtr<const AMyC4> Bomb;
-
+	bool bNeedToShow;
 };
