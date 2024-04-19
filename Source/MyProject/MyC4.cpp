@@ -80,6 +80,32 @@ bool AMyC4::IsPlantable(OUT FHitResult& OutResult) const
 		1.f
 	);
 
+	if (IsPlanted)
+	{
+		LOG_FUNC(LogTemp, Warning, "Bomb is already planted");
+	}
+
+	if (IsExploded)
+	{
+		LOG_FUNC(LogTemp, Warning, "Bomb is exploded");
+	}
+
+	if (!GroundResult)
+	{
+		LOG_FUNC(LogTemp, Warning, "Ground is not found");
+	}
+
+	if (!OverlapResult)
+	{
+		LOG_FUNC(LogTemp, Warning, "Bomesite is not found");
+	}
+
+	if (Speed != 0.f)
+	{
+		LOG_FUNC(LogTemp, Warning, "Speed is not zero");
+	}
+
+
 	return !IsPlanted && !IsExploded && GroundResult && OverlapResult && (Speed == 0.f);
 }
 

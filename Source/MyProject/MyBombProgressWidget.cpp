@@ -30,7 +30,6 @@ void UMyBombProgressWidget::NativeTick(const FGeometry& MyGeometry, float InDelt
 		else if (Bomb->BeingPlanted())
 		{
 			SetRenderOpacity(1.f);
-			UE_LOG(LogTemp, Warning, TEXT("Planting Ratio: %f"), Bomb->GetPlantingRatio());
 			SetValue(Bomb->GetPlantingRatio());
 		}
 		else
