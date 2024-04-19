@@ -113,20 +113,15 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void Server_Interactive();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Interactive();
 
-	void InteractiveStart();
+	void InteractiveImpl();
 
 	void InteractInterrupted();
 
 	UFUNCTION(Server, Reliable)
 	void Server_InteractInterrupted();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_InteractInterrupted();
-
-	void InteractInterruptedStart() const;
+	void InteractInterruptedImpl();
 
 	// ============ End of Interacting ============
 
@@ -137,20 +132,14 @@ private:
 	UFUNCTION(Server, Reliable)
 	void Server_Use();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Use();
-
-	void UseStart();
+	void UseImpl();
 
 	void UseInterrupt();
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseInterrupt();
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_UseInterrupt();
-
-	void UseInterruptStart() const;
+	void UseInterruptImpl();
 
 	// ============ End of Using ============
 
