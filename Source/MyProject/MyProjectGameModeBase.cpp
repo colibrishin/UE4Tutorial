@@ -72,7 +72,6 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 	}
 
 	PlayerState->SetHP(PlayerState->GetStatComponent()->GetMaxHealth());
-	PlayerState->SetState(EMyCharacterState::Alive);
 	PlayerState->AddMoney(18000);
 
 	const auto& MyGameState = GetGameState<AMyGameState>();
