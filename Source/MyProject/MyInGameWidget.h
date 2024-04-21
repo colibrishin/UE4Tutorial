@@ -40,4 +40,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyRemainingTeamWidget* RemainingTeamWidget;
 
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyScoreWidget* ScoreWidget;
+
 };

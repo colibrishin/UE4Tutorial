@@ -50,7 +50,9 @@ public:
 	}
 
 	class AMyC4* GetC4() const { return RoundC4; }
-	EMyBombState          GetBombState() const { return BombState; }
+	EMyBombState GetBombState() const { return BombState; }
+	int32        GetCTWins() const { return CTWinCount; }
+	int32        GetTWins() const { return TWinCount; }
 
 	AMyGameState();
 
