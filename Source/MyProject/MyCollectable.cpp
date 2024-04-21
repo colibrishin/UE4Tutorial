@@ -127,6 +127,8 @@ AMyCharacter* AMyCollectable::GetItemOwner() const
 
 void AMyCollectable::InteractImpl(class AMyCharacter* Character)
 {
+	Super::InteractImpl(Character);
+
 	LOG_FUNC(LogTemp, Warning, "Interact");
 
 	if (!PreInteract(Character))
@@ -143,6 +145,8 @@ void AMyCollectable::InteractImpl(class AMyCharacter* Character)
 
 void AMyCollectable::UseImpl(AMyCharacter* Character)
 {
+	Super::UseImpl(Character);
+
 	if (!PreUse(Character))
 	{
 		return;
@@ -158,11 +162,15 @@ void AMyCollectable::UseImpl(AMyCharacter* Character)
 
 void AMyCollectable::InteractInterruptedImpl()
 {
+	Super::InteractInterruptedImpl();
+
 	LOG_FUNC(LogTemp, Warning, "InteractInterrupted");
 }
 
 void AMyCollectable::UseInterruptedImpl()
 {
+	Super::UseInterruptedImpl();
+
 	LOG_FUNC(LogTemp, Warning, "UseInterrupted");
 }
 
