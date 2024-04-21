@@ -13,22 +13,28 @@ AMyInteractiveActor::AMyInteractiveActor()
 
 void AMyInteractiveActor::InteractImpl(AMyCharacter* Character)
 {
-	LOG_FUNC(LogTemp, Warning, "InteractImpl");
-
 	if (HasAuthority())
 	{
-		ClientInteractImpl(Character);
+		Client_Interact(Character);
 	}
 }
 
 void AMyInteractiveActor::ClientInteractImpl(AMyCharacter* Character)
 {
-	LOG_FUNC(LogTemp, Warning, "ClientInteractImpl");
+}
+
+void AMyInteractiveActor::ClientUseImpl(AMyCharacter* Character)
+{
 }
 
 void AMyInteractiveActor::Client_Interact_Implementation(AMyCharacter* Character)
 {
 	ClientInteractImpl(Character);
+}
+
+void AMyInteractiveActor::Client_Use_Implementation(AMyCharacter* Character)
+{
+	ClientUseImpl(Character);
 }
 
 void AMyInteractiveActor::Interact(AMyCharacter* Character)
@@ -44,13 +50,15 @@ void AMyInteractiveActor::Interact(AMyCharacter* Character)
 void AMyInteractiveActor::Server_Interact_Implementation(AMyCharacter* Character)
 {
 	InteractImpl(Character);
-	LOG_FUNC(LogTemp, Warning, "Do Client side call");
 	Client_Interact(Character);
 }
 
 void AMyInteractiveActor::UseImpl(AMyCharacter* Character)
 {
-	LOG_FUNC(LogTemp, Warning, "UseImpl");
+	if (HasAuthority())
+	{
+		Client_Use(Character);
+	}
 }
 
 void AMyInteractiveActor::Use(AMyCharacter* Character)
@@ -70,7 +78,20 @@ void AMyInteractiveActor::Server_Use_Implementation(AMyCharacter* Character)
 
 void AMyInteractiveActor::InteractInterruptedImpl()
 {
-	LOG_FUNC(LogTemp, Warning, "InteractInterruptedImpl");
+	if (HasAuthority())
+	{
+		Client_InteractInterrupted();
+	}
+}
+
+void AMyInteractiveActor::ClientInteractInterruptedImpl()
+{
+	
+}
+
+void AMyInteractiveActor::ClientUseInterruptedImpl()
+{
+	
 }
 
 void AMyInteractiveActor::InteractInterrupted()
@@ -103,5 +124,18 @@ void AMyInteractiveActor::Server_UseInterrupted_Implementation()
 
 void AMyInteractiveActor::UseInterruptedImpl()
 {
-	LOG_FUNC(LogTemp, Warning, "UseInterruptedImpl");
+	if (HasAuthority())
+	{
+		Client_UseInterrupted();
+	}
+}
+
+void AMyInteractiveActor::Client_InteractInterrupted_Implementation()
+{
+	ClientInteractInterruptedImpl();
+}
+
+void AMyInteractiveActor::Client_UseInterrupted_Implementation()
+{
+	ClientUseInterruptedImpl();
 }
