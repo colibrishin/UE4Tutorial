@@ -14,6 +14,8 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnWinnerSet, EMyTeam)
 DECLARE_MULTICAST_DELEGATE(FOnBombProgressChanging)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombProgressChanged, EMyBombState)
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnPlayerStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAliveCountChanged, EMyTeam, int32)
 
 /**
  * 
@@ -30,6 +32,8 @@ public:
 	DECL_BINDON(OnRoundProgressChanged, EMyRoundProgress)
 	DECL_BINDON(OnWinnerSet, EMyTeam)
 	DECL_BINDON(OnBombProgressChanged, EMyBombState)
+	DECL_BINDON(OnPlayerStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
+	DECL_BINDON(OnAliveCountChanged, EMyTeam, int32)
 
 	EMyRoundProgress GetState() const { return RoundProgress; }
 	int32 GetCTCount() const { return AliveCT; }
@@ -94,16 +98,22 @@ private:
 	void BuyTimeEnded();
 
 	UFUNCTION()
-	void OnRep_WinnerSet();
+	void OnRep_WinnerSet() const;
 
 	UFUNCTION()
-	void OnRep_RoundProgress();
+	void OnRep_RoundProgress() const;
 
 	UFUNCTION()
 	void OnRep_CanBuy() const;
 
 	UFUNCTION()
-	void OnRep_BombState();
+	void OnRep_BombState(const EMyBombState PreviousBombState);
+
+	UFUNCTION()
+	void OnRep_AliveCT() const;
+
+	UFUNCTION()
+	void OnRep_AliveT() const;
 
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<class AMyC4> C4BluePrint;
@@ -132,6 +142,12 @@ private:
 	UPROPERTY(EditAnywhere)
 	class USoundWave* RoundStartSound;
 
+	UPROPERTY(EditAnywhere)
+	class USoundWave* BombPlantedSound;
+
+	UPROPERTY(EditAnywhere)
+	class USoundWave* BombDefusedSound;
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
 	bool bCanBuy;
 
@@ -149,12 +165,16 @@ private:
 
 	FOnRoundProgressChanged OnRoundProgressChanged;
 
+	FOnAliveCountChanged OnAliveCountChanged;
+
 	FOnBombProgressChanged OnBombProgressChanged;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
+	FOnPlayerStateChanged OnPlayerStateChanged;
+
+	UPROPERTY(VisibleAnywhere,  ReplicatedUsing=OnRep_AliveCT)
 	int32 AliveCT;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_AliveT)
 	int32 AliveT;
 
 	FORCEINLINE void TransitTo

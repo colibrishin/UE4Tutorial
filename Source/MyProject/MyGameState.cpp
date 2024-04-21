@@ -37,7 +37,10 @@ AMyGameState::AMyGameState()
 	static ConstructorHelpers::FObjectFinder<USoundWave> RoundStartSoundFinder
 		(TEXT("SoundWave'/Game/Models/sounds/moveout.moveout'"));
 
-	if (RoundStartSoundFinder.Succeeded()) { RoundStartSound = RoundStartSoundFinder.Object; }
+	if (RoundStartSoundFinder.Succeeded())
+	{
+		RoundStartSound = RoundStartSoundFinder.Object;
+	}
 
 	static ConstructorHelpers::FObjectFinder<USoundWave> CTRoundWinSoundFinder
 		(
@@ -47,7 +50,10 @@ AMyGameState::AMyGameState()
 		 )
 		);
 
-	if (CTRoundWinSoundFinder.Succeeded()) { CTRoundWinSound = CTRoundWinSoundFinder.Object; }
+	if (CTRoundWinSoundFinder.Succeeded())
+	{
+		CTRoundWinSound = CTRoundWinSoundFinder.Object;
+	}
 
 	static ConstructorHelpers::FObjectFinder<USoundWave> TRoundWinSoundFinder
 		(
@@ -57,7 +63,29 @@ AMyGameState::AMyGameState()
 		 )
 		);
 
-	if (TRoundWinSoundFinder.Succeeded()) { TRoundWinSound = TRoundWinSoundFinder.Object; }
+	if (TRoundWinSoundFinder.Succeeded())
+	{
+		TRoundWinSound = TRoundWinSoundFinder.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<USoundWave> BombPlantedSoundFinder (
+		TEXT("SoundWave'/Game/Models/sounds/bomb-has-been-planted-sound-effect-cs-go-made-with-Voicemod.bomb-has-been-planted-sound-effect-cs-go-made-with-Voicemod'")
+	);
+
+	if (BombPlantedSoundFinder.Succeeded())
+	{
+		BombPlantedSound = BombPlantedSoundFinder.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<USoundWave> BombDefusedSoundFinder
+	(
+		TEXT("SoundWave'/Game/Models/sounds/bomb-has-been-defused-csgo-sound-effect.bomb-has-been-defused-csgo-sound-effect'")
+	);
+
+	if (BombDefusedSoundFinder.Succeeded())
+	{
+		BombDefusedSound = BombDefusedSoundFinder.Object;
+	}
 
 	static ConstructorHelpers::FClassFinder<AMyC4> BP_C4(TEXT("Blueprint'/Game/Blueprints/BPMyC4.BPMyC4_C'"));
 
@@ -74,7 +102,7 @@ void AMyGameState::BuyTimeEnded()
 	}
 }
 
-void AMyGameState::OnRep_WinnerSet()
+void AMyGameState::OnRep_WinnerSet() const
 {
 	if (Winner != EMyTeam::Unknown)
 	{
@@ -84,7 +112,7 @@ void AMyGameState::OnRep_WinnerSet()
 	OnWinnerSet.Broadcast(Winner);
 }
 
-void AMyGameState::OnRep_RoundProgress()
+void AMyGameState::OnRep_RoundProgress() const
 {
 	if (RoundProgress == EMyRoundProgress::Playing)
 	{
@@ -99,9 +127,29 @@ void AMyGameState::OnRep_CanBuy() const
 	OnBuyChanged.Broadcast(bCanBuy);
 }
 
-void AMyGameState::OnRep_BombState()
+void AMyGameState::OnRep_BombState(const EMyBombState PreviousBombState)
 {
+	if (PreviousBombState == EMyBombState::Planting && BombState == EMyBombState::Planted)
+	{
+		UGameplayStatics::PlaySound2D(this, BombPlantedSound);
+	}
+
+	if (PreviousBombState == EMyBombState::Defusing && BombState == EMyBombState::Defused)
+	{
+		UGameplayStatics::PlaySound2D(this, BombDefusedSound);
+	}
+
 	OnBombStateChanged(BombState);
+}
+
+void AMyGameState::OnRep_AliveCT() const
+{
+	OnAliveCountChanged.Broadcast(EMyTeam::CT, AliveCT);
+}
+
+void AMyGameState::OnRep_AliveT() const
+{
+	OnAliveCountChanged.Broadcast(EMyTeam::T, AliveT);
 }
 
 void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State)
@@ -117,7 +165,7 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 			case EMyTeam::T: ++AliveT; break;
 			case EMyTeam::Unknown:
 			default: break;
-			}	
+			}
 		case EMyCharacterState::Planting: 
 			break;
 		case EMyCharacterState::Defusing: 
@@ -134,6 +182,11 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 			break;
 		case EMyCharacterState::Unknown:
 		default: break;
+		}
+
+		if (State == EMyCharacterState::Alive || State == EMyCharacterState::Dead)
+		{
+			OnAliveCountChanged.Broadcast(Team, Team == EMyTeam::CT ? AliveCT : AliveT);
 		}
 
 		if (State == EMyCharacterState::Dead)
@@ -182,6 +235,8 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 				GoToRoundEnd();
 			}
 		}
+
+		OnPlayerStateChanged.Broadcast(PlayerController, Team, State);
 	}
 }
 
@@ -288,6 +343,16 @@ void AMyGameState::OnBombStateChanged(const EMyBombState NewState)
 
 	if (HasAuthority())
 	{
+		if (BombState == EMyBombState::Planting && NewState == EMyBombState::Planted)
+		{
+			UGameplayStatics::PlaySound2D(this, BombPlantedSound);
+		}
+
+		if (BombState == EMyBombState::Defusing && NewState == EMyBombState::Defused)
+		{
+			UGameplayStatics::PlaySound2D(this, BombDefusedSound);
+		}
+
 		BombState = NewState;
 	}
 
