@@ -503,6 +503,8 @@ void AMyCharacter::AttackStart(const float Value)
 		MeleeAttack();
 	}
 
+	OnAttackStarted.Broadcast();
+
 	CanAttack = false;
 	GetCharacterMovement()->MaxWalkSpeed = 150.f;
 }
