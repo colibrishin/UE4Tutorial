@@ -9,6 +9,7 @@
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
+DECLARE_MULTICAST_DELEGATE(FOnAttackStarted)
 DECLARE_MULTICAST_DELEGATE(FOnAttackEnded)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnAiming, bool)
 DECLARE_MULTICAST_DELEGATE(FOnUseInterrupted)
@@ -34,6 +35,7 @@ public:
 	// Sets default values for this character's properties
 	AMyCharacter();
 
+	DECL_BINDON(OnAttackStarted)
 	DECL_BINDON(OnAttackEnded)
 	DECL_BINDON(OnAiming, bool)
 	DECL_BINDON(OnUseInterrupted)
@@ -174,6 +176,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* AnimInstance;
+
+	FOnAttackStarted OnAttackStarted;
 
 	FOnAttackEnded OnAttackEnded;
 
