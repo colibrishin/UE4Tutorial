@@ -65,10 +65,17 @@ void UMyBuyMenuWidget::Open()
 	}
 
 	const auto BuyTime = Cast<AMyGameState>(UGameplayStatics::GetGameState(this));
+	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
+	const auto& Character = Cast<AMyCharacter>(Controller->GetPawn());
 
 	if (!BuyTime->CanBuy())
 	{
 		LOG_FUNC(LogTemp, Error, "Cannot open buy menu after buy time is over");
+		return;
+	}
+
+	if (!IsPlayerInBuyZone(Character))
+	{
 		return;
 	}
 
@@ -78,9 +85,6 @@ void UMyBuyMenuWidget::Open()
 	{
 		AddToViewport();
 	}
-
-	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
-	const auto& Character = Cast<AMyCharacter>(Controller->GetPawn());
 
 	if (IsValid(Character))
 	{
