@@ -11,6 +11,7 @@
 #include "MyGameState.h"
 #include "MyRemainingTeamWidget.h"
 #include "MyRoundTimeWidget.h"
+#include "MyScoreWidget.h"
 
 void UMyInGameWidget::BindPlayer(AMyPlayerState* State) const
 {
@@ -35,6 +36,11 @@ void UMyInGameWidget::BindGameState(AMyGameState* State) const
 		if (RemainingTeamWidget)
 		{
 			RemainingTeamWidget->BindGameState(State);
+		}
+
+		if (ScoreWidget)
+		{
+			ScoreWidget->BindGameState(State);
 		}
 	}
 }
