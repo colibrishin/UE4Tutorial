@@ -15,7 +15,9 @@
 #include "Components/BoxComponent.h"
 #include "Components/WidgetComponent.h"
 
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/HUD.h"
+#include "GameFramework/PawnMovementComponent.h"
 
 #include "Kismet/GameplayStatics.h"
 
@@ -39,7 +41,7 @@ AMyC4::AMyC4()
 	}
 }
 
-bool AMyC4::IsPlantable() const
+bool AMyC4::IsPlantable(const bool bCheckSpeed) const
 {
 	FHitResult            HitResult;
 	FCollisionQueryParams Params{NAME_None , false , this};
@@ -64,11 +66,16 @@ bool AMyC4::IsPlantable() const
 		Params
 	);
 
-	float Speed = 1.f;
+	float Speed = 0.f;
 
-	if (IsValid(GetItemOwner()))
+	if (bCheckSpeed)
 	{
-		Speed = GetItemOwner()->GetVelocity().Size();
+		Speed = 1.f;
+
+		if (IsValid(GetItemOwner()))
+		{
+			Speed = GetItemOwner()->GetVelocity().Size();
+		}
 	}
 
 	DrawDebugLine
@@ -110,7 +117,7 @@ bool AMyC4::IsPlantable() const
 	return !IsPlanted() && !IsExploded() && GroundResult && OverlapResult && (Speed == 0.f);
 }
 
-bool AMyC4::IsDefusable() const
+bool AMyC4::IsDefusable(const bool bCheckSpeed) const
 {
 	const FCollisionQueryParams Params{NAME_None, false, this};
 	const FCollisionObjectQueryParams ObjectParams(ECollisionChannel::ECC_Pawn);
@@ -142,11 +149,16 @@ bool AMyC4::IsDefusable() const
 		}
 	}
 
-	float Speed = 1.f;
+	float Speed = 0.f;
 
-	if (DefusingCharacter.IsValid())
+	if (bCheckSpeed)
 	{
-		Speed = DefusingCharacter->GetVelocity().Size();
+		Speed = 1.f;
+
+		if (DefusingCharacter.IsValid())
+		{
+			Speed = DefusingCharacter->GetVelocity().Size();
+		}
 	}
 
 	DrawDebugSphere
@@ -197,21 +209,45 @@ void AMyC4::ClientInteractImpl(AMyCharacter* Character)
 	TryDefuse(Character);
 }
 
+void AMyC4::ClientUseImpl(AMyCharacter* Character)
+{
+	Super::ClientUseImpl(Character);
+
+	TryPlant(Character);
+}
+
+void AMyC4::ClientInteractInterruptedImpl()
+{
+	Super::ClientInteractInterruptedImpl();
+}
+
+void AMyC4::ClientUseInterruptedImpl()
+{
+	Super::ClientUseInterruptedImpl();
+}
+
 void AMyC4::OnBombExplodedImpl()
 {
-	if (IsDefusing())
+	if (HasAuthority())
 	{
-		SetDefusing(nullptr);
-	}
+		if (IsDefusing())
+		{
+			DefusingCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+			DefusingCharacter->UnbindOnAttackStarted(DefuserAttackHandle);
+			DefusingCharacter->UnbindOnInteractInterrupted(DefuserOnInteractInterruptedHandle);
 
-	SetState(EMyBombState::Exploded);
-	UE_LOG(LogTemp, Warning, TEXT("Bomb IsExploded"));
-	GetWorldTimerManager().ClearTimer(OnBombExplodedHandle);
+			SetDefusing(nullptr);
+		}
+
+		SetState(EMyBombState::Exploded);
+		UE_LOG(LogTemp, Warning, TEXT("Bomb IsExploded"));
+		GetWorldTimerManager().ClearTimer(OnBombExplodedHandle);
+	}
 }
 
 void AMyC4::OnBombPlantedImpl()
 {
-	if (HasAuthority() || IsRunningDedicatedServer())
+	if (HasAuthority())
 	{
 		if (!IsValid(GetItemOwner()))
 		{
@@ -219,54 +255,61 @@ void AMyC4::OnBombPlantedImpl()
 			PlantingTime = 0.f;
 			return;
 		}
+
+		const auto& GroundResult = IsPlantable();
+
+		if (!GroundResult)
+		{
+			LOG_FUNC(LogTemp, Warning, "Bomb is not plantable");
+			PlantingTime = 0.f;
+			return;
+		}
+
+		LOG_FUNC(LogTemp, Warning, "Bomb planted");
+		SetState(EMyBombState::Planted);
+		Elapsed = 0.f;
+
+		GetItemOwner()->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+		Drop();
+
+		GetWorldTimerManager().ClearTimer(OnBombPlantingHandle);
+
+		GetWorldTimerManager().SetTimer(
+			OnBombExplodedHandle,
+			this,
+			&AMyC4::OnBombExplodedImpl,
+			FullExplodingTime,
+			false);
 	}
-
-	const auto& GroundResult = IsPlantable();
-
-	if (!GroundResult)
-	{
-		LOG_FUNC(LogTemp, Warning, "Bomb is not plantable");
-		PlantingTime = 0.f;
-		return;
-	}
-
-	LOG_FUNC(LogTemp, Warning, "Bomb planted");
-	SetState(EMyBombState::Planted);
-	Elapsed = 0.f;
-
-	Drop();
-
-	GetWorldTimerManager().ClearTimer(OnBombPlantingHandle);
-
-	GetWorldTimerManager().SetTimer(
-		OnBombExplodedHandle,
-		this,
-		&AMyC4::OnBombExplodedImpl,
-		FullExplodingTime,
-		false);
 }
 
 void AMyC4::OnBombDefusedImpl()
 {
-	if (!DefusingCharacter.IsValid())
+	if (HasAuthority())
 	{
-		LOG_FUNC(LogTemp, Warning, "Defusing character is not valid");
-		DefusingTime = 0.f;
-		return;
-	}
+		if (!DefusingCharacter.IsValid())
+		{
+			LOG_FUNC(LogTemp, Warning, "Defusing character is not valid");
+			DefusingTime = 0.f;
+			return;
+		}
 
-	// Second chance, preventing from not InteractInterrupted
-	if (!IsDefusing() || !IsDefusable())
-	{
-		LOG_FUNC(LogTemp, Warning, "Bomb is not defusable");
-		DefusingTime = 0.f;
-		return;
-	}
+		// Second chance, preventing from not InteractInterrupted
+		if (!IsDefusing() || !IsDefusable())
+		{
+			LOG_FUNC(LogTemp, Warning, "Bomb is not defusable");
+			DefusingTime = 0.f;
+			return;
+		}
 
-	SetState(EMyBombState::Defused);
-	LOG_FUNC(LogTemp, Warning, "Bomb defused");
-	GetWorldTimerManager().ClearTimer(OnBombExplodedHandle);
-	GetWorldTimerManager().ClearTimer(OnBombDefusingHandle);
+		DefusingCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+		SetState(EMyBombState::Defused);
+		LOG_FUNC(LogTemp, Warning, "Bomb defused");
+		GetWorldTimerManager().ClearTimer(OnBombExplodedHandle);
+		GetWorldTimerManager().ClearTimer(OnBombDefusingHandle);
+	}
 }
 
 void AMyC4::Destroyed()
@@ -348,55 +391,71 @@ bool AMyC4::TryAttachItem(const AMyCharacter* Character)
 
 bool AMyC4::PreUse(AMyCharacter* Character)
 {
+	const auto& Result = Super::PreUse(Character);
+
 	if (!IsPlanted())
 	{
 		if (IsExploded() || IsDefused())
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Bomb is exploded or defused"));
-			return false;
+			return false && Result;
 		}
 
-		return CTPickPlantGuard(Character);
+		return Result && CTPickPlantGuard(Character);
 	}
 
-	return Super::PreUse(Character);
+	return Result;
 }
 
 bool AMyC4::TryPlant(class AMyCharacter* Character)
 {
-	if (!IsPlanted() && IsPlantable())
+	if (IsPlanted())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Bomb planting"));
-
-		if (!OnBombPlantingHandle.IsValid())
-		{
-			GetWorldTimerManager().SetTimer
-			(
-                OnBombPlantingHandle, 
-                this,
-                &AMyC4::OnBombPlantedImpl,
-                FullPlantingTime,
-                false
-			);
-
-			SetPlanting(true);
-		}
-
-		return true;
+		return false;
 	}
 
-	return false;
+	if (!IsPlantable(false))
+	{
+		return false;
+	}
+
+	Character->GetMovementComponent()->StopMovementImmediately();
+	Character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+	PlanterAttackHandle = GetItemOwner()->BindOnAttackStarted(this, &AMyC4::UseInterrupted);
+	
+	UE_LOG(LogTemp, Warning, TEXT("Bomb planting"));
+
+	if (OnBombPlantingHandle.IsValid())
+	{
+		GetWorldTimerManager().ClearTimer(OnBombPlantingHandle);
+	}
+
+	GetWorldTimerManager().SetTimer
+	(
+        OnBombPlantingHandle, 
+        this,
+        &AMyC4::OnBombPlantedImpl,
+        FullPlantingTime,
+        false
+	);
+
+	SetPlanting(true);
+
+	return true;
 }
 
 bool AMyC4::PostUse(AMyCharacter* Character)
 {
+	const auto& Result = Super::PostUse(Character);
+
 	if (!IsPlanted())
 	{
-		return TryPlant(Character) && Super::PostUse(Character);
+		return TryPlant(Character) && Result;
 	}
 	else
 	{
-		return Super::PostUse(Character);
+		return Result;
 	}
 }
 
@@ -409,6 +468,7 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 {
 	if (IsDefused() || IsExploded())
 	{
+		LOG_FUNC(LogTemp, Warning, "Bomb is exploded or defused");
 		return false;
 	}
 
@@ -420,48 +480,82 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 
 	DefusingCharacter = Character;
 
-	if (IsPlanted() && IsDefusable())
+	if (!IsPlanted())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Bomb defusing"));
-
-		if (!OnBombDefusingHandle.IsValid())
-		{
-			LOG_FUNC(LogTemp, Warning, "Establish Defusing handle");
-			GetWorldTimerManager().SetTimer
-			(
-			 OnBombDefusingHandle,
-			 this,
-			 &AMyC4::OnBombDefusedImpl,
-			 FullDefusingTime,
-			 false
-			);
-
-			DefuserOnInteractInterruptedHandle = DefusingCharacter->BindOnInteractInterrupted(
-				this, &AMyC4::InteractInterrupted);
-
-			
-			SetDefusing(Character);
-		}
-
-		return true;
+		LOG_FUNC(LogTemp, Warning, "Bomb is not planted");
+		return false;
 	}
-	else
+
+	if (!IsDefusable(false))
 	{
+		LOG_FUNC(LogTemp, Warning, "Bomb is not defusable");
+		return false;
+	}
+
+	Character->GetMovementComponent()->StopMovementImmediately();
+	Character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
+
+	UE_LOG(LogTemp, Warning, TEXT("Bomb defusing"));
+
+	LOG_FUNC(LogTemp, Warning, "Establish Defusing handle");
+	if (OnBombDefusingHandle.IsValid())
+	{
+		GetWorldTimerManager().ClearTimer(OnBombDefusingHandle);
+	}
+
+	GetWorldTimerManager().SetTimer
+	(
+	 OnBombDefusingHandle,
+	 this,
+	 &AMyC4::OnBombDefusedImpl,
+	 FullDefusingTime,
+	 false
+	);
+
+	DefuserAttackHandle = DefusingCharacter->BindOnAttackStarted(this, &AMyC4::InteractInterrupted);
+
+	DefuserOnInteractInterruptedHandle = DefusingCharacter->BindOnInteractInterrupted(
+		this, &AMyC4::InteractInterrupted);
+
+	
+	SetDefusing(Character);
+
+	return true;
+}
+
+void AMyC4::DefuseInterrupted()
+{
+	if (IsDefusing() && GetDefusingRatio() < 1.f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Defusing interrupted"));
+
+		DefusingCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+		DefusingCharacter->UnbindOnAttackStarted(DefuserAttackHandle);
+		DefusingCharacter->UnbindOnInteractInterrupted(DefuserOnInteractInterruptedHandle);
+		GetWorldTimerManager().ClearTimer(OnBombDefusingHandle);
 		SetDefusing(nullptr);
 	}
-
-	return false;
 }
 
 void AMyC4::InteractInterrupted()
 {
 	Super::InteractInterrupted();
 
-	if (IsDefusing() && GetDefusingRatio() < 1.f)
+	DefuseInterrupted();
+}
+
+void AMyC4::PlantInterrupted()
+{
+	if (IsPlanting() && GetPlantingRatio() < 1.f)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Defusing interrupted"));
-		GetWorldTimerManager().ClearTimer(OnBombDefusingHandle);
-		SetDefusing(nullptr);
+		UE_LOG(LogTemp, Warning, TEXT("Planting interrupted"));
+
+		GetItemOwner()->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+
+		GetItemOwner()->UnbindOnAttackStarted(PlanterAttackHandle);
+		GetWorldTimerManager().ClearTimer(OnBombPlantingHandle);
+		SetPlanting(false);
 	}
 }
 
@@ -469,12 +563,7 @@ void AMyC4::UseInterrupted()
 {
 	Super::UseInterrupted();
 
-	if (IsPlanting() && GetPlantingRatio() < 1.f)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Planting interrupted"));
-		GetWorldTimerManager().ClearTimer(OnBombPlantingHandle);
-		SetPlanting(false);
-	}
+	PlantInterrupted();
 }
 
 void AMyC4::Tick(float DeltaSeconds)
