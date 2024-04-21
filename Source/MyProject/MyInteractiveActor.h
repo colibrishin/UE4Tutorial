@@ -33,9 +33,15 @@ protected:
 
 	virtual void ClientInteractImpl(class AMyCharacter* Character);
 
+	virtual void ClientUseImpl(class AMyCharacter* Character);
+
 	virtual void InteractInterruptedImpl();
 
+	virtual void ClientInteractInterruptedImpl();
+
 	virtual void UseInterruptedImpl();
+
+	virtual void ClientUseInterruptedImpl();
 
 private:
 	UFUNCTION(Server, Reliable)
@@ -47,10 +53,19 @@ private:
 	UFUNCTION(Server, Reliable)
 	void Server_Use(class AMyCharacter* Character);
 
+	UFUNCTION(Client, Reliable)
+	void Client_Use(class AMyCharacter* Character);
+
 	UFUNCTION(Server, Reliable)
 	void Server_InteractInterrupted();
 
+	UFUNCTION(Client, Reliable)
+	void Client_InteractInterrupted();
+
 	UFUNCTION(Server, Reliable)
 	void Server_UseInterrupted();
+
+	UFUNCTION(Client, Reliable)
+	void Client_UseInterrupted();
 
 };
