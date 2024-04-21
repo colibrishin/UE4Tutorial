@@ -47,6 +47,7 @@ public:
 	}
 
 	virtual void InteractInterrupted() override;
+	void         PlantInterrupted();
 	virtual void UseInterrupted() override;
 
 	DECL_BINDON(OnBombStateChanged, EMyBombState)
@@ -87,6 +88,7 @@ private:
 	void SetDefusing(AMyCharacter* Character);
 	void SetPlanting(const bool NewPlanting);
 	bool TryDefuse(class AMyCharacter* Character);
+	void DefuseInterrupted();
 	bool TryPlant(class AMyCharacter* Character);
 
 	UPROPERTY(VisibleAnywhere, Replicated)
