@@ -13,38 +13,6 @@
 #include "MyRoundTimeWidget.h"
 #include "MyScoreWidget.h"
 
-void UMyInGameWidget::BindPlayer(AMyPlayerState* State) const
-{
-	if (IsValid(State))
-	{
-		if (CharacterWidget)
-		{
-			CharacterWidget->BindHp(State);
-		}
-	}
-}
-
-void UMyInGameWidget::BindGameState(AMyGameState* State) const
-{
-	if (IsValid(State))
-	{
-		if (BombProgressWidget)
-		{
-			BombProgressWidget->BindGameState(State);
-		}
-
-		if (RemainingTeamWidget)
-		{
-			RemainingTeamWidget->BindGameState(State);
-		}
-
-		if (ScoreWidget)
-		{
-			ScoreWidget->BindGameState(State);
-		}
-	}
-}
-
 void UMyInGameWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
 {
 	if (IsValid(AmmoWidget))

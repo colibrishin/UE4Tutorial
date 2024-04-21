@@ -16,10 +16,12 @@ class MYPROJECT_API UMyScoreWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
-public:
-	void BindGameState(AMyGameState* State);
+protected:
+	virtual void NativeConstruct() override;
 
 private:
+	void BindGameState(AMyGameState* State);
+
 	void UpdateScore(const EMyTeam Team) const;
 
 	UPROPERTY(Meta=(BindWidget))

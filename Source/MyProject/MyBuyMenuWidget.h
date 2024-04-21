@@ -26,10 +26,13 @@ public:
 	void             Toggle();
 
 	FORCEINLINE bool IsOpened() const { return IsOpen; }
-	void             BindPlayer(AMyPlayerState* State);
 	void             BuyTimeEnded(bool NewBuyTime);
 
+protected:
+	virtual void NativeConstruct() override;
+
 private:
+	void BindPlayerState(AMyPlayerState* State);
 	void ProcessBuy(const int32 ID) const;
 	void UpdateMoney(const int32 Money) const;
 
