@@ -9,6 +9,7 @@
 #include "MyCharacter.h"
 #include "MyCharacterWidget.h"
 #include "MyGameState.h"
+#include "MyRemainingTeamWidget.h"
 #include "MyRoundTimeWidget.h"
 
 void UMyInGameWidget::BindPlayer(AMyPlayerState* State) const
@@ -29,6 +30,11 @@ void UMyInGameWidget::BindGameState(AMyGameState* State) const
 		if (BombProgressWidget)
 		{
 			BombProgressWidget->BindGameState(State);
+		}
+
+		if (RemainingTeamWidget)
+		{
+			RemainingTeamWidget->BindGameState(State);
 		}
 	}
 }
