@@ -37,4 +37,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyRoundTimeWidget* RoundTimeWidget;
 
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyRemainingTeamWidget* RemainingTeamWidget;
+
 };
