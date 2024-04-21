@@ -7,6 +7,16 @@
 
 #include "Components/TextBlock.h"
 
+void UMyRemainingTeamWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
+	{
+		BindGameState(GameState);
+	}
+}
+
 void UMyRemainingTeamWidget::BindGameState(AMyGameState* State) const
 {
 	if (IsValid(State))

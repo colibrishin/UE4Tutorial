@@ -14,6 +14,16 @@ void UMyBombProgressWidget::SetValue(const float Value) const
 	ProgressBar->SetPercent(Value);
 }
 
+void UMyBombProgressWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
+	{
+		BindGameState(GameState);
+	}
+}
+
 void UMyBombProgressWidget::BindGameState(AMyGameState* GameState)
 {
 	if (GameState)

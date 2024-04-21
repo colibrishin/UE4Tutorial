@@ -21,7 +21,6 @@ public:
 	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
 	bool IsBuyMenuOpened() const;
-	void BindPlayer(class AMyPlayerState* PlayerState) const;
 
 protected:
 	virtual void BeginPlay() override;

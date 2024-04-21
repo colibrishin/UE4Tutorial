@@ -62,18 +62,6 @@ bool AMyInGameHUD::IsBuyMenuOpened() const
 	return false;
 }
 
-void AMyInGameHUD::BindPlayer(AMyPlayerState* PlayerState) const
-{
-	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
-	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
-	
-	if (Widget)
-	{
-		Widget->BindPlayer(PlayerState);
-		BuyMenuWidget->BindPlayer(PlayerState);
-	}
-}
-
 void AMyInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -95,7 +83,6 @@ void AMyInGameHUD::BeginPlay()
 
 	if (Widget)
 	{
-		Widget->BindGameState(GameState);
 		Widget->AddToViewport();
 	}
 

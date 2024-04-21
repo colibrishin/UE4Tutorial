@@ -17,9 +17,13 @@ class MYPROJECT_API UMyRemainingTeamWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void BindGameState(class AMyGameState* State) const;
+
+protected:
+	virtual void NativeConstruct() override;
 
 private:
+	void BindGameState(class AMyGameState* State) const;
+
 	void HandlePlayerChanges(const EMyTeam Team, const int32 Count) const;
 
 	UPROPERTY(meta = (BindWidget))
