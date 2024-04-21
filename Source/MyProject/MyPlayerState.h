@@ -58,11 +58,11 @@ public:
 	FORCEINLINE int32 GetMoney() const { return Money; }
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	int32         GetDamage() const;
 
-	virtual void Reset() override;
+	int32         GetDamage() const;
 	EMyCharacterState GetState() const { return State; }
 
+	virtual void Reset() override;
 protected:
 	virtual void BeginPlay() override;
 

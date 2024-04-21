@@ -2,12 +2,59 @@
 
 #include "CoreMinimal.h"
 #include "Data.h"
+#include "MyBuyZone.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
 #include "MyPlayerState.h"
 #include "MyStatComponent.h"
 #include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
+
+inline bool IsPlayerInBuyZone(AMyCharacter* Character)
+{
+	const FCollisionQueryParams Params {NAME_None, false, Character};
+
+	const auto& PlayerState = Character->GetPlayerState<AMyPlayerState>();
+
+	TArray<FOverlapResult> Results;
+
+	const auto& BuyCheck = Character->GetWorld()->OverlapMultiByChannel
+	(
+		Results,
+		Character->GetActorLocation(),
+		FQuat::Identity,
+		ECollisionChannel::ECC_GameTraceChannel8,
+		FCollisionShape::MakeSphere(10.0f),
+		Params
+	);
+
+	bool Found = false;
+
+	for (const auto& Result : Results)
+	{
+		const auto& BuyZone = Cast<AMyBuyZone>(Result.GetActor());
+
+		if (!IsValid(BuyZone))
+		{
+			continue;
+		}
+
+		LOG_FUNC_PRINTF(LogTemp, Warning, "BuyZone: %s", *BuyZone->GetName());
+
+		if (BuyZone->GetTeam() == PlayerState->GetTeam())
+		{
+			Found = true;
+		}
+	}
+
+	if (!Found)
+	{
+		LOG_FUNC(LogTemp, Error, "Player is not in buy zone");
+		return false;
+	}
+
+	return true;
+}
 
 inline bool ValidateBuyRequest(const int32 ID, AMyCharacter* const& Character)
 {
@@ -33,13 +80,14 @@ inline bool ValidateBuyRequest(const int32 ID, AMyCharacter* const& Character)
 		return false;
 	}
 
-	const auto& PlayerState = Cast<AMyGameState>(UGameplayStatics::GetGameState(Character));
+	const auto& GameState = Cast<AMyGameState>(UGameplayStatics::GetGameState(Character));
 
-	if (!PlayerState->CanBuy())
+	if (!GameState->CanBuy())
 	{
 		LOG_FUNC(LogTemp, Error, "MatchBuyTime is over");
 		return false;
 	}
 
-	return true;
+	return IsPlayerInBuyZone(Character);
 }
+
