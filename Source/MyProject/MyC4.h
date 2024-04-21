@@ -33,8 +33,8 @@ public:
 	bool IsDefused() const { return BombState == EMyBombState::Defused; }
 	bool IsExploded() const { return BombState == EMyBombState::Exploded; }
 
-	bool IsPlantable() const;
-	bool IsDefusable() const;
+	bool IsPlantable(const bool bCheckSpeed = true) const;
+	bool IsDefusable(const bool bCheckSpeed = true) const;
 
 	const AMyCharacter* GetDefusingCharacter() const { return DefusingCharacter.Get(); }
 
@@ -58,6 +58,10 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void ClientInteractImpl(AMyCharacter* Character) override;
+	virtual void ClientUseImpl(AMyCharacter* Character) override;
+
+	virtual void ClientInteractInterruptedImpl() override;
+	virtual void ClientUseInterruptedImpl() override;
 
 	void         OnBombExplodedImpl();
 	void         OnBombPlantedImpl();
@@ -99,6 +103,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	TWeakObjectPtr<class AMyCharacter> DefusingCharacter;
+
+	FDelegateHandle PlanterAttackHandle;
+
+	FDelegateHandle DefuserAttackHandle;
 
 	FDelegateHandle DefuserOnInteractInterruptedHandle;
 
