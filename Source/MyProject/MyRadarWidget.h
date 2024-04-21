@@ -33,6 +33,12 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	FSlateBrush TeammateBrush;
 
+	UPROPERTY(EditAnywhere)
+	class UTexture2D* NullTexture;
+
+	UPROPERTY(VisibleAnywhere)
+	FSlateBrush NullBrush;
+
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UCanvasPanel* RadarCanvas;
 

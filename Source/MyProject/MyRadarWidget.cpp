@@ -39,6 +39,18 @@ UMyRadarWidget::UMyRadarWidget(const FObjectInitializer& ObjectInitializer) : Su
 		EnemyBrush.Tiling = ESlateBrushTileType::NoTile;
 		EnemyBrush.Mirroring = ESlateBrushMirrorType::NoMirror;
 	}
+
+	static ConstructorHelpers::FObjectFinder<UTexture2D> NullTextureFinder(TEXT("Texture2D'/Game/Models/null-brush.null-brush'"));
+
+	if (NullTextureFinder.Succeeded())
+	{
+		NullTexture = NullTextureFinder.Object;
+		NullBrush.SetResourceObject(NullTexture);
+		NullBrush.SetImageSize({16.f, 16.f});
+		NullBrush.DrawAs = ESlateBrushDrawType::Image;
+		NullBrush.Tiling = ESlateBrushTileType::NoTile;
+		NullBrush.Mirroring = ESlateBrushMirrorType::NoMirror;
+	}
 }
 
 void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -121,13 +133,15 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 				const auto& Distance = FVector2D(RadarPosition.X, RadarPosition.Y).Size();
 
-				if (Distance > RadarScale / 2.f)
-				{
-					continue;
-				}
-
 				const auto& Brush = LocalPlayerTeam == Player->GetTeam() ? TeammateBrush : EnemyBrush;
 				const auto& Image = RadarImages[i];
+
+				if (Distance > RadarScale / 2.f)
+				{
+					Image->SetBrush(NullBrush);
+					Image->SetRenderTranslation(RadarCenter);
+					continue;
+				}
 
 				Image->SetBrush(Brush);
 				Image->SetRenderTranslation(PositionFromCenter);
