@@ -97,7 +97,13 @@ AMyWeapon* AMyCharacter::GetWeapon() const
 AMyCollectable* AMyCharacter::GetCurrentItem() const
 {
 	const auto& State = GetPlayerState<AMyPlayerState>();
-	return State->GetCurrentItem();
+
+	if (IsValid(State))
+	{
+		return State->GetCurrentItem();
+	}
+
+	return nullptr;
 }
 
 // Called when the game starts or when spawned
