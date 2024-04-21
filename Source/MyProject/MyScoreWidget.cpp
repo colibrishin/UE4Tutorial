@@ -5,6 +5,16 @@
 
 #include "Components/TextBlock.h"
 
+void UMyScoreWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
+	{
+		BindGameState(GameState);
+	}
+}
+
 void UMyScoreWidget::BindGameState(AMyGameState* State)
 {
 	if (IsValid(State))

@@ -141,7 +141,7 @@ void UMyBuyMenuWidget::Toggle()
 	}
 }
 
-void UMyBuyMenuWidget::BindPlayer(AMyPlayerState* State)
+void UMyBuyMenuWidget::BindPlayerState(AMyPlayerState* State)
 {
 	State->BindOnMoneyChanged(this, &UMyBuyMenuWidget::UpdateMoney);
 }
@@ -152,6 +152,16 @@ void UMyBuyMenuWidget::BuyTimeEnded(bool NewBuyTime)
 	{
 		LOG_FUNC(LogTemp, Warning, "Buy time ended");
 		Close();
+	}
+}
+
+void UMyBuyMenuWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (const auto& Controller = Cast<AMyPlayerController>(GetOwningLocalPlayer()->PlayerController))
+	{
+		BindPlayerState(Controller->GetPlayerState<AMyPlayerState>());
 	}
 }
 

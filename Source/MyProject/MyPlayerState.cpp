@@ -38,29 +38,6 @@ AMyPlayerState::AMyPlayerState()
 void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (HasLocalNetOwner())
-	{
-		const auto& PlayerController = Cast<AMyPlayerController>(GetOwner());
-
-		if (!IsValid(PlayerController))
-		{
-			LOG_FUNC(LogTemp, Error, "PlayerController is not valid");
-			return;
-		}
-
-		const auto& HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD());
-
-		if (IsValid(HUD))
-		{
-			LOG_FUNC(LogTemp, Warning, "Bind Player");
-			HUD->BindPlayer(this);
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Error, "HUD is not valid");
-		}
-	}
 }
 
 float AMyPlayerState::TakeDamage(

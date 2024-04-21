@@ -17,8 +17,6 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void BindPlayer(AMyPlayerState* State) const;
-	void BindGameState(class AMyGameState* State) const;
 	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
 private:
@@ -42,5 +40,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyScoreWidget* ScoreWidget;
+
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyRadarWidget* RadarWidget;
 
 };

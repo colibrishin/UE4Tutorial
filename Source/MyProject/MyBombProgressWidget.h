@@ -18,11 +18,15 @@ class MYPROJECT_API UMyBombProgressWidget : public UUserWidget
 
 public:
 	void SetValue(const float Value) const;
-	void BindGameState(class AMyGameState* GameState);
+
+protected:
+	virtual void NativeConstruct() override;
 
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
+	void BindGameState(class AMyGameState* GameState);
+
 	void OnBombStateChanged(const EMyBombState NewState);
 
 	UPROPERTY(Meta=(BindWidget))
