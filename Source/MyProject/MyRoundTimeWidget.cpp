@@ -28,3 +28,28 @@ void UMyRoundTimeWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTi
 	Super::NativeTick(MyGeometry, InDeltaTime);
 	UpdateTime();
 }
+
+void UMyRoundTimeWidget::NativeConstruct()
+{
+	Super::NativeConstruct();
+
+	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
+	{
+		GameState->BindOnBombProgressChanged(this, &UMyRoundTimeWidget::HandleBombProgressChanged);
+	}
+}
+
+void UMyRoundTimeWidget::HandleBombProgressChanged(const EMyBombState State) const
+{
+	if (State == EMyBombState::Planted || 
+		State == EMyBombState::Defusing || 
+		State == EMyBombState::Exploded ||
+		State == EMyBombState::Defused)
+	{
+		RoundTimeText->SetVisibility(ESlateVisibility::Hidden);
+	}
+	else
+	{
+		RoundTimeText->SetVisibility(ESlateVisibility::Visible);
+	}
+}

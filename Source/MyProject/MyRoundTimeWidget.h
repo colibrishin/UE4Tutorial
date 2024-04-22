@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Enum.h"
+
 #include "Blueprint/UserWidget.h"
 #include "MyRoundTimeWidget.generated.h"
 
@@ -19,7 +21,11 @@ public:
 
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
+	virtual void NativeConstruct() override;
+
 private:
+	void HandleBombProgressChanged(const EMyBombState State) const;
+
 	UPROPERTY(Meta = (BindWidget))
 	class UTextBlock* RoundTimeText;
 };
