@@ -45,6 +45,19 @@ float AMyPlayerState::TakeDamage(
 )
 {
 	SetHP(Health - DamageAmount);
+
+	if (HasAuthority())
+	{
+		if (GetHP() <= 0)
+		{
+			const auto& Killer = Cast<AMyPlayerController>(EventInstigator)->GetPlayerState<AMyPlayerState>();
+			const auto& Victim = Cast<AMyPlayerController>(GetOwner())->GetPlayerState<AMyPlayerState>();
+			const auto& KillerWeapon = Cast<AMyWeapon>(DamageCauser);
+
+			OnKillOccurred.Broadcast(Killer, Victim, KillerWeapon);
+		}
+	}
+
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
 
@@ -77,6 +90,16 @@ void AMyPlayerState::Reset()
 	SetState(EMyCharacterState::Alive);
 	SetHP(StatComponent->GetMaxHealth());
 	// todo: Add money by winning or losing
+}
+
+void AMyPlayerState::IncrementKills()
+{
+	Kill++;
+}
+
+void AMyPlayerState::IncrementDeaths()
+{
+	Death++;
 }
 
 void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

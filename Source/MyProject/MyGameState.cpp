@@ -92,6 +92,20 @@ AMyGameState::AMyGameState()
 	if (BP_C4.Succeeded()) { C4BluePrint = BP_C4.Class; }
 }
 
+void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, const AMyWeapon* Weapon) const
+{
+	if (HasAuthority())
+	{
+		if (Killer && Victim)
+		{
+			Killer->IncrementKills();
+			Victim->IncrementDeaths();
+
+			Multi_KillOccurred(Killer, Victim, Weapon);
+		}
+	}
+}
+
 void AMyGameState::BuyTimeEnded()
 {
 	bCanBuy = false;
@@ -150,6 +164,13 @@ void AMyGameState::OnRep_AliveCT() const
 void AMyGameState::OnRep_AliveT() const
 {
 	OnAliveCountChanged.Broadcast(EMyTeam::T, AliveT);
+}
+
+void AMyGameState::Multi_KillOccurred_Implementation(
+	AMyPlayerState* Killer, AMyPlayerState* Victim, const AMyWeapon* Weapon
+) const
+{
+	OnKillOccurred.Broadcast(Killer, Victim, Weapon);
 }
 
 void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State)

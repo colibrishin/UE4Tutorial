@@ -306,7 +306,7 @@ void AMyCharacter::HitscanAttack()
 		{
 			UE_LOG(LogTemp, Warning , TEXT("Hit Actor: %s"), *Target->GetName());
 			FDamageEvent DamageEvent;
-			Target->TakeDamage(GetDamage(), DamageEvent, GetController(), this);
+			Target->TakeDamage(GetDamage(), DamageEvent, GetController(), GetWeapon());
 		}
 	}
 	else
