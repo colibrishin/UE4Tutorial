@@ -57,12 +57,16 @@ bool AMyWeapon::TryAttachItem(const AMyCharacter* Character)
 
 bool AMyWeapon::PostInteract(AMyCharacter* Character)
 {
-	if (Super::PostInteract(Character) && Character->TryPickWeapon(this))
+	const auto& Result = Super::PostInteract(Character);
+
+	if (Character->TryPickWeapon(this))
 	{
 		Show();
+
+		return Result && true;
 	}
 
-	return false;
+	return Result && false;
 }
 
 void AMyWeapon::OnFireRateTimed()
