@@ -16,6 +16,7 @@ DECLARE_MULTICAST_DELEGATE(FOnBombProgressChanging)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombProgressChanged, EMyBombState)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnPlayerStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAliveCountChanged, EMyTeam, int32)
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 /**
  * 
@@ -34,6 +35,7 @@ public:
 	DECL_BINDON(OnBombProgressChanged, EMyBombState)
 	DECL_BINDON(OnPlayerStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
 	DECL_BINDON(OnAliveCountChanged, EMyTeam, int32)
+	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 	EMyRoundProgress GetState() const { return RoundProgress; }
 	int32 GetCTCount() const { return AliveCT; }
@@ -55,6 +57,8 @@ public:
 	int32        GetTWins() const { return TWinCount; }
 
 	AMyGameState();
+
+	void HandleKillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
 
 	void HandlePlayerStateChanged(class AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State);
 
@@ -117,6 +121,9 @@ private:
 	UFUNCTION()
 	void OnRep_AliveT() const;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_KillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
+
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<class AMyC4> C4BluePrint;
 
@@ -172,6 +179,8 @@ private:
 	FOnBombProgressChanged OnBombProgressChanged;
 
 	FOnPlayerStateChanged OnPlayerStateChanged;
+
+	FOnKillOccurred OnKillOccurred;
 
 	UPROPERTY(VisibleAnywhere,  ReplicatedUsing=OnRep_AliveCT)
 	int32 AliveCT;
