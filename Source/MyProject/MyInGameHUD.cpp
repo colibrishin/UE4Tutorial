@@ -50,6 +50,11 @@ void AMyInGameHUD::UpdateAmmo(const int32 CurrentAmmoCount, const int32 Remainin
 	}
 }
 
+UMyInGameWidget* AMyInGameHUD::GetInGameWidget() const
+{
+	return Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
+}
+
 bool AMyInGameHUD::IsBuyMenuOpened() const
 {
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
