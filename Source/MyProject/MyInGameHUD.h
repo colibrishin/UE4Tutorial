@@ -20,6 +20,8 @@ public:
 
 	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
+	class UMyInGameWidget* GetInGameWidget() const;
+
 	bool IsBuyMenuOpened() const;
 
 protected:

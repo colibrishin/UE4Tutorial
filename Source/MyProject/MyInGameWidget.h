@@ -19,6 +19,8 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 public:
 	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
+	class UMyBombIndicatorWidget* GetBombIndicatorWidget() const;
+
 private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyCharacterWidget* CharacterWidget;
@@ -43,5 +45,10 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyRadarWidget* RadarWidget;
+
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyBombIndicatorWidget* BombIndicatorWidget;
+
+	//todo: Kill feed
 
 };
