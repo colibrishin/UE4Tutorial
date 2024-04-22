@@ -20,3 +20,8 @@ void UMyInGameWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 Remai
 		AmmoWidget->UpdateAmmo(CurrentAmmoCount, RemainingAmmoCount);
 	}
 }
+
+UMyBombIndicatorWidget* UMyInGameWidget::GetBombIndicatorWidget() const
+{
+	return BombIndicatorWidget;
+}
