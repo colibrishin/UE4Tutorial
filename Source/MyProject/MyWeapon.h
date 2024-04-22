@@ -37,6 +37,7 @@ public:
 	virtual bool Reload() final;
 
 	virtual bool TryAttachItem(const AMyCharacter* Character) override;
+	UTexture2D*  GetWeaponImage() const { return WeaponImage; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -58,6 +59,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool CanAttack;
+
+	UPROPERTY(EditAnywhere)
+	class UTexture2D* WeaponImage;
 
 	FTimerHandle FireRateTimerHandle;
 
