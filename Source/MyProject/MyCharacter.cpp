@@ -536,7 +536,7 @@ void AMyCharacter::InteractiveImpl()
 		OUT HitResults,
 		GetActorLocation(),
 		FQuat::Identity,
-		ECC_EngineTraceChannel3,
+		ECC_GameTraceChannel9,
 		FCollisionShape::MakeSphere(100.f),
 		Params
 	);
