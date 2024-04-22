@@ -10,6 +10,7 @@
 #include "MyC4.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombStateChanged, EMyBombState)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombPicked, class AMyCharacter*)
 
 UCLASS()
 class MYPROJECT_API AMyC4 : public AMyItem
@@ -26,6 +27,7 @@ public:
 
 	float GetPlantingRatio() const { return PlantingTime / FullPlantingTime; }
 	float GetDefusingRatio() const { return DefusingTime / FullDefusingTime; }
+	float GetElapsed() const { return Elapsed; }
 
 	bool IsPlanting() const { return BombState == EMyBombState::Planting; }
 	bool IsDefusing() const { return BombState == EMyBombState::Defusing; }
@@ -51,6 +53,7 @@ public:
 	virtual void UseInterrupted() override;
 
 	DECL_BINDON(OnBombStateChanged, EMyBombState)
+	DECL_BINDON(OnBombPicked, class AMyCharacter*)
 
 protected:
 	// Called when the game starts or when spawned
@@ -91,6 +94,9 @@ private:
 	void DefuseInterrupted();
 	bool TryPlant(class AMyCharacter* Character);
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_NotifyPicked(AMyCharacter* Character) const;
+
 	UPROPERTY(VisibleAnywhere, Replicated)
 	EMyBombState BombState;
 
@@ -113,6 +119,8 @@ private:
 	FDelegateHandle DefuserOnInteractInterruptedHandle;
 
 	FOnBombStateChanged OnBombStateChanged;
+
+	FOnBombPicked OnBombPicked;
 
 	FTimerHandle OnBombDefusingHandle;
 
