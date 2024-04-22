@@ -5,9 +5,11 @@
 
 #include "ConstantFVector.hpp"
 #include "DrawDebugHelpers.h"
+#include "MyBombIndicatorWidget.h"
 #include "MyBombProgressWidget.h"
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
+#include "MyInGameWidget.h"
 #include "MyInventoryComponent.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
@@ -190,6 +192,17 @@ bool AMyC4::IsDefusable(const bool bCheckSpeed) const
 void AMyC4::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (const auto& PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		if (const auto& LocalHUD = Cast<AMyInGameHUD>(PlayerController->GetHUD()))
+		{
+			if (const auto& BombIndicator = LocalHUD->GetInGameWidget()->GetBombIndicatorWidget())
+			{
+				BombIndicator->BindBomb(this);
+			}
+		}
+	}
 }
 
 void AMyC4::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -269,6 +282,7 @@ void AMyC4::OnBombPlantedImpl()
 		SetState(EMyBombState::Planted);
 		Elapsed = 0.f;
 
+		GetMesh()->SetSimulatePhysics(false);
 		GetItemOwner()->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 
 		Drop();
@@ -380,7 +394,17 @@ bool AMyC4::PostInteract(AMyCharacter* Character)
 	}
 	else
 	{
-		return CTPickPlantGuard(Character) && Super::PostInteract(Character);
+		const auto& Result = CTPickPlantGuard(Character) && Super::PostInteract(Character);
+
+		if (Result)
+		{
+			if (HasAuthority())
+			{
+				Multi_NotifyPicked(Character);
+			}
+		}
+
+		return Result;
 	}
 }
 
@@ -443,6 +467,11 @@ bool AMyC4::TryPlant(class AMyCharacter* Character)
 	SetPlanting(true);
 
 	return true;
+}
+
+void AMyC4::Multi_NotifyPicked_Implementation(AMyCharacter* Character) const
+{
+	OnBombPicked.Broadcast(Character);
 }
 
 bool AMyC4::PostUse(AMyCharacter* Character)
