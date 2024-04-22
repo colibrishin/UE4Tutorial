@@ -21,19 +21,20 @@ AMyCollectable::AMyCollectable()
 	GetMesh()->SetupAttachment(RootComponent);
 	GetCollider()->SetupAttachment(GetMesh());
 
-	GetMesh()->SetCollisionProfileName(TEXT("MyCollectable"));
 	GetCollider()->SetCollisionProfileName(TEXT("MyCollectable"));
 
 	GetCollider()->SetBoxExtent(FVector{10.f, 30.f, 10.f});
 
-	GetMesh()->SetSimulatePhysics(false);
-	GetCollider()->SetSimulatePhysics(false);
+	GetMesh()->SetSimulatePhysics(true);
 }
 
 // Called when the game starts or when spawned
 void AMyCollectable::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetReplicates(true);
+    SetReplicateMovement(true);
 }
 
 void AMyCollectable::PostInitializeComponents()
@@ -93,6 +94,8 @@ bool AMyCollectable::TryAttachItem(const AMyCharacter* Character)
 
 bool AMyCollectable::PostInteract(AMyCharacter* Character)
 {
+	GetMesh()->SetSimulatePhysics(false);
+
 	if (TryAttachItem(Character))
 	{
 		LOG_FUNC(LogTemp, Warning, "PostInteract success");
@@ -218,7 +221,7 @@ bool AMyCollectable::Drop()
 	}
 
 	Show();
-	//GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->SetSimulatePhysics(true);
 	return true;
 }
 
