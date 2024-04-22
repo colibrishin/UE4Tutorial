@@ -49,6 +49,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyBombIndicatorWidget* BombIndicatorWidget;
 
-	//todo: Kill feed
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyKillFeedWidget* KillFeedWidget;
 
 };
