@@ -79,6 +79,22 @@ bool AMyInGameHUD::IsBuyMenuOpened() const
 	return false;
 }
 
+void AMyInGameHUD::SetState(AMyPlayerState* MyPlayerState) const
+{
+	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
+	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
+
+	if (Widget)
+	{
+		Widget->BindPlayerState(MyPlayerState);
+	}
+
+	if (BuyMenuWidget)
+	{
+		BuyMenuWidget->BindPlayerState(MyPlayerState);
+	}
+}
+
 void AMyInGameHUD::BeginPlay()
 {
 	Super::BeginPlay();
@@ -86,8 +102,6 @@ void AMyInGameHUD::BeginPlay()
 	const auto& Controller = GetOwningPlayerController();
 	EnableInput(Controller);
 	const auto& Character = Cast<AMyCharacter>(GetOwningPawn());
-
-	const auto& PlayerState = Cast<AMyPlayerState>(Controller->PlayerState);
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());

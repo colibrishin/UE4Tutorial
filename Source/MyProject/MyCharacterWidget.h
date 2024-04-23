@@ -16,13 +16,14 @@ class MYPROJECT_API UMyCharacterWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
+public:
+	void         BindPlayerState(AMyPlayerState* MyPlayerState);
+
 protected:
 	virtual void NativeConstruct() override;
-
+	
 private:
-	void BindHp(AMyPlayerState* State);
-
-	void UpdateHpRatio(const int32 PlayerId, const float Value) const;
+	void UpdateHpRatio(const float Value) const;
 
 	UPROPERTY(Meta=(BindWidget))
 	class UProgressBar* HPProgressBar;

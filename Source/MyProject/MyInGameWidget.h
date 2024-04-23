@@ -17,9 +17,12 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	UMyInGameWidget(const FObjectInitializer& ObjectInitializer);
+
 	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
 
 	class UMyBombIndicatorWidget* GetBombIndicatorWidget() const;
+	void                          BindPlayerState(AMyPlayerState* MyPlayerState) const;
 
 private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
@@ -51,5 +54,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UMyKillFeedWidget* KillFeedWidget;
+
+	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
+	class UMyDamageIndicatorWidget* DamageIndicatorWidget;
 
 };
