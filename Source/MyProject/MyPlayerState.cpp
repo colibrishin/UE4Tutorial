@@ -94,12 +94,18 @@ void AMyPlayerState::Reset()
 
 void AMyPlayerState::IncrementKills()
 {
-	Kill++;
+	if (HasAuthority())
+	{
+		Kill++;
+	}
 }
 
 void AMyPlayerState::IncrementDeaths()
 {
-	Death++;
+	if (HasAuthority())
+	{
+		Death++;
+	}
 }
 
 void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -116,11 +122,6 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, StatComponent);
 	DOREPLIFETIME(AMyPlayerState, Weapon);
 	DOREPLIFETIME(AMyPlayerState, CurrentItem);
-}
-
-void AMyPlayerState::OnRep_StateChanged() const
-{
-	OnStateChanged.Broadcast(Cast<AMyPlayerController>(GetOwner()), Team, State);
 }
 
 void AMyPlayerState::OnRep_HealthChanged() const
@@ -213,7 +214,6 @@ void AMyPlayerState::SetHP(const int32 NewHP)
 	{
 		if (Health <= 0 && State != EMyCharacterState::Dead)
 		{
-			Death++;
 			SetState(EMyCharacterState::Dead);
 		}
 
