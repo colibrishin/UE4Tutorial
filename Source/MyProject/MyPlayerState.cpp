@@ -56,13 +56,21 @@ float AMyPlayerState::TakeDamage(
 
 	if (HasAuthority())
 	{
+		const auto& DamageGiver = Cast<AMyPlayerController>(EventInstigator)->GetPlayerState<AMyPlayerState>();
+		const auto& Victim = Cast<AMyPlayerController>(GetOwner())->GetPlayerState<AMyPlayerState>();
+		const auto& KillerWeapon = Cast<AMyWeapon>(DamageCauser);
+
 		if (GetHP() <= 0)
 		{
-			const auto& Killer = Cast<AMyPlayerController>(EventInstigator)->GetPlayerState<AMyPlayerState>();
-			const auto& Victim = Cast<AMyPlayerController>(GetOwner())->GetPlayerState<AMyPlayerState>();
-			const auto& KillerWeapon = Cast<AMyWeapon>(DamageCauser);
-
-			OnKillOccurred.Broadcast(Killer, Victim, KillerWeapon);
+			OnKillOccurred.Broadcast(DamageGiver, Victim, KillerWeapon);
+		}
+		else
+		{
+			if (HasAuthority())
+			{
+				OnDamageTaken.Broadcast(DamageGiver);
+				Client_OnDamageTaken(DamageGiver);
+			}
 		}
 	}
 
@@ -134,7 +142,12 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 
 void AMyPlayerState::OnRep_HealthChanged() const
 {
-	OnHPChanged.Broadcast(GetPlayerId(), GetHPRatio());
+	OnHPChanged.Broadcast(GetHPRatio());
+}
+
+void AMyPlayerState::Client_OnDamageTaken_Implementation(AMyPlayerState* DamageGiver)
+{
+	OnDamageTaken.Broadcast(DamageGiver);
 }
 
 void AMyPlayerState::OnRep_MoneyChanged() const
@@ -225,7 +238,7 @@ void AMyPlayerState::SetHP(const int32 NewHP)
 			SetState(EMyCharacterState::Dead);
 		}
 
-		OnHPChanged.Broadcast(GetPlayerId(), GetHPRatio());
+		OnHPChanged.Broadcast(GetHPRatio());
 	}
 	
 }
