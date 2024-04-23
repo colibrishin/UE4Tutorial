@@ -35,6 +35,14 @@ AMyPlayerState::AMyPlayerState()
 	InventoryComponent = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("InventoryComponent"));
 }
 
+void AMyPlayerState::Client_NotifyHUDUpdate_Implementation()
+{
+	if (const auto& HUD = Cast<AMyInGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
+	{
+		HUD->SetState(this);
+	}
+}
+
 void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();

@@ -27,12 +27,12 @@ public:
 
 	FORCEINLINE bool IsOpened() const { return IsOpen; }
 	void             BuyTimeEnded(bool NewBuyTime);
+	void             BindPlayerState(AMyPlayerState* State);
 
 protected:
 	virtual void NativeConstruct() override;
 
 private:
-	void BindPlayerState(AMyPlayerState* State);
 	void ProcessBuy(const int32 ID) const;
 	void UpdateMoney(const int32 Money) const;
 
