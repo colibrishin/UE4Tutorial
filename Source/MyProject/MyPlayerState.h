@@ -68,15 +68,17 @@ public:
 	void         IncrementKills();
 	void         IncrementDeaths();
 
+	int32        GetKill() const { return Kill; }
+	int32        GetDeath() const { return Death; }
+	int32        GetAssist()const { return Assist; }
+
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	UFUNCTION()
-	void OnRep_StateChanged() const;
-
+	
 	UFUNCTION()
 	void OnRep_HealthChanged() const;
 
@@ -91,7 +93,7 @@ private:
 
 	static std::mutex TeamAssignMutex;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_StateChanged)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	EMyCharacterState State;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
