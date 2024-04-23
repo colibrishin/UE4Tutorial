@@ -67,8 +67,6 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Vertical = FVector::DotProduct(Velocity, Character->GetActorForwardVector());
 	Horizontal = FVector::DotProduct(Velocity, Character->GetActorRightVector());
 	Pitch = Character->GetPitchInput();
-
-    LOG_FUNC_PRINTF(LogTemp, Warning, "%f", Pitch);
 }
 
 FName UMyAnimInstance::GetAttackMontageSectionName(const int32 NewIndex)
