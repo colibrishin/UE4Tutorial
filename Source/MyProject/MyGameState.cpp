@@ -116,6 +116,14 @@ void AMyGameState::BuyTimeEnded()
 	}
 }
 
+void AMyGameState::HandleOnBombPicked(AMyCharacter* Character) const
+{
+	if (HasAuthority())
+	{
+		Multi_NotifyBombPicked(Character);
+	}
+}
+
 void AMyGameState::OnRep_WinnerSet() const
 {
 	if (Winner != EMyTeam::Unknown)
@@ -164,6 +172,11 @@ void AMyGameState::OnRep_AliveCT() const
 void AMyGameState::OnRep_AliveT() const
 {
 	OnAliveCountChanged.Broadcast(EMyTeam::T, AliveT);
+}
+
+void AMyGameState::Multi_NotifyBombPicked_Implementation(AMyCharacter* Character) const
+{
+	OnBombPicked.Broadcast(Character);
 }
 
 void AMyGameState::Multi_NotifyNewPlayer_Implementation(AMyPlayerState* State) const
@@ -418,10 +431,18 @@ void AMyGameState::RestartRound()
 	AliveCT = 0;
 	AliveT = 0;
 
-	RoundC4->UnbindOnBombStateChanged(OnBombStateChangedHandle);
-
 	if (RoundC4)
 	{
+		if (OnBombStateChangedHandle.IsValid())
+		{
+			RoundC4->UnbindOnBombStateChanged(OnBombStateChangedHandle);
+		}
+
+		if (OnBombPickedHandle.IsValid())
+		{
+			RoundC4->UnbindOnBombPicked(OnBombPickedHandle);
+		}
+		
 		RoundC4->Destroy(true);
 	}
 
@@ -506,6 +527,8 @@ void AMyGameState::RestartRound()
 
 	OnBombStateChangedHandle = RoundC4->BindOnBombStateChanged(this, &AMyGameState::OnBombStateChanged);
 	BombState = EMyBombState::Idle;
+
+	OnBombPickedHandle = RoundC4->BindOnBombPicked(this, &AMyGameState::HandleOnBombPicked);
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);

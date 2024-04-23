@@ -6,14 +6,16 @@
 
 #include "CoreMinimal.h"
 #include "Enum.h"
+#include "MyDamageIndicatorWidget.h"
 #include "MyProjectGameModeBase.h"
 
 #include "GameFramework/PlayerState.h"
 #include "MyPlayerState.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHPChanged, int32, float)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnHPChanged, float)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, int32)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, class AMyPlayerState*)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 /**
@@ -52,7 +54,8 @@ public:
 	}
 	FORCEINLINE float GetHPRatio() const;
 
-	DECL_BINDON(OnHPChanged, int32, float)
+	DECL_BINDON(OnDamageTaken, class AMyPlayerState*)
+	DECL_BINDON(OnHPChanged, float)
 	DECL_BINDON(OnMoneyChanged, int32)
 	DECL_BINDON(OnStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
 	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
@@ -91,6 +94,9 @@ private:
 		Team = NewTeam;
 	}
 
+	UFUNCTION(Client, Reliable)
+	void Client_OnDamageTaken(AMyPlayerState* DamageGiver);
+
 	UFUNCTION()
 	void OnRep_MoneyChanged() const;
 
@@ -128,6 +134,8 @@ private:
 
 	UPROPERTY(Replicated, VisibleAnywhere)
 	class AMyCollectable* CurrentItem;
+
+	FOnDamageTaken OnDamageTaken;
 
 	FOnStateChanged OnStateChanged;
 
