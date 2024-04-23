@@ -77,6 +77,11 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		{
 			constexpr float RadarScale = 300.0f;
 
+			if (PlayerController->GetPawn() == nullptr)
+			{
+				return;
+			}
+
 			const FVector LocalPlayer3DLocation = PlayerController->GetPawn()->GetActorLocation();
 			const auto& PlayerYaw = PlayerController->GetControlRotation().Yaw;
 			const auto& PlayerState = Cast<AMyPlayerState>(GetPlayerContext().GetPlayerState());
