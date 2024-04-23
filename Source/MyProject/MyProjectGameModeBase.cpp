@@ -87,6 +87,9 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 	PlayerState->BindOnKillOccurred(MyGameState, &AMyGameState::HandleKillOccurred);
 	MyGameState->HandleNewPlayer(PlayerState);
 
+	// Workaround for not using arbitrary delay for player state binding in HUD
+	PlayerState->Client_NotifyHUDUpdate();
+
 	if (!IsValid(MyGameState))
 	{
 		LOG_FUNC(LogTemp, Error, "GameState is not valid");

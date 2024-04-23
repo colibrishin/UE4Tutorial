@@ -68,9 +68,12 @@ public:
 	void         IncrementKills();
 	void         IncrementDeaths();
 
-	int32        GetKill() const { return Kill; }
-	int32        GetDeath() const { return Death; }
-	int32        GetAssist()const { return Assist; }
+	int32 GetKill() const { return Kill; }
+	int32 GetDeath() const { return Death; }
+	int32 GetAssist()const { return Assist; }
+
+	UFUNCTION(Client, Reliable)
+	void Client_NotifyHUDUpdate();
 
 protected:
 	virtual void BeginPlay() override;

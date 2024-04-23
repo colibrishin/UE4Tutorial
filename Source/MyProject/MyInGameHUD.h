@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyPlayerState.h"
 
 #include "GameFramework/HUD.h"
 #include "MyInGameHUD.generated.h"
@@ -23,6 +24,7 @@ public:
 	class UMyInGameWidget* GetInGameWidget() const;
 
 	bool IsBuyMenuOpened() const;
+	void SetState(class AMyPlayerState* MyPlayerState) const;
 
 protected:
 	virtual void BeginPlay() override;
