@@ -8,6 +8,12 @@
 #include "MyGameState.h"
 #include "MyPlayerState.h"
 
+void UMyBombIndicatorWidget::Reset()
+{
+	SetRenderOpacity(0.f);
+	ElapsedTime = 0.f;
+}
+
 void UMyBombIndicatorWidget::NativeConstruct()
 {
 	Super::NativeConstruct();

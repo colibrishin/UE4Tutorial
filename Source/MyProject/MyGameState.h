@@ -139,6 +139,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_NotifyBombPicked(class AMyCharacter* Character) const;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_ResetBombIndicator();
+
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<class AMyC4> C4BluePrint;
 

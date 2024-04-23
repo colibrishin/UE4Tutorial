@@ -40,6 +40,11 @@ void UMyInGameWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 Remai
 	}
 }
 
+UMyBombIndicatorWidget* UMyInGameWidget::GetBombIndicatorWidget() const
+{
+	return BombIndicatorWidget;
+}
+
 void UMyInGameWidget::BindPlayerState(AMyPlayerState* MyPlayerState) const
 {
 	if (IsValid(CharacterWidget))
