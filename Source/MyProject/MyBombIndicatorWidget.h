@@ -18,7 +18,7 @@ class MYPROJECT_API UMyBombIndicatorWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void BindBomb(AMyC4* Bomb);
+	void Reset();
 
 protected:
 	virtual void NativeConstruct() override;

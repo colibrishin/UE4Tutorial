@@ -4,6 +4,7 @@
 #include "MyProject/MyInGameHUD.h"
 
 #include "MyAmmoWidget.h"
+#include "MyBombProgressWidget.h"
 #include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
