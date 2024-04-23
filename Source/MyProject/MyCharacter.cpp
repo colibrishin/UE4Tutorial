@@ -60,6 +60,11 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	SpringArm->TargetArmLength = 0.f;
 	SpringArm->SetRelativeLocation({93.f, 41.f, 84.f});
 
+	SpringArm->bUsePawnControlRotation = true;
+	SpringArm->bInheritPitch = true;
+	SpringArm->bInheritYaw = true;
+	SpringArm->bInheritRoll = false;
+
 	bUseControllerRotationYaw = true;
 	bUseControllerRotationPitch = false;
 
@@ -125,6 +130,12 @@ void AMyCharacter::PostInitializeComponents()
 		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnMontageEnded);
 		AnimInstance->BindOnAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
 	}
+}
+
+void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyCharacter, PitchInput);
 }
 
 float AMyCharacter::TakeDamage(
@@ -722,8 +733,22 @@ void AMyCharacter::Pitch(const float Value)
 		return;
 	}
 
+	if (Value == 0.f)
+	{
+		return;
+	}
+
 	// 폰의 설정에서 Rotation Pitch가 true여야 함
-	//AddControllerPitchInput(Value);	
+	AddControllerPitchInput(Value);
+
+	if (!HasAuthority())
+	{
+		Server_SyncPitch(GetControlRotation().Pitch);
+	}
+	else
+	{
+		PitchInput = GetControlRotation().Pitch;
+	}
 }
 
 bool AMyCharacter::IsBuyMenuOpened() const
@@ -736,4 +761,9 @@ bool AMyCharacter::IsBuyMenuOpened() const
 	}
 
 	return false;
+}
+
+void AMyCharacter::Server_SyncPitch_Implementation(const float NewPitch)
+{
+	PitchInput = NewPitch;
 }
