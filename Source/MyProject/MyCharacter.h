@@ -127,7 +127,7 @@ private:
 	UFUNCTION(Server, Reliable)
 	void Server_InteractInterrupted();
 
-	void InteractInterruptedImpl();
+	void InteractInterruptedImpl() const;
 
 	// ============ End of Interacting ============
 
@@ -145,7 +145,7 @@ private:
 	UFUNCTION(Server, Reliable)
 	void Server_UseInterrupt();
 
-	void UseInterruptImpl();
+	void UseInterruptImpl() const;
 
 	// ============ End of Using ============
 
