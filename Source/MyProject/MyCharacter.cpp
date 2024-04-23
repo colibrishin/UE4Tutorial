@@ -739,7 +739,7 @@ void AMyCharacter::Pitch(const float Value)
 	}
 
 	// 폰의 설정에서 Rotation Pitch가 true여야 함
-	AddControllerPitchInput(Value);
+	AddControllerPitchInput(-Value);
 
 	if (!HasAuthority())
 	{
