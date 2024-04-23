@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
 #include "Utilities.hpp"
 
@@ -17,6 +18,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombProgressChanged, EMyBombState)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnPlayerStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAliveCountChanged, EMyTeam, int32)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewPlayerJoined, class AMyPlayerState*);
 
 /**
  * 
@@ -36,6 +38,7 @@ public:
 	DECL_BINDON(OnPlayerStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
 	DECL_BINDON(OnAliveCountChanged, EMyTeam, int32)
 	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
+	DECL_BINDON(OnNewPlayerJoined, class AMyPlayerState*)
 
 	EMyRoundProgress GetState() const { return RoundProgress; }
 	int32 GetCTCount() const { return AliveCT; }
@@ -61,6 +64,8 @@ public:
 	void HandleKillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
 
 	void HandlePlayerStateChanged(class AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State);
+
+	void HandleNewPlayer(class AMyPlayerState* State) const;
 
 	void RestartRound();
 
@@ -124,6 +129,9 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_KillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
 
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_NotifyNewPlayer(class AMyPlayerState* State) const;
+
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<class AMyC4> C4BluePrint;
 
@@ -181,6 +189,8 @@ private:
 	FOnPlayerStateChanged OnPlayerStateChanged;
 
 	FOnKillOccurred OnKillOccurred;
+
+	FOnNewPlayerJoined OnNewPlayerJoined;
 
 	UPROPERTY(VisibleAnywhere,  ReplicatedUsing=OnRep_AliveCT)
 	int32 AliveCT;

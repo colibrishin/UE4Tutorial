@@ -166,6 +166,11 @@ void AMyGameState::OnRep_AliveT() const
 	OnAliveCountChanged.Broadcast(EMyTeam::T, AliveT);
 }
 
+void AMyGameState::Multi_NotifyNewPlayer_Implementation(AMyPlayerState* State) const
+{
+	OnNewPlayerJoined.Broadcast(State);
+}
+
 void AMyGameState::Multi_KillOccurred_Implementation(
 	AMyPlayerState* Killer, AMyPlayerState* Victim, const AMyWeapon* Weapon
 ) const
@@ -258,6 +263,14 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 		}
 
 		OnPlayerStateChanged.Broadcast(PlayerController, Team, State);
+	}
+}
+
+void AMyGameState::HandleNewPlayer(AMyPlayerState* State) const
+{
+	if (HasAuthority())
+	{
+		Multi_NotifyNewPlayer(State);
 	}
 }
 
