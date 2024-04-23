@@ -7,6 +7,7 @@
 #include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
+#include "MyInGameStatWidget.h"
 #include "MyInGameWidget.h"
 #include "MyPlayerState.h"
 #include "MyStatComponent.h"
@@ -17,6 +18,7 @@ AMyInGameHUD::AMyInGameHUD()
 {
 	Widgets = CreateDefaultSubobject<UWidgetComponent>(TEXT("Widgets"));
 	BuyMenu = CreateDefaultSubobject<UWidgetComponent>(TEXT("BuyMenu"));
+	StatWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("StatWidget"));
 
 	SetRootComponent(Widgets);
 	Widgets->SetWidgetSpace(EWidgetSpace::Screen);
@@ -38,6 +40,16 @@ AMyInGameHUD::AMyInGameHUD()
 	}
 
 	BuyMenu->SetWidgetSpace(EWidgetSpace::Screen);
+
+	static ConstructorHelpers::FClassFinder<UMyInGameStatWidget> BP_StatWidget(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyInGameStatWidget.BPMyInGameStatWidget_C'"));
+
+	if (BP_StatWidget.Succeeded())
+	{
+		LOG_FUNC(LogTemp, Warning, "Stat is loaded");
+		StatWidget->SetWidgetClass(BP_StatWidget.Class);
+	}
+
+	StatWidget->SetWidgetSpace(EWidgetSpace::Screen);
 }
 
 void AMyInGameHUD::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
@@ -81,6 +93,8 @@ void AMyInGameHUD::BeginPlay()
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
 	const auto& GameState = Cast<AMyGameState>(UGameplayStatics::GetGameState(this));
 
+	const auto& StatSubWidget = Cast<UMyInGameStatWidget>(StatWidget->GetUserWidgetObject());
+
 	if (!IsValid(GameState))
 	{
 		UE_LOG(LogTemp, Error, TEXT("GameState is not valid"));
@@ -97,6 +111,12 @@ void AMyInGameHUD::BeginPlay()
 		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
 		GameState->BindOnBuyChanged(BuyMenuWidget, &UMyBuyMenuWidget::BuyTimeEnded);
 	}
+
+	if (StatSubWidget)
+	{
+		InputComponent->BindAction(TEXT("Score"), IE_Pressed, StatSubWidget, &UMyInGameStatWidget::Open);
+		InputComponent->BindAction(TEXT("Score"), IE_Released, StatSubWidget, &UMyInGameStatWidget::Close);
+	}
 }
 
 void AMyInGameHUD::DrawHUD()
@@ -110,4 +130,5 @@ void AMyInGameHUD::PostInitializeComponents()
 
 	Widgets->InitWidget();
 	BuyMenu->InitWidget();
+	StatWidget->InitWidget();
 }
