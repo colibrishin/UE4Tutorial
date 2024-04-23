@@ -3,10 +3,12 @@
 
 #include "MyProject/MyGameState.h"
 
+#include "MyBombIndicatorWidget.h"
 #include "MyC4.h"
 #include "MyCharacter.h"
 #include "MyCollectable.h"
 #include "MyInGameHUD.h"
+#include "MyInGameWidget.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
@@ -172,6 +174,23 @@ void AMyGameState::OnRep_AliveCT() const
 void AMyGameState::OnRep_AliveT() const
 {
 	OnAliveCountChanged.Broadcast(EMyTeam::T, AliveT);
+}
+
+void AMyGameState::Multi_ResetBombIndicator_Implementation()
+{
+	if (const auto& HUD = GetWorld()->GetFirstPlayerController()->GetHUD())
+	{
+		if (const auto& InGameHUD = Cast<AMyInGameHUD>(HUD))
+		{
+			if (const auto& InGameWidget = InGameHUD->GetInGameWidget())
+			{
+				if (const auto& BombIndicator = InGameWidget->GetBombIndicatorWidget())
+				{
+					BombIndicator->Reset();
+				}
+			}
+		}
+	}
 }
 
 void AMyGameState::Multi_NotifyBombPicked_Implementation(AMyCharacter* Character) const
@@ -447,6 +466,8 @@ void AMyGameState::RestartRound()
 	}
 
 	BombState = EMyBombState::Unknown;
+
+	Multi_ResetBombIndicator();
 
 	for (const auto& Player : PlayerArray)
 	{
