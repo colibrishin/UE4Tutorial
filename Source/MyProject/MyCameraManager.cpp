@@ -7,12 +7,9 @@ AMyCameraManager::AMyCameraManager()
 {
 	DefaultFOV = 90.0f;
 
-	ViewPitchMin = -90.0f;
-	ViewPitchMax = 90.0f;
+	ViewPitchMin = -89.90f;
+	ViewPitchMax = 89.90f;
 
 	ViewYawMin = 0;
 	ViewYawMax = 359.99f;
-
-	ViewRollMin = -90.0f;
-	ViewRollMax = 90.0f;
 }

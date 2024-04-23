@@ -46,11 +46,15 @@ public:
 	class AMyWeapon* GetWeapon() const;
 	class AMyCollectable* GetCurrentItem() const;
 
+	float GetPitchInput() const { return PitchInput; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void PostInitializeComponents() override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
@@ -149,11 +153,18 @@ private:
 	void Pitch(const float Value);
 	bool IsBuyMenuOpened() const;
 
+	UFUNCTION(Server)
+	void Server_SyncPitch(const float NewPitch);
+
 	UPROPERTY(VisibleAnywhere)
 	float ForwardInput;
 
 	UPROPERTY(VisibleAnywhere)
 	float RightInput;
+
+	// todo: overhead?
+	UPROPERTY(VisibleAnywhere, Replicated)
+	float PitchInput;
 
 	UPROPERTY(VisibleAnywhere)
 	bool IsAttacking;
