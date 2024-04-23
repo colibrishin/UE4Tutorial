@@ -109,6 +109,11 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					continue;
 				}
 
+				if (!IsValid(Player))
+				{
+					return;
+				}
+
 				// Endpoint - StartPoint
 				const auto& RelativePosition = LocalPlayer3DLocation - Player->GetPawn()->GetActorLocation();
 				const auto& Relative2DPosition = FVector2D(RelativePosition);
