@@ -585,7 +585,7 @@ void AMyCharacter::Server_InteractInterrupted_Implementation()
 	InteractInterruptedImpl();
 }
 
-void AMyCharacter::InteractInterruptedImpl()
+void AMyCharacter::InteractInterruptedImpl() const
 {
 	UE_LOG(LogTemp, Warning, TEXT("Interact Interrupted"));
 	OnInteractInterrupted.Broadcast();
@@ -638,7 +638,7 @@ void AMyCharacter::Server_UseInterrupt_Implementation()
 	UseInterruptImpl();
 }
 
-void AMyCharacter::UseInterruptImpl()
+void AMyCharacter::UseInterruptImpl() const
 {
 	UE_LOG(LogTemp, Warning, TEXT("Use Interrupted"));
 	OnUseInterrupted.Broadcast();
