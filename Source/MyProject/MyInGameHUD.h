@@ -39,4 +39,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UWidgetComponent* BuyMenu;
 
+	UPROPERTY(VisibleAnywhere)
+	class UWidgetComponent* StatWidget;
+
 };
