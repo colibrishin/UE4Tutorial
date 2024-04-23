@@ -85,7 +85,7 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 	PlayerState->BindOnStateChanged(MyGameState, &AMyGameState::HandlePlayerStateChanged);
 	PlayerState->SetState(EMyCharacterState::Alive);
 	PlayerState->BindOnKillOccurred(MyGameState, &AMyGameState::HandleKillOccurred);
-
+	MyGameState->HandleNewPlayer(PlayerState);
 
 	if (!IsValid(MyGameState))
 	{
