@@ -8,14 +8,6 @@
 #include "MyGameState.h"
 #include "MyPlayerState.h"
 
-void UMyBombIndicatorWidget::BindBomb(AMyC4* Bomb)
-{
-	if (IsValid(Bomb))
-	{
-		Bomb->BindOnBombPicked(this, &UMyBombIndicatorWidget::OnBombPicked);
-	}
-}
-
 void UMyBombIndicatorWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -25,7 +17,7 @@ void UMyBombIndicatorWidget::NativeConstruct()
 	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
 	{
 		GameState->BindOnBombProgressChanged(this, &UMyBombIndicatorWidget::OnBombProgressChanged);
-
+		GameState->BindOnBombPicked(this, &UMyBombIndicatorWidget::OnBombPicked);
 	}
 
 	ElapsedTime = 0.f;

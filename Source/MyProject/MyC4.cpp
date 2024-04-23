@@ -192,17 +192,6 @@ bool AMyC4::IsDefusable(const bool bCheckSpeed) const
 void AMyC4::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (const auto& PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
-	{
-		if (const auto& LocalHUD = Cast<AMyInGameHUD>(PlayerController->GetHUD()))
-		{
-			if (const auto& BombIndicator = LocalHUD->GetInGameWidget()->GetBombIndicatorWidget())
-			{
-				BombIndicator->BindBomb(this);
-			}
-		}
-	}
 }
 
 void AMyC4::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

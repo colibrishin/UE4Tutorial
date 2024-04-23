@@ -19,6 +19,7 @@ DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnPlayerStateChanged, class AMyPlayerCon
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAliveCountChanged, EMyTeam, int32)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewPlayerJoined, class AMyPlayerState*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombPicked, class AMyCharacter*)
 
 /**
  * 
@@ -39,6 +40,7 @@ public:
 	DECL_BINDON(OnAliveCountChanged, EMyTeam, int32)
 	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 	DECL_BINDON(OnNewPlayerJoined, class AMyPlayerState*)
+	DECL_BINDON(OnBombPicked, class AMyCharacter*)
 
 	EMyRoundProgress GetState() const { return RoundProgress; }
 	int32 GetCTCount() const { return AliveCT; }
@@ -108,6 +110,8 @@ private:
 
 	void BuyTimeEnded();
 
+	void HandleOnBombPicked(class AMyCharacter* Character) const;
+
 	UFUNCTION()
 	void OnRep_WinnerSet() const;
 
@@ -131,6 +135,9 @@ private:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_NotifyNewPlayer(class AMyPlayerState* State) const;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_NotifyBombPicked(class AMyCharacter* Character) const;
 
 	UPROPERTY(VisibleAnywhere)
 	TSubclassOf<class AMyC4> C4BluePrint;
@@ -178,6 +185,8 @@ private:
 
 	FOnWinnerSet OnWinnerSet;
 
+	FOnBombPicked OnBombPicked;
+
 	FTimerHandle BuyTimeHandle;
 
 	FOnRoundProgressChanged OnRoundProgressChanged;
@@ -212,4 +221,5 @@ private:
 	FTimerHandle RoundEndTimerHandle;
 
 	FDelegateHandle OnBombStateChangedHandle;
+	FDelegateHandle OnBombPickedHandle;
 };
