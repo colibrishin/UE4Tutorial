@@ -153,7 +153,7 @@ private:
 	void Pitch(const float Value);
 	bool IsBuyMenuOpened() const;
 
-	UFUNCTION(Server)
+	UFUNCTION(Server, Unreliable)
 	void Server_SyncPitch(const float NewPitch);
 
 	UPROPERTY(VisibleAnywhere)
