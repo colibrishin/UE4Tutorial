@@ -148,6 +148,42 @@ FORCEINLINE void ExecuteServer(
 	}
 }
 
+template <typename T , typename... Args>
+FORCEINLINE void ExecuteServer(
+	AActor* ActorContext, 
+	void (T::*ClientFunction)(Args...), 
+	void (T::*ServerFunction)(Args...) const,
+	Args... Arguments
+)
+{
+	if (!ActorContext->HasAuthority())
+	{
+		(static_cast<T*>(ActorContext)->*ClientFunction)(Arguments...);
+	}
+	else if (ActorContext->HasAuthority() || IsRunningDedicatedServer())
+	{
+		(static_cast<const T*>(ActorContext)->*ServerFunction)(Arguments...);
+	}
+}
+
+template <typename T , typename... Args>
+FORCEINLINE void ExecuteServer(
+	AActor* ActorContext, 
+	void (T::*ClientFunction)(Args...) const, 
+	void (T::*ServerFunction)(Args...),
+	Args... Arguments
+)
+{
+	if (!ActorContext->HasAuthority())
+	{
+		(static_cast<const T*>(ActorContext)->*ClientFunction)(Arguments...);
+	}
+	else if (ActorContext->HasAuthority() || IsRunningDedicatedServer())
+	{
+		(static_cast<T*>(ActorContext)->*ServerFunction)(Arguments...);
+	}
+}
+
 template<typename T>
 inline static FString EnumToString(const T Value)
 {
