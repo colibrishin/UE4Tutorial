@@ -26,6 +26,7 @@
 #include "Components/WidgetComponent.h"
 
 #include "Net/UnrealNetwork.h"
+#include "NiagaraComponent.h"
 
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
@@ -38,6 +39,10 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
+	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	BulletTrail = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BulletTrail"));
+
 	// 리소스를 불러오는 방법
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Mesh(TEXT("SkeletalMesh'/Game/ParagonBoris/Characters/Heroes/Boris/Meshes/Boris.Boris'"));
 
@@ -46,8 +51,16 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 		GetMesh()->SetSkeletalMesh(SK_Mesh.Object);
 	}
 
-	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
-	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> NS_BulletTrail(TEXT("NiagaraSystem'/Game/Blueprints/BPNiagaraMyBulletTrail.BPNiagaraMyBulletTrail'"));
+
+	if (NS_BulletTrail.Succeeded())
+	{
+		BulletTrail->SetAsset(NS_BulletTrail.Object);
+	}
+
+	BulletTrail->SetupAttachment(Camera);
+	BulletTrail->SetAutoActivate(false);
+	BulletTrail->SetAutoDestroy(false);
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -297,9 +310,11 @@ void AMyCharacter::HitscanAttack()
 		 Params
 		);
 
+	BulletTrail->Activate();
+
 	if (Result)
 	{
-		DrawDebugLine
+		/*DrawDebugLine
 			(
 			 GetWorld(),
 			 Camera->GetComponentLocation(),
@@ -309,7 +324,7 @@ void AMyCharacter::HitscanAttack()
 			 1.f,
 			 0,
 			 2.f
-			);
+			);*/
 
 		const auto& Target = Cast<AMyCharacter>(HitResult.GetActor());
 
@@ -322,7 +337,7 @@ void AMyCharacter::HitscanAttack()
 	}
 	else
 	{
-		DrawDebugLine
+		/*DrawDebugLine
 			(
 			 GetWorld(),
 			 Camera->GetComponentLocation(),
@@ -332,7 +347,7 @@ void AMyCharacter::HitscanAttack()
 			 1.f,
 			 0,
 			 2.f
-			);
+			);*/
 	}
 }
 
@@ -495,6 +510,7 @@ void AMyCharacter::AttackStart(const float Value)
 
 			if (GetWeapon()->GetWeaponStatComponent()->IsHitscan())
 			{
+				BulletTrail->SetNiagaraVariableFloat(TEXT("System.Age"), GetWeapon()->GetWeaponStatComponent()->GetFireRate());
 				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
 				HitscanAttack();
 			}
