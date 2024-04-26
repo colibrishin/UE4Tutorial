@@ -20,7 +20,8 @@ public class MyProject: ModuleRules
 			"UMG",
 			"NavigationSystem",
 			"AIModule",
-			"GameplayTasks"
+			"GameplayTasks",
+			"Niagara"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]
