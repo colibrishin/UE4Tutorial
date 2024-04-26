@@ -18,6 +18,8 @@ public:
 	AMyItem();
 	virtual bool PostInteract(class AMyCharacter* Character) override;
 
+	virtual bool Drop() override;
+
 protected:
 	virtual void PostInitializeComponents() override;
 
