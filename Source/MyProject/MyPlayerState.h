@@ -6,16 +6,18 @@
 
 #include "CoreMinimal.h"
 #include "Enum.h"
+#include "MyAmmoWidget.h"
 #include "MyDamageIndicatorWidget.h"
 #include "MyProjectGameModeBase.h"
 
 #include "GameFramework/PlayerState.h"
 #include "MyPlayerState.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStateChanged, class AMyPlayerState*, EMyCharacterState)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHPChanged, float)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, class AMyPlayerState*)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnWeaponChanged, class AMyPlayerState*)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 /**
@@ -57,7 +59,8 @@ public:
 	DECL_BINDON(OnDamageTaken, class AMyPlayerState*)
 	DECL_BINDON(OnHPChanged, float)
 	DECL_BINDON(OnMoneyChanged, int32)
-	DECL_BINDON(OnStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
+	DECL_BINDON(OnStateChanged, class AMyPlayerState*, EMyCharacterState)
+	DECL_BINDON(OnWeaponChanged, class AMyPlayerState*)
 	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 	FORCEINLINE int32 GetMoney() const { return Money; }
@@ -87,6 +90,9 @@ private:
 	
 	UFUNCTION()
 	void OnRep_HealthChanged() const;
+
+	UFUNCTION()
+	void OnRep_WeaponChanged();
 
 	void SetTeam(const EMyTeam NewTeam)
 	{
@@ -129,7 +135,7 @@ private:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	class UMyInventoryComponent* InventoryComponent;
 
-	UPROPERTY(Replicated, VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponChanged)
 	class AMyWeapon* Weapon;
 
 	UPROPERTY(Replicated, VisibleAnywhere)
@@ -140,6 +146,8 @@ private:
 	FOnStateChanged OnStateChanged;
 
 	FOnHPChanged OnHPChanged;
+
+	FOnWeaponChanged OnWeaponChanged;
 
 	FOnKillOccurred OnKillOccurred;
 

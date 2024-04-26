@@ -210,10 +210,12 @@ void AMyGameState::Multi_KillOccurred_Implementation(
 	OnKillOccurred.Broadcast(Killer, Victim, Weapon);
 }
 
-void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State)
+void AMyGameState::HandlePlayerStateChanged(AMyPlayerState* PlayerState, const EMyCharacterState State)
 {
 	if (HasAuthority())
 	{
+		const auto& Team = PlayerState->GetTeam();
+
 		switch (State)
 		{
 		case EMyCharacterState::Alive:
@@ -249,7 +251,7 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 
 		if (State == EMyCharacterState::Dead)
 		{
-			const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
+			const auto& Character = Cast<AMyCharacter>(PlayerState->GetPawn());
 
 			const auto& Spectator = GetWorld()->SpawnActor<AMySpectatorPawn>(
 				Character->GetActorLocation(),
@@ -268,7 +270,9 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 				}
 			}
 
-			Spectator->SetPreviousCharacter(Cast<AMyCharacter>(PlayerController->GetCharacter()));
+			const auto& PlayerController = Cast<AMyPlayerController>(PlayerState->GetOwner());
+
+			Spectator->SetPreviousCharacter(Character);
 			PlayerController->SetSpectator(Spectator);
 
 			if (!PlayerController->HasAuthority())
@@ -294,7 +298,7 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerController* PlayerControlle
 			}
 		}
 
-		OnPlayerStateChanged.Broadcast(PlayerController, Team, State);
+		OnPlayerStateChanged.Broadcast(PlayerState, State);
 	}
 }
 
