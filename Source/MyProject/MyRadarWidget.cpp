@@ -98,9 +98,9 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 			for (int i = 0; i < GameState->PlayerArray.Num(); ++i)
 			{
-				const auto& Player = Cast<AMyPlayerState>(GameState->PlayerArray[i]);
+				const auto& OtherPlayerState = Cast<AMyPlayerState>(GameState->PlayerArray[i]);
 
-				if (Player == GetPlayerContext().GetPlayerState())
+				if (OtherPlayerState == GetPlayerContext().GetPlayerState())
 				{
 					const auto& Image = RadarImages[i];
 
@@ -109,18 +109,23 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					continue;
 				}
 
-				if (Cast<AMySpectatorPawn>(Player->GetPawn()))
+				if (Cast<AMySpectatorPawn>(OtherPlayerState->GetPawn()))
 				{
 					continue;
 				}
 
-				if (!IsValid(Player))
+				if (!IsValid(OtherPlayerState))
+				{
+					return;
+				}
+
+				if (!IsValid(OtherPlayerState->GetPawn()))
 				{
 					return;
 				}
 
 				// Endpoint - StartPoint
-				const auto& RelativePosition = LocalPlayer3DLocation - Player->GetPawn()->GetActorLocation();
+				const auto& RelativePosition = LocalPlayer3DLocation - OtherPlayerState->GetPawn()->GetActorLocation();
 				const auto& Relative2DPosition = FVector2D(RelativePosition);
 
 				// Gets the angle between the two points in degrees 
@@ -143,7 +148,7 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 				const auto& Distance = FVector2D(RadarPosition.X, RadarPosition.Y).Size();
 
-				const auto& Brush = LocalPlayerTeam == Player->GetTeam() ? TeammateBrush : EnemyBrush;
+				const auto& Brush = LocalPlayerTeam == OtherPlayerState->GetTeam() ? TeammateBrush : EnemyBrush;
 				const auto& Image = RadarImages[i];
 
 				if (Distance > RadarScale / 2.f)
