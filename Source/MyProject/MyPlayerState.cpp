@@ -3,6 +3,7 @@
 
 #include "MyProject/MyPlayerState.h"
 
+#include "MyAIController.h"
 #include "Utilities.hpp"
 
 #include "GameFramework/GameStateBase.h"
@@ -56,6 +57,12 @@ float AMyPlayerState::TakeDamage(
 
 	if (HasAuthority())
 	{
+		// todo: AIController + Player State?
+		if (Cast<AAIController>(EventInstigator))
+		{
+			return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+		}
+
 		const auto& DamageGiver = Cast<AMyPlayerController>(EventInstigator)->GetPlayerState<AMyPlayerState>();
 		const auto& Victim = Cast<AMyPlayerController>(GetOwner())->GetPlayerState<AMyPlayerState>();
 		const auto& KillerWeapon = Cast<AMyWeapon>(DamageCauser);
