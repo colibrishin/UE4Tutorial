@@ -152,6 +152,11 @@ void AMyPlayerState::OnRep_HealthChanged() const
 	OnHPChanged.Broadcast(GetHPRatio());
 }
 
+void AMyPlayerState::OnRep_WeaponChanged()
+{
+	OnWeaponChanged.Broadcast(this);
+}
+
 void AMyPlayerState::Client_OnDamageTaken_Implementation(AMyPlayerState* DamageGiver)
 {
 	OnDamageTaken.Broadcast(DamageGiver);
@@ -224,7 +229,7 @@ void AMyPlayerState::SetState(const EMyCharacterState NewState)
 
 	if (HasAuthority())
 	{
-		OnStateChanged.Broadcast(Cast<AMyPlayerController>(GetOwner()), Team, State);
+		OnStateChanged.Broadcast(this, State);
 	}
 }
 
@@ -252,17 +257,20 @@ void AMyPlayerState::SetHP(const int32 NewHP)
 
 void AMyPlayerState::AddMoney(const int32 Amount)
 {
-	Money += Amount;
-
 	// Server does not participate in the replication.
 	if (HasAuthority())
 	{
+		Money += Amount;
 		OnMoneyChanged.Broadcast(Money);
 	}
 }
 
 void AMyPlayerState::SetWeapon(AMyWeapon* NewWeapon)
 {
-	Weapon = NewWeapon;
+	if (HasAuthority())
+	{
+		Weapon = NewWeapon;
+		OnWeaponChanged.Broadcast(this);
+	}
 }
 	

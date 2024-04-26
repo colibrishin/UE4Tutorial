@@ -15,7 +15,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnWinnerSet, EMyTeam)
 DECLARE_MULTICAST_DELEGATE(FOnBombProgressChanging)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombProgressChanged, EMyBombState)
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnPlayerStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
+DECLARE_MULTICAST_DELEGATE_TwoParams(FOnPlayerStateChanged, class AMyPlayerState*, EMyCharacterState)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAliveCountChanged, EMyTeam, int32)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewPlayerJoined, class AMyPlayerState*);
@@ -36,7 +36,7 @@ public:
 	DECL_BINDON(OnRoundProgressChanged, EMyRoundProgress)
 	DECL_BINDON(OnWinnerSet, EMyTeam)
 	DECL_BINDON(OnBombProgressChanged, EMyBombState)
-	DECL_BINDON(OnPlayerStateChanged, class AMyPlayerController*, EMyTeam, EMyCharacterState)
+	DECL_BINDON(OnPlayerStateChanged, class AMyPlayerState*, EMyCharacterState)
 	DECL_BINDON(OnAliveCountChanged, EMyTeam, int32)
 	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 	DECL_BINDON(OnNewPlayerJoined, class AMyPlayerState*)
@@ -65,7 +65,7 @@ public:
 
 	void HandleKillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
 
-	void HandlePlayerStateChanged(class AMyPlayerController* PlayerController, const EMyTeam Team, const EMyCharacterState State);
+	void HandlePlayerStateChanged(class AMyPlayerState* PlayerState, const EMyCharacterState State);
 
 	void HandleNewPlayer(class AMyPlayerState* State) const;
 
