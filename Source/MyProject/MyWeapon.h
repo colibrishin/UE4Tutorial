@@ -35,6 +35,7 @@ public:
 
 	virtual bool Attack() final;
 	virtual bool Reload() final;
+	virtual bool Drop() override;
 
 	virtual bool TryAttachItem(const AMyCharacter* Character) override;
 	UTexture2D*  GetWeaponImage() const { return WeaponImage; }

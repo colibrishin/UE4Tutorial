@@ -4,6 +4,7 @@
 #include "MyWeapon.h"
 
 #include "MyCharacter.h"
+#include "MyPlayerState.h"
 #include "MyWeaponStatComponent.h"
 
 #include "Components/BoxComponent.h"
@@ -139,4 +140,25 @@ bool AMyWeapon::Reload()
 	}
 
 	return false;
+}
+
+bool AMyWeapon::Drop()
+{
+	const auto& ItemOwner = GetItemOwner();
+	const auto& Result = Super::Drop();
+
+	if (Result)
+	{
+		if (HasAuthority())
+		{
+			if (const auto& PlayerState = ItemOwner->GetPlayerState<AMyPlayerState>())
+			{
+				PlayerState->SetWeapon(nullptr);
+			}
+		}
+		
+		return true && Result;
+	}
+
+	return false && Result;
 }
