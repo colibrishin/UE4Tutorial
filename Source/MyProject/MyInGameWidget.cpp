@@ -52,6 +52,11 @@ void UMyInGameWidget::BindPlayerState(AMyPlayerState* MyPlayerState) const
 		CharacterWidget->BindPlayerState(MyPlayerState);
 	}
 
+	if (IsValid(AmmoWidget))
+	{
+		AmmoWidget->BindPlayerState(MyPlayerState);
+	}
+
 	if (IsValid(DamageIndicatorWidget))
 	{
 		DamageIndicatorWidget->BindPlayerState(MyPlayerState);
