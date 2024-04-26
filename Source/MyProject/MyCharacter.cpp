@@ -510,7 +510,7 @@ void AMyCharacter::AttackStart(const float Value)
 
 			if (GetWeapon()->GetWeaponStatComponent()->IsHitscan())
 			{
-				BulletTrail->SetNiagaraVariableFloat(TEXT("System.Age"), GetWeapon()->GetWeaponStatComponent()->GetFireRate());
+				BulletTrail->SetNiagaraVariableFloat(TEXT("User.FireRate"), GetWeapon()->GetWeaponStatComponent()->GetFireRate());
 				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
 				HitscanAttack();
 			}
