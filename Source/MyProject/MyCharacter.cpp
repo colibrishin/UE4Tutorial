@@ -41,7 +41,6 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
-	BulletTrail = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BulletTrail"));
 
 	// 리소스를 불러오는 방법
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Mesh(TEXT("SkeletalMesh'/Game/ParagonBoris/Characters/Heroes/Boris/Meshes/Boris.Boris'"));
@@ -50,17 +49,6 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	{
 		GetMesh()->SetSkeletalMesh(SK_Mesh.Object);
 	}
-
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> NS_BulletTrail(TEXT("NiagaraSystem'/Game/Blueprints/BPNiagaraMyBulletTrail.BPNiagaraMyBulletTrail'"));
-
-	if (NS_BulletTrail.Succeeded())
-	{
-		BulletTrail->SetAsset(NS_BulletTrail.Object);
-	}
-
-	BulletTrail->SetupAttachment(Camera);
-	BulletTrail->SetAutoActivate(false);
-	BulletTrail->SetAutoDestroy(false);
 
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
@@ -310,8 +298,6 @@ void AMyCharacter::HitscanAttack()
 		 Params
 		);
 
-	BulletTrail->Activate();
-
 	if (Result)
 	{
 		/*DrawDebugLine
@@ -510,7 +496,6 @@ void AMyCharacter::AttackStart(const float Value)
 
 			if (GetWeapon()->GetWeaponStatComponent()->IsHitscan())
 			{
-				BulletTrail->SetNiagaraVariableFloat(TEXT("User.FireRate"), GetWeapon()->GetWeaponStatComponent()->GetFireRate());
 				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
 				HitscanAttack();
 			}

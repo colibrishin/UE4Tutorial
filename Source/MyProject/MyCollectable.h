@@ -17,7 +17,10 @@ public:
 	// Sets default values for this actor's properties
 	AMyCollectable();
 
-	UStaticMeshComponent* GetMesh() const { return Mesh; }
+	UMeshComponent* GetMesh() const { return MeshComponent.Get(); }
+	UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
+
 	class UBoxComponent* GetCollider() const { return Collider; }
 	class AMyCharacter* GetItemOwner() const;
 
@@ -25,6 +28,9 @@ public:
 
 	void Hide() const;
 	void Show() const;
+
+	void SetSkeletalMesh();
+	void SetStaticMesh();
 
 protected:
 	// Called when the game starts or when spawned
@@ -61,10 +67,15 @@ private:
 	virtual void OnCharacterOverlapImpl(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* Mesh;
+	class UBoxComponent* Collider;
+
+	TWeakObjectPtr<UMeshComponent> MeshComponent;
 
 	UPROPERTY(VisibleAnywhere)
-	class UBoxComponent* Collider;
+	class UStaticMeshComponent* StaticMeshComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class USkeletalMeshComponent* SkeletalMeshComponent;
 
 	FDelegateHandle OnInteractInterruptedHandle;
 

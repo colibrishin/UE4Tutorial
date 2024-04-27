@@ -3,6 +3,9 @@
 
 #include "MyProject/MyCV47Weapon.h"
 
+#include "NiagaraComponent.h"
+#include "NiagaraSystem.h"
+
 #include "Kismet/GameplayStatics.h"
 
 AMyCV47Weapon::AMyCV47Weapon()
@@ -19,6 +22,13 @@ AMyCV47Weapon::AMyCV47Weapon()
 	if (SW_Reload.Succeeded())
 	{
 		ReloadSound = SW_Reload.Object;
+	}
+
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Model(TEXT("SkeletalMesh'/Game/FPS_Weapon_Bundle/Weapons/Meshes/Ka47/SK_KA47_X.SK_KA47_X'"));
+
+	if (SK_Model.Succeeded())
+	{
+		GetSkeletalMeshComponent()->SetSkeletalMesh(SK_Model.Object);
 	}
 }
 

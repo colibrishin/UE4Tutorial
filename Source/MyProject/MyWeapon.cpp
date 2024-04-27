@@ -28,11 +28,6 @@ void AMyWeapon::BeginPlay()
 void AMyWeapon::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
-  if (GetMesh()->GetStaticMesh() == nullptr)
-  {
-	  UE_LOG(LogTemp, Error, TEXT("Weapon mesh is not set"));
-  }
 }
 
 bool AMyWeapon::TryAttachItem(const AMyCharacter* Character)
