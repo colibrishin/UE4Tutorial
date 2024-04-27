@@ -39,7 +39,7 @@ AMyC4::AMyC4()
 
 	if (SM_C4.Succeeded())
 	{
-		GetMesh()->SetStaticMesh(SM_C4.Object);
+		Cast<UStaticMeshComponent>(GetMesh())->SetStaticMesh(SM_C4.Object);
 	}
 }
 

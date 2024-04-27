@@ -186,9 +186,6 @@ private:
 	class UCameraComponent* Camera;
 
 	UPROPERTY(VisibleAnywhere)
-	class UNiagaraComponent* BulletTrail;
-
-	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* AnimInstance;
 
 	FOnAttackStarted OnAttackStarted;
