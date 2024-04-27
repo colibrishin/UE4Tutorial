@@ -60,6 +60,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Pawn, Meta=(AllowPrivateAccess))
 	bool bIsAiming;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Pawn, Meta=(AllowPrivateAccess))
+	bool bHasWeapon;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Pawn, Meta=(AllowPrivateAccess))
 	UAnimMontage* AttackMontage;
 

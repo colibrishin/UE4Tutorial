@@ -2,7 +2,10 @@
 
 
 #include "MyAnimInstance.h"
+
+#include "MyAimableWeapon.h"
 #include "MyCharacter.h"
+#include "MyWeapon.h"
 
 #include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
@@ -15,7 +18,8 @@ UMyAnimInstance::UMyAnimInstance()
 	  Pitch(0),
 	  IsFalling(false),
 	  bIsAttacking(false),
-	  bIsAiming(false)
+	  bIsAiming(false),
+	  bHasWeapon(false)
 {
 	static ConstructorHelpers::FObjectFinder<UAnimMontage> AM
 		(TEXT("AnimMontage'/Game/Blueprints/BPAnimationMontage.BPAnimationMontage'"));
@@ -67,6 +71,7 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Vertical = FVector::DotProduct(Velocity, Character->GetActorForwardVector());
 	Horizontal = FVector::DotProduct(Velocity, Character->GetActorRightVector());
 	Pitch = Character->GetPitchInput();
+	bHasWeapon = IsValid(Cast<AMyAimableWeapon>(Character->GetWeapon()));
 }
 
 FName UMyAnimInstance::GetAttackMontageSectionName(const int32 NewIndex)
