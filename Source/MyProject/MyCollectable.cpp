@@ -15,17 +15,19 @@ AMyCollectable::AMyCollectable()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	Collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
+	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
 
-	GetMesh()->SetupAttachment(RootComponent);
-	GetCollider()->SetupAttachment(GetMesh());
+	Collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
 
 	GetCollider()->SetCollisionProfileName(TEXT("MyCollectable"));
 
 	GetCollider()->SetBoxExtent(FVector{10.f, 30.f, 10.f});
 
-	GetMesh()->SetSimulatePhysics(true);
+	StaticMeshComponent->SetSimulatePhysics(true);
+	SkeletalMeshComponent->SetSimulatePhysics(true);
+
+	SetStaticMesh();
 }
 
 // Called when the game starts or when spawned
@@ -233,6 +235,32 @@ void AMyCollectable::Hide() const
 void AMyCollectable::Show() const
 {
 	GetMesh()->SetVisibility(true);
+}
+
+void AMyCollectable::SetSkeletalMesh()
+{
+	if (MeshComponent.IsValid())
+	{
+		MeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	}
+
+	MeshComponent = SkeletalMeshComponent;
+
+	SetRootComponent(MeshComponent.Get());
+	GetCollider()->SetupAttachment(MeshComponent.Get());
+}
+
+void AMyCollectable::SetStaticMesh()
+{
+	if (MeshComponent.IsValid())
+	{
+		MeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	}
+
+	MeshComponent = StaticMeshComponent;
+
+	SetRootComponent(MeshComponent.Get());
+	GetCollider()->SetupAttachment(MeshComponent.Get());
 }
 
 bool AMyCollectable::IsBelongToCharacter() const

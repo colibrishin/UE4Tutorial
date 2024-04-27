@@ -27,6 +27,10 @@ public:
 
 
 protected:
+	virtual void PostInitializeComponents() override;
+
+	virtual void BeginPlay() override;
+
 	virtual bool AttackImpl() override;
 	virtual bool ReloadImpl() override;
 
@@ -35,4 +39,7 @@ protected:
 
 private:
 	void UpdateAmmoDisplay() const;
+
+	UPROPERTY(EditAnywhere, Category = "Aimable Weapon")
+	class UNiagaraComponent* BulletTrail;
 };

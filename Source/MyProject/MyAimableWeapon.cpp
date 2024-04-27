@@ -6,13 +6,32 @@
 #include "DrawDebugHelpers.h"
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
+#include "NiagaraComponent.h"
 
 #include "Camera/CameraComponent.h"
+
+#include "Components/BoxComponent.h"
 
 #include "Kismet/GameplayStatics.h"
 
 AMyAimableWeapon::AMyAimableWeapon()
 {
+	PrimaryActorTick.bCanEverTick = true;
+
+	BulletTrail = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BulletTrail"));
+
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> NS_BulletTrail(TEXT("NiagaraSystem'/Game/Blueprints/BPNiagaraMyBulletTrail.BPNiagaraMyBulletTrail'"));
+
+	if (NS_BulletTrail.Succeeded())
+	{
+		BulletTrail->SetAsset(NS_BulletTrail.Object);
+	}
+
+	SetSkeletalMesh();
+
+	BulletTrail->SetupAttachment(GetMesh(), TEXT("Muzzle"));
+	BulletTrail->SetAutoActivate(false);
+	BulletTrail->SetAutoDestroy(false);
 }
 
 bool AMyAimableWeapon::PreInteract(AMyCharacter* Character)
@@ -65,12 +84,28 @@ bool AMyAimableWeapon::PostUse(AMyCharacter* Character)
 	return Super::PostUse(Character);
 }
 
+void AMyAimableWeapon::PostInitializeComponents()
+{
+	Super::PostInitializeComponents();
+}
+
+void AMyAimableWeapon::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (const auto& StatComponent = GetWeaponStatComponent())
+	{
+		BulletTrail->SetNiagaraVariableFloat(TEXT("User.FireRate"), StatComponent->GetFireRate());
+	}
+}
+
 bool AMyAimableWeapon::AttackImpl()
 {
 	if (GetWeaponStatComponent()->ConsumeAmmo())
 	{
 		// todo: Recoil
 		UpdateAmmoDisplay();
+		BulletTrail->Activate();
 		return true;
 	}
 

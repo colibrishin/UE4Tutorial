@@ -52,9 +52,4 @@ bool AMyItem::Drop()
 void AMyItem::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
-	if (!IsValid(GetMesh()))
-	{
-		UE_LOG(LogTemp, Error, TEXT("Item Mesh is not valid"));
-	}
 }
