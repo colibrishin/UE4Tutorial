@@ -105,6 +105,24 @@ bool AMyAimableWeapon::AttackImpl()
 	{
 		// todo: Recoil
 		UpdateAmmoDisplay();
+
+		const auto& MuzzleLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle"));
+
+		const auto& PawnCamera = GetItemOwner()->FindComponentByClass<UCameraComponent>();
+		const auto& CameraLocation = PawnCamera->GetComponentLocation();
+		const auto& CameraForwardVector = PawnCamera->GetForwardVector();
+		const auto& WeaponRange = GetWeaponStatComponent()->GetRange();
+		const auto& EndLocation = CameraLocation + (CameraForwardVector * WeaponRange);
+		const auto& Delta = EndLocation - MuzzleLocation;
+		const auto& Normal = Delta.GetSafeNormal();
+
+		const auto& Yaw = FMath::RadiansToDegrees(FMath::Atan2(Normal.Y, Normal.X));
+		const auto& Pitch = FMath::RadiansToDegrees(FMath::Atan2(Normal.Z, Normal.X));
+		const auto& Roll = 0.f;
+
+		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Yaw"), Yaw);
+		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Pitch"), Pitch);
+		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Roll"), Roll);
 		BulletTrail->Activate();
 		return true;
 	}
