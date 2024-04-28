@@ -15,6 +15,7 @@ UMyAnimInstance::UMyAnimInstance()
 	: Speed(0),
 	  Horizontal(0),
 	  Vertical(0),
+	  Yaw(0),
 	  Pitch(0),
 	  IsFalling(false),
 	  bIsAttacking(false),
@@ -70,6 +71,7 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	Vertical = FVector::DotProduct(Velocity, Character->GetActorForwardVector());
 	Horizontal = FVector::DotProduct(Velocity, Character->GetActorRightVector());
+	Yaw = Character->GetActorRotation().Yaw;
 	Pitch = Character->GetPitchInput();
 	bHasWeapon = IsValid(Cast<AMyAimableWeapon>(Character->GetWeapon()));
 }
