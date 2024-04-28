@@ -116,7 +116,7 @@ AMyCollectable* AMyCharacter::GetCurrentItem() const
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	GetMesh()->SetOwnerNoSee(true);
+	//GetMesh()->SetOwnerNoSee(true);
 }
 
 void AMyCharacter::PostInitializeComponents()
@@ -272,69 +272,37 @@ void AMyCharacter::Server_Reload_Implementation()
 	Multi_Reload();
 }
 
-void AMyCharacter::HitscanAttack()
+void AMyCharacter::NotifyDamage(AMyCharacter* const Target) const
 {
-	if (!CanAttack)
+	if (IsValid(Target))
 	{
-		return;
+		UE_LOG(LogTemp, Warning , TEXT("Hit Actor: %s"), *Target->GetName());
+		const FDamageEvent DamageEvent;
+		Target->TakeDamage(GetDamage(), DamageEvent, GetController(), GetWeapon());
 	}
+}
 
+bool AMyCharacter::HitscanAttack(OUT FHitResult& OutHitResult)
+{
 	UE_LOG(LogTemp, Warning, TEXT("Hitscan Fire!"));
 
-	FHitResult HitResult;
 	FCollisionQueryParams Params{NAME_None, false, this};
 
-	FVector EndVector = 
+	const FVector EndVector = 
 		Camera->GetComponentLocation() + 
 		Camera->GetForwardVector() * 
 		GetWeapon()->GetWeaponStatComponent()->GetRange();
 
 	const auto& Result = GetWorld()->LineTraceSingleByChannel
 		(
-		 OUT HitResult,
+		 OUT OutHitResult,
 		 Camera->GetComponentLocation() ,
 		 EndVector,
 		 ECollisionChannel::ECC_Visibility,
 		 Params
 		);
 
-	if (Result)
-	{
-		/*DrawDebugLine
-			(
-			 GetWorld(),
-			 Camera->GetComponentLocation(),
-			 HitResult.ImpactPoint,
-			 FColor::Green,
-			 false,
-			 1.f,
-			 0,
-			 2.f
-			);*/
-
-		const auto& Target = Cast<AMyCharacter>(HitResult.GetActor());
-
-		if (IsValid(Target))
-		{
-			UE_LOG(LogTemp, Warning , TEXT("Hit Actor: %s"), *Target->GetName());
-			FDamageEvent DamageEvent;
-			Target->TakeDamage(GetDamage(), DamageEvent, GetController(), GetWeapon());
-		}
-	}
-	else
-	{
-		/*DrawDebugLine
-			(
-			 GetWorld(),
-			 Camera->GetComponentLocation(),
-			 EndVector,
-			 FColor::Red,
-			 false,
-			 1.f,
-			 0,
-			 2.f
-			);*/
-	}
+	return Result;
 }
 
 void AMyCharacter::MeleeAttack()
@@ -497,7 +465,12 @@ void AMyCharacter::AttackStart(const float Value)
 			if (GetWeapon()->GetWeaponStatComponent()->IsHitscan())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
-				HitscanAttack();
+
+				FHitResult HitResult;
+				if (HitscanAttack(HitResult))
+				{
+					NotifyDamage(Cast<AMyCharacter>(HitResult.Actor.Get()));
+				}
 			}
 			break;
 		case EMyWeaponType::Melee:
