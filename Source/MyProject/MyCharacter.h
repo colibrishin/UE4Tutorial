@@ -82,7 +82,8 @@ private:
 
 	void AttackStart(const float Value);
 
-	void HitscanAttack();
+	void NotifyDamage(AMyCharacter* const Target) const;
+	bool HitscanAttack(FHitResult& OutHitResult);
 	void MeleeAttack();
 	void ResetAttack();
 
