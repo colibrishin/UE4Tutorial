@@ -220,7 +220,7 @@ void AMyPlayerState::AssignTeam()
 
 void AMyPlayerState::Use(const int32 Index)
 {
-	CurrentItem = InventoryComponent->Use(Index);
+	SetCurrentItem(InventoryComponent->Use(Index));
 }
 
 void AMyPlayerState::SetState(const EMyCharacterState NewState)
@@ -271,6 +271,14 @@ void AMyPlayerState::SetWeapon(AMyWeapon* NewWeapon)
 	{
 		Weapon = NewWeapon;
 		OnWeaponChanged.Broadcast(this);
+	}
+}
+
+void AMyPlayerState::SetCurrentItem(AMyCollectable* NewItem)
+{
+	if (HasAuthority())
+	{
+		CurrentItem = NewItem;
 	}
 }
 	

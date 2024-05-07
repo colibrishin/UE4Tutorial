@@ -79,6 +79,19 @@ void AMyWeapon::OnReloadDone()
 	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
 }
 
+void AMyWeapon::DropImpl()
+{
+	Super::DropImpl();
+
+	if (HasAuthority())
+	{
+		if (const auto& PlayerState = GetItemOwner()->GetPlayerState<AMyPlayerState>())
+		{
+			PlayerState->SetWeapon(nullptr);
+		}
+	}
+}
+
 bool AMyWeapon::Attack()
 {
 	if (CanAttack)
@@ -135,25 +148,4 @@ bool AMyWeapon::Reload()
 	}
 
 	return false;
-}
-
-bool AMyWeapon::Drop()
-{
-	const auto& ItemOwner = GetItemOwner();
-	const auto& Result = Super::Drop();
-
-	if (Result)
-	{
-		if (HasAuthority())
-		{
-			if (const auto& PlayerState = ItemOwner->GetPlayerState<AMyPlayerState>())
-			{
-				PlayerState->SetWeapon(nullptr);
-			}
-		}
-		
-		return true && Result;
-	}
-
-	return false && Result;
 }

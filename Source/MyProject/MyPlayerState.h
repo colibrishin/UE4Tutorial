@@ -49,6 +49,7 @@ public:
 	void SetHP(const int32 NewHP);
 	void AddMoney(const int32 Amount);
 	void SetWeapon(class AMyWeapon* NewWeapon);
+	void SetCurrentItem(class AMyCollectable* NewItem);
 
 	FORCEINLINE float GetHP() const
 	{
