@@ -68,8 +68,6 @@ public:
 	float GetForwardInput() const { return ForwardInput; }
 	float GetRightInput() const { return RightInput; }
 
-	bool TryPickWeapon(AMyWeapon* NewWeapon) const;
-
 	void Attack(const float Value);
 
 private:
@@ -149,6 +147,9 @@ private:
 	void UseInterruptImpl() const;
 
 	// ============ End of Using ============
+
+
+	void OnWeaponChanged(class AMyPlayerState* ThisPlayerState) const;
 
 	void Yaw(const float Value);
 	void Pitch(const float Value);
