@@ -333,14 +333,13 @@ bool AMyC4::PreInteract(AMyCharacter* Character)
 			UE_LOG(LogTemp, Warning, TEXT("Bomb is exploded or defused"));
 			return false;
 		}
-	}
 
-	if (IsPlanted())
+		return Super::PreInteract(Character) && CTPickPlantGuard(Character);
+	}
+	else
 	{
 		return TDefuseGuard(Character) && Super::PreInteract(Character);
 	}
-
-	return Super::PreInteract(Character);
 }
 
 bool AMyC4::TDefuseGuard(AMyCharacter* Character) const
