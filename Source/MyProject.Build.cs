@@ -8,6 +8,9 @@ public class MyProject: ModuleRules
 	public MyProject(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+        bEnforceIWYU = true;
+		PrivatePCHHeaderFile = "ProjectPrecompiled.h";
+		MinFilesUsingPrecompiledHeaderOverride = 1;
 		CppStandard = CppStandardVersion.Cpp17;
 
 		PublicDependencyModuleNames.AddRange(new string[] 
