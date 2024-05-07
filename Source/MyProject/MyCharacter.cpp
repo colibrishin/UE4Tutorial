@@ -116,7 +116,13 @@ AMyCollectable* AMyCharacter::GetCurrentItem() const
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	//GetMesh()->SetOwnerNoSee(true);
+
+	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
+
+	if (IsValid(MyPlayerState))
+	{
+		MyPlayerState->BindOnWeaponChanged(this, &AMyCharacter::OnWeaponChanged);
+	}
 }
 
 void AMyCharacter::PostInitializeComponents()
@@ -165,7 +171,6 @@ float AMyCharacter::TakeDamage(
 void AMyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
 // Called to bind functionality to input
@@ -193,29 +198,6 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAxis(TEXT("Pitch"), this, &AMyCharacter::Pitch);
 	PlayerInputComponent->BindAxis(TEXT("Yaw"), this, &AMyCharacter::Yaw);
 
-}
-
-bool AMyCharacter::TryPickWeapon(AMyWeapon* NewWeapon) const
-{
-	const auto& State = GetPlayerState<AMyPlayerState>();
-
-	if (IsValid(State->GetWeapon()))
-	{
-		LOG_FUNC(LogTemp, Warning, "Already has weapon");
-		return false;
-	}
-
-	if (IsValid(NewWeapon))
-	{
-		LOG_FUNC(LogTemp, Warning, "Weapon is valid");
-		State->SetWeapon(NewWeapon);
-		return true;
-	}
-	else
-	{
-		LOG_FUNC(LogTemp, Warning, "Weapon is not valid");
-		return false;
-	}
 }
 
 void AMyCharacter::Server_Attack_Implementation(const float Value)
@@ -616,6 +598,31 @@ void AMyCharacter::UseInterruptImpl() const
 {
 	UE_LOG(LogTemp, Warning, TEXT("Use Interrupted"));
 	OnUseInterrupted.Broadcast();
+}
+
+void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState) const
+{
+	const auto& Weapon = ThisPlayerState->GetWeapon();
+
+	if (IsValid(Weapon))
+	{
+		Weapon->AttachToComponent
+		(
+			GetMesh(), 
+			FAttachmentTransformRules::SnapToTargetIncludingScale, 
+			AMyCharacter::RightHandSocketName
+		);
+	}
+	else
+	{
+		for (const auto& Child : GetMesh()->GetAttachChildren())
+		{
+			if (Child->GetAttachSocketName() == AMyCharacter::RightHandSocketName)
+			{
+				Child->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+			}
+		}
+	}
 }
 
 int32 AMyCharacter::GetDamage() const
