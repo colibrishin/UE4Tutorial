@@ -55,14 +55,20 @@ bool AMyWeapon::PostInteract(AMyCharacter* Character)
 {
 	const auto& Result = Super::PostInteract(Character);
 
-	if (Character->TryPickWeapon(this))
+	if (Result)
 	{
-		Show();
+		if (HasAuthority())
+		{
+			if (const auto& PlayerState = Character->GetPlayerState<AMyPlayerState>())
+			{
+				PlayerState->SetWeapon(this);
+			}
+		}
 
-		return Result && true;
+		Show();
 	}
 
-	return Result && false;
+	return Result;
 }
 
 void AMyWeapon::OnFireRateTimed()
