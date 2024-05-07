@@ -124,6 +124,10 @@ bool AMyCollectable::PostUse(AMyCharacter* Character)
 	return true;
 }
 
+void AMyCollectable::DropImpl()
+{
+}
+
 AMyCharacter* AMyCollectable::GetItemOwner() const
 {
 	const auto& CollectableOwner = GetAttachParentActor();
@@ -203,6 +207,8 @@ bool AMyCollectable::Drop()
 		TEXT("IgnoreOnlyPawn"),
 		Params
 	);
+
+	DropImpl();
 
 	GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 

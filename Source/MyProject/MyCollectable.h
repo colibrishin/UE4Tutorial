@@ -24,7 +24,7 @@ public:
 	class UBoxComponent* GetCollider() const { return Collider; }
 	class AMyCharacter* GetItemOwner() const;
 
-	virtual bool Drop();
+	bool Drop();
 
 	void Hide() const;
 	void Show() const;
@@ -55,6 +55,8 @@ protected:
 
 	virtual bool PreUse(class AMyCharacter* Character);
 	virtual bool PostUse(class AMyCharacter* Character);
+
+	virtual void DropImpl();
 
 	bool IsBelongToCharacter() const;
 
