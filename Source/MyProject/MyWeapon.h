@@ -35,7 +35,6 @@ public:
 
 	virtual bool Attack() final;
 	virtual bool Reload() final;
-	virtual bool Drop() override;
 
 	virtual bool TryAttachItem(const AMyCharacter* Character) override;
 	UTexture2D*  GetWeaponImage() const { return WeaponImage; }
@@ -53,6 +52,8 @@ protected:
 
 	virtual void OnFireRateTimed();
 	virtual void OnReloadDone();
+
+	virtual void DropImpl() override;
 
 private:
 	UPROPERTY(VisibleAnywhere)
