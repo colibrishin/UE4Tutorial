@@ -10,6 +10,8 @@
 #include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 
+#include "UObject/ConstructorHelpers.h"
+
 UMyGameInstance::UMyGameInstance()
 {
 	static ConstructorHelpers::FObjectFinder<UDataTable> DT_STAT(TEXT("DataTable'/Game/Data/StatsData.StatsData'"));
