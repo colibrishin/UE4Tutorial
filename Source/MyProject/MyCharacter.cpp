@@ -28,6 +28,8 @@
 #include "Net/UnrealNetwork.h"
 #include "NiagaraComponent.h"
 
+#include "UObject/ConstructorHelpers.h"
+
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));
 const FName AMyCharacter::HeadSocketName(TEXT("head_socket"));
@@ -41,6 +43,7 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 
 	SpringArm = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArm"));
 	Camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
+	ArmMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmMeshComponent"));
 
 	// 리소스를 불러오는 방법
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Mesh(TEXT("SkeletalMesh'/Game/ParagonBoris/Characters/Heroes/Boris/Meshes/Boris.Boris'"));
@@ -50,8 +53,16 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 		GetMesh()->SetSkeletalMesh(SK_Mesh.Object);
 	}
 
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_ArmMesh(TEXT("SkeletalMesh'/Game/Models/Boris_Arms/Boris_arms.Boris_arms'"));
+
+	if (SK_ArmMesh.Succeeded())
+	{
+		ArmMeshComponent->SetSkeletalMesh(SK_ArmMesh.Object);
+	}
+
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
+	ArmMeshComponent->SetupAttachment(Camera);
 
 	// 기본 캡슐 사이즈, 매쉬가 붕 뜨지 않게 하도록
 	// Character 구현부 52번 라인 참조
@@ -74,6 +85,11 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	AIControllerClass = AMyAIController::StaticClass();
 
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+
+	GetMesh()->SetOwnerNoSee(true);
+	GetMesh()->SetCastShadow(true);
+	ArmMeshComponent->SetOnlyOwnerSee(true);
+	ArmMeshComponent->SetCastShadow(false);
 }
 
 UMyInventoryComponent* AMyCharacter::GetInventory() const
@@ -136,6 +152,14 @@ void AMyCharacter::PostInitializeComponents()
 		AnimInstance = Cast<UMyAnimInstance>(Anim);
 		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnMontageEnded);
 		AnimInstance->BindOnAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
+	}
+
+	const auto& ArmAnim = ArmMeshComponent->GetAnimInstance();
+
+	if (IsValid(ArmAnim))
+	{
+		ArmAnimInstance = Cast<UMyAnimInstance>(ArmAnim);
+		ArmAnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnMontageEnded);
 	}
 }
 
@@ -299,6 +323,7 @@ void AMyCharacter::MeleeAttack()
 	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
 	AttackIndex = (AttackIndex + 1) % MaxAttackSection;
 	AnimInstance->PlayAttackMontage(AttackIndex);
+	ArmAnimInstance->PlayAttackMontage(AttackIndex);
 }
 
 void AMyCharacter::Multi_Reload_Implementation()
@@ -600,8 +625,9 @@ void AMyCharacter::UseInterruptImpl() const
 	OnUseInterrupted.Broadcast();
 }
 
-void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState) const
+void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState)
 {
+	LOG_FUNC(LogTemp, Warning, "Weapon change caught");
 	const auto& Weapon = ThisPlayerState->GetWeapon();
 
 	if (IsValid(Weapon))
@@ -612,6 +638,8 @@ void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState) const
 			FAttachmentTransformRules::SnapToTargetIncludingScale, 
 			AMyCharacter::RightHandSocketName
 		);
+
+		AttachArmWeaponImpl();
 	}
 	else
 	{
@@ -620,6 +648,15 @@ void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState) const
 			if (Child->GetAttachSocketName() == AMyCharacter::RightHandSocketName)
 			{
 				Child->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+			}
+		}
+
+		if (IsLocallyControlled())
+		{
+			if (IsValid(HandWeapon))
+			{
+				HandWeapon->Destroy();
+				HandWeapon = nullptr;
 			}
 		}
 	}
@@ -694,6 +731,40 @@ void AMyCharacter::OnAttackAnimNotify()
 		false,
 		1.f
 	);
+}
+
+void AMyCharacter::AttachArmWeaponImpl()
+{
+	LOG_FUNC(LogTemp, Warning, "AttachArmWeaponImpl");
+
+	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
+
+	if (IsValid(MyPlayerState))
+	{
+		const auto& Weapon = GetWeapon();
+
+		HandWeapon = GetWorld()->SpawnActor<AMyWeapon>(Weapon->GetClass());
+		HandWeapon->GetMesh()->SetSimulatePhysics(false);
+
+		if (HandWeapon->GetMesh()->AttachToComponent
+		(
+			ArmMeshComponent,
+			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			AMyCharacter::RightHandSocketName
+		))
+		{
+			HandWeapon->SetOwner(this);
+			HandWeapon->GetMesh()->SetVisibility(true);
+			HandWeapon->GetMesh()->SetOnlyOwnerSee(true);
+			HandWeapon->GetMesh()->SetCastShadow(false);
+
+			LOG_FUNC(LogTemp, Warning, "Weapon attached to arm");
+		}
+		else
+		{
+			LOG_FUNC(LogTemp, Error, "Failed to attach weapon to arm");
+		}
+	}
 }
 
 void AMyCharacter::Yaw(const float Value)
