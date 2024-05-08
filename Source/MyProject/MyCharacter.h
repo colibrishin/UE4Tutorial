@@ -148,8 +148,9 @@ private:
 
 	// ============ End of Using ============
 
+	void OnWeaponChanged(class AMyPlayerState* ThisPlayerState);
 
-	void OnWeaponChanged(class AMyPlayerState* ThisPlayerState) const;
+	void AttachArmWeaponImpl();
 
 	void Yaw(const float Value);
 	void Pitch(const float Value);
@@ -189,6 +190,15 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* AnimInstance;
+
+	UPROPERTY(VisibleAnywhere)
+	class USkeletalMeshComponent* ArmMeshComponent;
+
+	UPROPERTY(VisibleAnywhere)
+	class UMyAnimInstance* ArmAnimInstance;
+
+	UPROPERTY(VisibleAnywhere)
+	class AMyWeapon* HandWeapon;
 
 	FOnAttackStarted OnAttackStarted;
 
