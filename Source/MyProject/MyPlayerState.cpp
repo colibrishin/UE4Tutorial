@@ -269,6 +269,7 @@ void AMyPlayerState::SetWeapon(AMyWeapon* NewWeapon)
 {
 	if (HasAuthority())
 	{
+		LOG_FUNC_PRINTF(LogTemp, Warning, "SetWeapon: %s", *NewWeapon->GetName());
 		Weapon = NewWeapon;
 		OnWeaponChanged.Broadcast(this);
 	}
