@@ -120,13 +120,14 @@ FORCEINLINE void ExecuteServer(
 	Args... Arguments
 )
 {
-	if (!ActorContext->HasAuthority())
-	{
-		(static_cast<T*>(ActorContext)->*ClientFunction)(Arguments...);
-	}
-	else if (ActorContext->HasAuthority() || IsRunningDedicatedServer())
+	
+	if (ActorContext->HasAuthority() || IsRunningDedicatedServer() || ActorContext->GetNetMode() == ENetMode::NM_ListenServer)
 	{
 		(static_cast<T*>(ActorContext)->*ServerFunction)(Arguments...);
+	}
+	else if (!ActorContext->HasAuthority())
+	{
+		(static_cast<T*>(ActorContext)->*ClientFunction)(Arguments...);
 	}
 }
 
@@ -138,13 +139,13 @@ FORCEINLINE void ExecuteServer(
 	Args... Arguments
 )
 {
-	if (!ActorContext->HasAuthority())
-	{
-		(static_cast<const T*>(ActorContext)->*ClientFunction)(Arguments...);
-	}
-	else if (ActorContext->HasAuthority() || IsRunningDedicatedServer())
+	if (ActorContext->HasAuthority() || IsRunningDedicatedServer() || ActorContext->GetNetMode() == ENetMode::NM_ListenServer)
 	{
 		(static_cast<const T*>(ActorContext)->*ServerFunction)(Arguments...);
+	}
+	else if (!ActorContext->HasAuthority())
+	{
+		(static_cast<const T*>(ActorContext)->*ClientFunction)(Arguments...);
 	}
 }
 
@@ -156,13 +157,13 @@ FORCEINLINE void ExecuteServer(
 	Args... Arguments
 )
 {
-	if (!ActorContext->HasAuthority())
-	{
-		(static_cast<T*>(ActorContext)->*ClientFunction)(Arguments...);
-	}
-	else if (ActorContext->HasAuthority() || IsRunningDedicatedServer())
+	if (ActorContext->HasAuthority() || IsRunningDedicatedServer() || ActorContext->GetNetMode() == ENetMode::NM_ListenServer)
 	{
 		(static_cast<const T*>(ActorContext)->*ServerFunction)(Arguments...);
+	}
+	else if (!ActorContext->HasAuthority())
+	{
+		(static_cast<T*>(ActorContext)->*ClientFunction)(Arguments...);
 	}
 }
 
@@ -174,13 +175,13 @@ FORCEINLINE void ExecuteServer(
 	Args... Arguments
 )
 {
-	if (!ActorContext->HasAuthority())
-	{
-		(static_cast<const T*>(ActorContext)->*ClientFunction)(Arguments...);
-	}
-	else if (ActorContext->HasAuthority() || IsRunningDedicatedServer())
+	if (ActorContext->HasAuthority() || IsRunningDedicatedServer() || ActorContext->GetNetMode() == ENetMode::NM_ListenServer)
 	{
 		(static_cast<T*>(ActorContext)->*ServerFunction)(Arguments...);
+	}
+	else if (!ActorContext->HasAuthority())
+	{
+		(static_cast<const T*>(ActorContext)->*ClientFunction)(Arguments...);
 	}
 }
 
