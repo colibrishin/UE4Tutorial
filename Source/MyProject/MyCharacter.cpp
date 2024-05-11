@@ -132,13 +132,6 @@ AMyCollectable* AMyCharacter::GetCurrentItem() const
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
-
-	if (IsValid(MyPlayerState))
-	{
-		MyPlayerState->BindOnWeaponChanged(this, &AMyCharacter::OnWeaponChanged);
-	}
 }
 
 void AMyCharacter::PostInitializeComponents()
@@ -639,7 +632,12 @@ void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState)
 			AMyCharacter::RightHandSocketName
 		);
 
-		AttachArmWeaponImpl();
+		ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_AttachArmWeapon,
+		 &AMyCharacter::AttachArmWeaponImpl
+		);
 	}
 	else
 	{
@@ -660,6 +658,11 @@ void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState)
 			}
 		}
 	}
+}
+
+void AMyCharacter::Server_AttachArmWeapon_Implementation()
+{
+	AttachArmWeaponImpl();
 }
 
 int32 AMyCharacter::GetDamage() const
