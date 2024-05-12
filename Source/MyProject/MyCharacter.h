@@ -200,7 +200,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* ArmAnimInstance;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	class AMyWeapon* HandWeapon;
 
 	FOnAttackStarted OnAttackStarted;
@@ -214,4 +214,6 @@ private:
 	FOnInteractInterrupted OnInteractInterrupted;
 
 	FDelegateHandle OnAttackEndedHandle;
+
+	FDelegateHandle OnHandWeaponAttackEndedHandle;
 };
