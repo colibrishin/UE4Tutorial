@@ -9,6 +9,7 @@
 #include "MyCollectable.h"
 #include "MyInGameHUD.h"
 #include "MyInGameWidget.h"
+#include "MyInventoryComponent.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
@@ -258,17 +259,7 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerState* PlayerState, const E
 				FRotator::ZeroRotator
 			);
 
-			if (Character)
-			{
-				if (const auto& Weapon = Character->GetWeapon())
-				{
-					Weapon->Drop();
-				}
-				if (const auto& Item = Character->GetCurrentItem())
-				{
-					Item->Drop();	
-				}
-			}
+			PlayerState->GetInventoryComponent()->DropAll();
 
 			const auto& PlayerController = Cast<AMyPlayerController>(PlayerState->GetOwner());
 
