@@ -4,6 +4,7 @@
 #include "MyCollectable.h"
 
 #include "MyCharacter.h"
+#include "MyInventoryComponent.h"
 #include "MyPlayerState.h"
 
 #include "Components/BoxComponent.h"
@@ -103,6 +104,30 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 	{
 		LOG_FUNC(LogTemp, Warning, "PostInteract success");
 		Hide();
+
+		if (HasAuthority())
+		{
+			const auto& Inventory = Character->GetInventory();
+
+			if (Inventory->TryAddItem(this))
+			{
+				LOG_FUNC_PRINTF(LogTemp, Warning, "Server-side Item Interacted: %s", *GetName());
+			}
+			else 
+			{
+				LOG_FUNC(LogTemp, Warning, "Server-side Item Interacted failed");
+				return false;
+			}
+
+			if (const auto& TargetPlayerState = Character->GetPlayerState<AMyPlayerState>())
+			{
+				if (!IsValid(TargetPlayerState->GetCurrentHand()))
+				{
+					TargetPlayerState->SetCurrentItem(this);
+				}
+			}
+		}
+
 		return true;
 	}
 	else

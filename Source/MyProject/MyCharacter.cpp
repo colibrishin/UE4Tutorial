@@ -613,10 +613,6 @@ void AMyCharacter::UseImpl()
 	{
 		TryGetItem()->Use(this);
 	}
-	else
-	{
-		GetPlayerState<AMyPlayerState>()->Use(0);
-	}
 }
 
 void AMyCharacter::UseInterrupt()

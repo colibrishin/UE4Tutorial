@@ -4,6 +4,7 @@
 #include "MyWeapon.h"
 
 #include "MyCharacter.h"
+#include "MyInventoryComponent.h"
 #include "MyPlayerState.h"
 #include "MyWeaponStatComponent.h"
 #include "TimerManager.h"
@@ -58,14 +59,6 @@ bool AMyWeapon::PostInteract(AMyCharacter* Character)
 
 	if (Result)
 	{
-		if (HasAuthority())
-		{
-			if (const auto& PlayerState = Character->GetPlayerState<AMyPlayerState>())
-			{
-				PlayerState->SetCurrentWeapon(this);
-			}
-		}
-
 		Show();
 	}
 
