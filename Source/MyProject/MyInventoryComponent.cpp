@@ -42,7 +42,6 @@ bool UMyInventoryComponent::TryAddItem(AMyCollectable* Item)
 	else
 	{
 		LOG_FUNC(LogTemp, Warning, "Inventory is full");
-		UE_LOG(LogTemp, Warning, TEXT("Inventory is full"));
 		return false;
 	}
 }
@@ -78,6 +77,24 @@ void UMyInventoryComponent::Remove(AMyCollectable* MyCollectable)
 bool UMyInventoryComponent::Find(AMyCollectable* MyCollectable) const
 {
 	return Inventory.Find(MyCollectable) != INDEX_NONE;
+}
+
+void UMyInventoryComponent::Clear()
+{
+	for (int32 i = 0; i < Inventory.Num(); ++i)
+	{
+		Inventory[i]->Destroy();
+		Inventory[i] = nullptr;
+	}
+}
+
+void UMyInventoryComponent::DropAll()
+{
+	for (int32 i = 0; i < Inventory.Num(); ++i)
+	{
+		Inventory[i]->Drop();
+		Inventory[i] = nullptr;
+	}
 }
 
 void UMyInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

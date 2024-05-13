@@ -62,7 +62,7 @@ bool AMyWeapon::PostInteract(AMyCharacter* Character)
 		{
 			if (const auto& PlayerState = Character->GetPlayerState<AMyPlayerState>())
 			{
-				PlayerState->SetWeapon(this);
+				PlayerState->SetCurrentWeapon(this);
 			}
 		}
 
@@ -94,7 +94,7 @@ void AMyWeapon::DropImpl()
 	{
 		if (const auto& PlayerState = GetItemOwner()->GetPlayerState<AMyPlayerState>())
 		{
-			PlayerState->SetWeapon(nullptr);
+			PlayerState->SetCurrentWeapon(nullptr);
 		}
 	}
 }

@@ -92,6 +92,34 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	ArmMeshComponent->SetCastShadow(false);
 }
 
+AMyWeapon* AMyCharacter::TryGetWeapon() const
+{
+	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
+
+	if (IsValid(MyPlayerState))
+	{
+		return Cast<AMyWeapon>(MyPlayerState->GetCurrentHand());
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+AMyItem* AMyCharacter::TryGetItem() const
+{
+	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
+
+	if (IsValid(MyPlayerState))
+	{
+		return Cast<AMyItem>(MyPlayerState->GetCurrentHand());
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
 UMyInventoryComponent* AMyCharacter::GetInventory() const
 {
 	const auto& State = GetPlayerState<AMyPlayerState>();
@@ -102,30 +130,6 @@ UMyStatComponent*      AMyCharacter::GetStatComponent() const
 {
 	const auto& State = GetPlayerState<AMyPlayerState>();
 	return State->GetStatComponent();
-}
-
-AMyWeapon* AMyCharacter::GetWeapon() const
-{
-	const auto& State = GetPlayerState<AMyPlayerState>();
-
-	if (!IsValid(State))
-	{
-		return nullptr;
-	}
-
-	return State->GetWeapon();
-}
-
-AMyCollectable* AMyCharacter::GetCurrentItem() const
-{
-	const auto& State = GetPlayerState<AMyPlayerState>();
-
-	if (IsValid(State))
-	{
-		return State->GetCurrentItem();
-	}
-
-	return nullptr;
 }
 
 // Called when the game starts or when spawned
@@ -160,7 +164,7 @@ void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyCharacter, PitchInput);
-	DOREPLIFETIME(AMyCharacter, HandWeapon);
+	DOREPLIFETIME(AMyCharacter, HandCollectable);
 }
 
 float AMyCharacter::TakeDamage(
@@ -225,7 +229,7 @@ void AMyCharacter::Server_Attack_Implementation(const float Value)
 		return;
 	}
 
-	if (IsValid(GetWeapon()) && !GetWeapon()->CanDoAttack())
+	if (IsValid(TryGetWeapon()) && !TryGetWeapon()->CanDoAttack())
 	{
 		return;
 	}
@@ -259,12 +263,12 @@ void AMyCharacter::Reload()
 
 void AMyCharacter::Server_Reload_Implementation()
 {
-	if (!IsValid(GetWeapon()))
+	if (!IsValid(TryGetWeapon()))
 	{
 		return;
 	}
 
-	if (!GetWeapon()->CanBeReloaded())
+	if (!TryGetWeapon()->CanBeReloaded())
 	{
 		return;
 	}
@@ -278,7 +282,7 @@ void AMyCharacter::NotifyDamage(AMyCharacter* const Target) const
 	{
 		UE_LOG(LogTemp, Warning , TEXT("Hit Actor: %s"), *Target->GetName());
 		const FDamageEvent DamageEvent;
-		Target->TakeDamage(GetDamage(), DamageEvent, GetController(), GetWeapon());
+		Target->TakeDamage(GetDamage(), DamageEvent, GetController(), TryGetWeapon());
 	}
 }
 
@@ -291,7 +295,7 @@ bool AMyCharacter::HitscanAttack(OUT FHitResult& OutHitResult)
 	const FVector EndVector = 
 		Camera->GetComponentLocation() + 
 		Camera->GetForwardVector() * 
-		GetWeapon()->GetWeaponStatComponent()->GetRange();
+		TryGetWeapon()->GetWeaponStatComponent()->GetRange();
 
 	const auto& Result = GetWorld()->LineTraceSingleByChannel
 		(
@@ -327,17 +331,20 @@ void AMyCharacter::Multi_Reload_Implementation()
 
 void AMyCharacter::ReloadStart() const
 {
-	if (!IsValid(GetWeapon()))
+	if (!IsValid(TryGetWeapon()))
 	{
 		return;
 	}
 
 	UE_LOG(LogTemp, Warning, TEXT("Reload"));
-	GetWeapon()->Reload();
+	TryGetWeapon()->Reload();
 
-	if (IsLocallyControlled() && IsValid(HandWeapon))
+	if (IsLocallyControlled() && IsValid(HandCollectable))
 	{
-		HandWeapon->Reload();
+		if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
+		{
+			HandWeapon->Reload();
+		}
 	}
 }
 
@@ -361,12 +368,12 @@ void AMyCharacter::Aim()
 		return;
 	}
 
-	if (!IsValid(GetWeapon()))
+	if (!IsValid(TryGetWeapon()))
 	{
 		return;
 	}
 
-	if (!GetWeapon()->IsA<AMyAimableWeapon>())
+	if (!TryGetWeapon()->IsA<AMyAimableWeapon>())
 	{
 		return;
 	}
@@ -449,32 +456,35 @@ void AMyCharacter::AttackStart(const float Value)
 
 	constexpr int32 MaxAttackIndex = 3;
 
-	if (IsValid(GetWeapon()))
+	if (IsValid(TryGetWeapon()))
 	{
 		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack with weapon, Is Client? : %d"), !HasAuthority()));
 
-		if (!GetWeapon()->Attack())
+		if (!TryGetWeapon()->Attack())
 		{
 			LOG_FUNC(LogTemp, Error, "Failed to attack");
 			return;
 		}
 
-		if (IsLocallyControlled() && IsValid(HandWeapon))
+		if (IsLocallyControlled() && IsValid(HandCollectable))
 	    {
-		    HandWeapon->Attack();
-			OnHandWeaponAttackEndedHandle = HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+			if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
+			{
+				HandWeapon->Attack();
+				OnHandWeaponAttackEndedHandle = HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+			}
 	    }
 
 		// todo: process client before sending rpc to server.
 
-		switch (GetWeapon()->GetWeaponStatComponent()->GetWeaponType())
+		switch (TryGetWeapon()->GetWeaponStatComponent()->GetWeaponType())
 		{
 		case EMyWeaponType::Range:
 			UE_LOG(LogTemp, Warning, TEXT("Range Attack"));
 			// todo: unbind the fire when player drops.
-			OnAttackEndedHandle = GetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+			OnAttackEndedHandle = TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
 
-			if (GetWeapon()->GetWeaponStatComponent()->IsHitscan())
+			if (TryGetWeapon()->GetWeaponStatComponent()->IsHitscan())
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
 
@@ -513,7 +523,7 @@ void AMyCharacter::ResetAttack()
 	OnAttackEnded.Broadcast();
 
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
-	GetWeapon()->UnbindOnFireReady(OnAttackEndedHandle);
+	TryGetWeapon()->UnbindOnFireReady(OnAttackEndedHandle);
 }
 
 void AMyCharacter::Server_Interactive_Implementation()
@@ -599,9 +609,9 @@ void AMyCharacter::Server_Use_Implementation()
 
 void AMyCharacter::UseImpl()
 {
-	if (IsValid(GetCurrentItem()))
+	if (IsValid(TryGetItem()))
 	{
-		GetCurrentItem()->Use(this);
+		TryGetItem()->Use(this);
 	}
 	else
 	{
@@ -630,51 +640,53 @@ void AMyCharacter::UseInterruptImpl() const
 	OnUseInterrupted.Broadcast();
 }
 
-void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState)
+void AMyCharacter::OnHandChanged(AMyPlayerState* ThisPlayerState)
 {
 	LOG_FUNC(LogTemp, Warning, "Weapon change caught");
-	const auto& Weapon = ThisPlayerState->GetWeapon();
+	const auto& Collectable = ThisPlayerState->GetCurrentHand();
 
-	if (IsValid(Weapon))
+	if (IsValid(Collectable))
 	{
-		Weapon->AttachToComponent
+		Collectable->AttachToComponent
 		(
 			GetMesh(), 
-			FAttachmentTransformRules::SnapToTargetIncludingScale, 
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
 			AMyCharacter::RightHandSocketName
 		);
 
 		ExecuteServer
 		(
 		 this,
-		 &AMyCharacter::Server_AttachArmWeapon,
-		 &AMyCharacter::AttachArmWeaponImpl
+		 &AMyCharacter::Server_AttachArmCollectable,
+		 &AMyCharacter::AttachArmCollectableImpl
 		);
 	}
 	else
 	{
-		for (const auto& Child : GetMesh()->GetAttachChildren())
+		const auto& List = GetMesh()->GetAttachChildren();
+
+		for (size_t i = 0; i < List.Num(); ++i)
 		{
-			if (Child->GetAttachSocketName() == AMyCharacter::RightHandSocketName)
+			if (List[i]->GetAttachSocketName() == AMyCharacter::RightHandSocketName)
 			{
-				Child->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+				List[i]->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 			}
 		}
 
 		if (IsLocallyControlled())
 		{
-			if (IsValid(HandWeapon))
+			if (IsValid(HandCollectable))
 			{
-				HandWeapon->Destroy();
-				HandWeapon = nullptr;
+				HandCollectable->Destroy();
+				HandCollectable = nullptr;
 			}
 		}
 	}
 }
 
-void AMyCharacter::Server_AttachArmWeapon_Implementation()
+void AMyCharacter::Server_AttachArmCollectable_Implementation()
 {
-	AttachArmWeaponImpl();
+	AttachArmCollectableImpl();
 }
 
 int32 AMyCharacter::GetDamage() const
@@ -686,9 +698,9 @@ int32 AMyCharacter::GetDamage() const
 		return 0;
 	}
 
-	if (IsValid(GetWeapon()))
+	if (IsValid(TryGetWeapon()))
 	{
-		return State->GetDamage() + GetWeapon()->GetDamage();
+		return State->GetDamage() + TryGetWeapon()->GetDamage();
 	}
 
 	return State->GetDamage();
@@ -748,32 +760,32 @@ void AMyCharacter::OnAttackAnimNotify()
 	);
 }
 
-void AMyCharacter::AttachArmWeaponImpl()
+void AMyCharacter::AttachArmCollectableImpl()
 {
-	LOG_FUNC(LogTemp, Warning, "AttachArmWeaponImpl");
+	LOG_FUNC(LogTemp, Warning, "AttachArmCollectableImpl");
 
 	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
 
 	if (IsValid(MyPlayerState))
 	{
-		const auto& Weapon = GetWeapon();
+		const auto& Collectable = MyPlayerState->GetCurrentHand();
 
-		HandWeapon = GetWorld()->SpawnActor<AMyWeapon>(Weapon->GetClass());
-		HandWeapon->GetMesh()->SetSimulatePhysics(false);
+		HandCollectable = GetWorld()->SpawnActor<AMyCollectable>(Collectable->GetClass());
+		HandCollectable->GetMesh()->SetSimulatePhysics(false);
 
-		if (HandWeapon->GetMesh()->AttachToComponent
+		if (HandCollectable->GetMesh()->AttachToComponent
 		(
 			ArmMeshComponent,
-			FAttachmentTransformRules::SnapToTargetIncludingScale,
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 			AMyCharacter::RightHandSocketName
 		))
 		{
-			HandWeapon->SetOwner(this);
-			HandWeapon->bOnlyRelevantToOwner = true;
-			HandWeapon->SetReplicates(true);
-			HandWeapon->GetMesh()->SetVisibility(true);
-			HandWeapon->GetMesh()->SetOnlyOwnerSee(true);
-			HandWeapon->GetMesh()->SetCastShadow(false);
+			HandCollectable->SetOwner(this);
+			HandCollectable->bOnlyRelevantToOwner = true;
+			HandCollectable->SetReplicates(true);
+			HandCollectable->GetMesh()->SetVisibility(true);
+			HandCollectable->GetMesh()->SetOnlyOwnerSee(true);
+			HandCollectable->GetMesh()->SetCastShadow(false);
 
 			LOG_FUNC(LogTemp, Warning, "Weapon attached to arm");
 		}

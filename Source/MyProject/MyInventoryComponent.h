@@ -59,6 +59,9 @@ public:
 
 	bool Find(AMyCollectable* MyCollectable) const;
 
+	void Clear();
+	void DropAll();
+
 protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

@@ -126,12 +126,12 @@ bool AMyC4::IsDefusable(const bool bCheckSpeed) const
 
 	TArray<FOverlapResult> OverlapResult;
 
-	const auto& DefuserCheck = GetWorld()->OverlapMultiByObjectType
+	const auto& DefuserCheck = GetWorld()->OverlapMultiByChannel
 	(
 		OverlapResult,
 		GetActorLocation(),
 		FQuat::Identity,
-		ObjectParams,
+		ECC_GameTraceChannel1,
 		FCollisionShape::MakeSphere(50.f),
 		Params
 	);
@@ -506,6 +506,7 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 	if (!IsDefusable(false))
 	{
 		LOG_FUNC(LogTemp, Warning, "Bomb is not defusable");
+		DefusingCharacter = nullptr;
 		return false;
 	}
 
