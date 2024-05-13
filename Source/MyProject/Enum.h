@@ -11,6 +11,17 @@ enum class EMyWeaponType : uint8
 };
 
 UENUM()
+enum class EMySlotType : uint8
+{
+	Unknown,
+	Primary,
+	Secondary,
+	Melee,
+	Utility,
+	Bomb
+};
+
+UENUM()
 enum class EMyCharacterState : uint8
 {
 	Unknown,
