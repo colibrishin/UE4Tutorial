@@ -48,6 +48,8 @@ public:
 
 	float GetPitchInput() const { return PitchInput; }
 
+	void OnWeaponChanged(class AMyPlayerState* ThisPlayerState);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -148,7 +150,8 @@ private:
 
 	// ============ End of Using ============
 
-	void OnWeaponChanged(class AMyPlayerState* ThisPlayerState);
+	UFUNCTION(Server, Reliable)
+	void Server_AttachArmWeapon();
 
 	void AttachArmWeaponImpl();
 
@@ -197,7 +200,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class UMyAnimInstance* ArmAnimInstance;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	class AMyWeapon* HandWeapon;
 
 	FOnAttackStarted OnAttackStarted;
@@ -211,4 +214,6 @@ private:
 	FOnInteractInterrupted OnInteractInterrupted;
 
 	FDelegateHandle OnAttackEndedHandle;
+
+	FDelegateHandle OnHandWeaponAttackEndedHandle;
 };

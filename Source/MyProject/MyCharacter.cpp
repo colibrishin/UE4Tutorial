@@ -132,13 +132,6 @@ AMyCollectable* AMyCharacter::GetCurrentItem() const
 void AMyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
-
-	if (IsValid(MyPlayerState))
-	{
-		MyPlayerState->BindOnWeaponChanged(this, &AMyCharacter::OnWeaponChanged);
-	}
 }
 
 void AMyCharacter::PostInitializeComponents()
@@ -167,6 +160,7 @@ void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyCharacter, PitchInput);
+	DOREPLIFETIME(AMyCharacter, HandWeapon);
 }
 
 float AMyCharacter::TakeDamage(
@@ -340,6 +334,11 @@ void AMyCharacter::ReloadStart() const
 
 	UE_LOG(LogTemp, Warning, TEXT("Reload"));
 	GetWeapon()->Reload();
+
+	if (IsLocallyControlled() && IsValid(HandWeapon))
+	{
+		HandWeapon->Reload();
+	}
 }
 
 void AMyCharacter::UpDown(const float Value)
@@ -459,6 +458,12 @@ void AMyCharacter::AttackStart(const float Value)
 			LOG_FUNC(LogTemp, Error, "Failed to attack");
 			return;
 		}
+
+		if (IsLocallyControlled() && IsValid(HandWeapon))
+	    {
+		    HandWeapon->Attack();
+			OnHandWeaponAttackEndedHandle = HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+	    }
 
 		// todo: process client before sending rpc to server.
 
@@ -639,7 +644,12 @@ void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState)
 			AMyCharacter::RightHandSocketName
 		);
 
-		AttachArmWeaponImpl();
+		ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_AttachArmWeapon,
+		 &AMyCharacter::AttachArmWeaponImpl
+		);
 	}
 	else
 	{
@@ -660,6 +670,11 @@ void AMyCharacter::OnWeaponChanged(AMyPlayerState* ThisPlayerState)
 			}
 		}
 	}
+}
+
+void AMyCharacter::Server_AttachArmWeapon_Implementation()
+{
+	AttachArmWeaponImpl();
 }
 
 int32 AMyCharacter::GetDamage() const
@@ -754,6 +769,8 @@ void AMyCharacter::AttachArmWeaponImpl()
 		))
 		{
 			HandWeapon->SetOwner(this);
+			HandWeapon->bOnlyRelevantToOwner = true;
+			HandWeapon->SetReplicates(true);
 			HandWeapon->GetMesh()->SetVisibility(true);
 			HandWeapon->GetMesh()->SetOnlyOwnerSee(true);
 			HandWeapon->GetMesh()->SetCastShadow(false);

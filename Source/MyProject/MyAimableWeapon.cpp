@@ -124,6 +124,12 @@ bool AMyAimableWeapon::AttackImpl()
 		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Pitch"), Pitch);
 		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Roll"), Roll);
 		BulletTrail->Activate();
+
+		if (IsDummyVisually())
+		{
+			return false;
+		}
+
 		return true;
 	}
 
@@ -136,6 +142,12 @@ bool AMyAimableWeapon::ReloadImpl()
 		 GetWeaponStatComponent()->GetCurrentAmmoCount() != GetWeaponStatComponent()->GetLoadedAmmoCount())
 	{
 		GetWeaponStatComponent()->Reload();
+
+		if (IsDummyVisually())
+		{
+			return false;
+		}
+
 		return true;
 	}
 
