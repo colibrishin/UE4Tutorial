@@ -41,14 +41,14 @@ public:
 	DECL_BINDON(OnUseInterrupted)
 	DECL_BINDON(OnInteractInterrupted)
 
+	class AMyWeapon* TryGetWeapon() const;
+	class AMyItem* TryGetItem() const;
 	class UMyInventoryComponent* GetInventory() const;
 	class UMyStatComponent* GetStatComponent() const;
-	class AMyWeapon* GetWeapon() const;
-	class AMyCollectable* GetCurrentItem() const;
 
 	float GetPitchInput() const { return PitchInput; }
 
-	void OnWeaponChanged(class AMyPlayerState* ThisPlayerState);
+	void OnHandChanged(class AMyPlayerState* ThisPlayerState);
 
 protected:
 	// Called when the game starts or when spawned
@@ -151,9 +151,9 @@ private:
 	// ============ End of Using ============
 
 	UFUNCTION(Server, Reliable)
-	void Server_AttachArmWeapon();
+	void Server_AttachArmCollectable();
 
-	void AttachArmWeaponImpl();
+	void AttachArmCollectableImpl();
 
 	void Yaw(const float Value);
 	void Pitch(const float Value);
@@ -201,7 +201,7 @@ private:
 	class UMyAnimInstance* ArmAnimInstance;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
-	class AMyWeapon* HandWeapon;
+	class AMyCollectable* HandCollectable;
 
 	FOnAttackStarted OnAttackStarted;
 

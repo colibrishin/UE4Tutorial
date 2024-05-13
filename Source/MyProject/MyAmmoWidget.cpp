@@ -23,7 +23,7 @@ void UMyAmmoWidget::BindPlayerState(AMyPlayerState* PlayerState) const
 	if (IsValid(PlayerState))
 	{
 		PlayerState->BindOnStateChanged(this, &UMyAmmoWidget::HandleStateChanged);
-		PlayerState->BindOnWeaponChanged(this, &UMyAmmoWidget::HandleWeaponChanged);
+		PlayerState->BindOnHandChanged(this, &UMyAmmoWidget::HandleWeaponChanged);
 	}
 }
 
@@ -35,7 +35,7 @@ void UMyAmmoWidget::HandleStateChanged(AMyPlayerState* PlayerState, const EMyCha
 	}
 	else
 	{
-		if (PlayerState->GetWeapon() == nullptr)
+		if (Cast<AMyWeapon>(PlayerState->GetCurrentHand()) == nullptr)
 		{
 			AmmoText->SetText(FText::FromString(TEXT("")));
 		}
@@ -46,10 +46,12 @@ void UMyAmmoWidget::HandleStateChanged(AMyPlayerState* PlayerState, const EMyCha
 
 void UMyAmmoWidget::HandleWeaponChanged(AMyPlayerState* PlayerState) const
 {
-	if (IsValid(PlayerState->GetWeapon()))
+	const auto& Weapon = Cast<AMyWeapon>(PlayerState->GetCurrentHand());
+
+	if (IsValid(Weapon))
 	{
 		LOG_FUNC(LogTemp, Warning, "Weapon changed, update ammo count");
-		const auto& StatComponent = PlayerState->GetWeapon()->GetWeaponStatComponent();
+		const auto& StatComponent = Weapon->GetWeaponStatComponent();
 		UpdateAmmo(StatComponent->GetCurrentAmmoCount(), StatComponent->GetRemainingAmmoCount());
 	}
 	else

@@ -123,23 +123,21 @@ void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 
 		if (IsValid(PlayerState))
 		{
-			PlayerState->BindOnWeaponChanged(Character, &AMyCharacter::OnWeaponChanged);
+			PlayerState->BindOnHandChanged(Character, &AMyCharacter::OnHandChanged);
 		}
 
-		if (const auto& Weapon = PlayerState->GetWeapon())
+		if (const auto& Collectable = PlayerState->GetCurrentHand())
 		{
 			if (IsValid(Character))
 			{
-				PlayerState->SetWeapon(Weapon);
-			}
-		}
-
-		if (const auto& Item = PlayerState->GetCurrentItem())
-		{
-			if (IsValid(Character))
-			{
-				// todo: need to be attaching to character
-				PlayerState->SetCurrentItem(Item);
+				if (const auto& Weapon = Cast<AMyWeapon>(Collectable))
+				{
+					PlayerState->SetCurrentWeapon(Weapon);
+				}
+				else
+				{
+					PlayerState->SetCurrentItem(Collectable);
+				}
 			}
 		}
 	}

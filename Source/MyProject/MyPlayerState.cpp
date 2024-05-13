@@ -29,8 +29,7 @@ AMyPlayerState::AMyPlayerState()
 	  Assist(0),
 	  Health(0),
 	  Money(0),
-      Weapon(nullptr),
-      CurrentItem(nullptr)
+      CurrentHand(nullptr)
 {
 	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
 	InventoryComponent = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("InventoryComponent"));
@@ -97,17 +96,13 @@ void AMyPlayerState::Reset()
 
 	if (State != EMyCharacterState::Alive)
 	{
-		if (Weapon && !Weapon->GetItemOwner())
+		if (CurrentHand && !CurrentHand->GetItemOwner())
 		{
-			Weapon->Destroy();
-			Weapon = nullptr;
+			CurrentHand->Destroy();
+			CurrentHand = nullptr;
 		}
 
-		if (CurrentItem && !CurrentItem->GetItemOwner())
-		{
-			CurrentItem->Destroy();
-			CurrentItem = nullptr;
-		}
+		InventoryComponent->Clear();
 	}
 
 	SetState(EMyCharacterState::Alive);
@@ -143,8 +138,7 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, Money);
 	DOREPLIFETIME(AMyPlayerState, InventoryComponent);
 	DOREPLIFETIME(AMyPlayerState, StatComponent);
-	DOREPLIFETIME(AMyPlayerState, Weapon);
-	DOREPLIFETIME(AMyPlayerState, CurrentItem);
+	DOREPLIFETIME(AMyPlayerState, CurrentHand);
 }
 
 void AMyPlayerState::OnRep_HealthChanged() const
@@ -152,9 +146,9 @@ void AMyPlayerState::OnRep_HealthChanged() const
 	OnHPChanged.Broadcast(GetHPRatio());
 }
 
-void AMyPlayerState::OnRep_WeaponChanged()
+void AMyPlayerState::OnRep_HandChanged()
 {
-	OnWeaponChanged.Broadcast(this);
+	OnHandChanged.Broadcast(this);
 }
 
 void AMyPlayerState::Client_OnDamageTaken_Implementation(AMyPlayerState* DamageGiver)
@@ -265,13 +259,21 @@ void AMyPlayerState::AddMoney(const int32 Amount)
 	}
 }
 
-void AMyPlayerState::SetWeapon(AMyWeapon* NewWeapon)
+void AMyPlayerState::SetCurrentWeapon(AMyWeapon* NewWeapon)
 {
 	if (HasAuthority())
 	{
-		LOG_FUNC_PRINTF(LogTemp, Warning, "SetWeapon: %s", *NewWeapon->GetName());
-		Weapon = NewWeapon;
-		OnWeaponChanged.Broadcast(this);
+		if (NewWeapon)
+		{
+			LOG_FUNC_PRINTF(LogTemp, Warning, "SetCurrentWeapon: %s", *NewWeapon->GetName());
+		}
+		else
+		{
+			LOG_FUNC(LogTemp, Warning, "SetCurrentWeapon: nullptr");
+		}
+
+		CurrentHand = NewWeapon;
+		OnHandChanged.Broadcast(this);
 	}
 }
 
@@ -279,7 +281,17 @@ void AMyPlayerState::SetCurrentItem(AMyCollectable* NewItem)
 {
 	if (HasAuthority())
 	{
-		CurrentItem = NewItem;
+		if (NewItem)
+		{
+			LOG_FUNC_PRINTF(LogTemp, Warning, "SetCurrentItem: %s", *NewItem->GetName());
+		}
+		else
+		{
+			LOG_FUNC(LogTemp, Warning, "SetCurrentItem: nullptr");
+		}
+
+		CurrentHand = NewItem;
+		OnHandChanged.Broadcast(this);
 	}
 }
 	
