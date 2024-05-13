@@ -4,6 +4,7 @@
 #include "MyCollectable.h"
 
 #include "MyCharacter.h"
+#include "MyCollectableComponent.h"
 #include "MyInventoryComponent.h"
 #include "MyPlayerState.h"
 
@@ -19,6 +20,7 @@ AMyCollectable::AMyCollectable()
 
 	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
 	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
+    CollectableComponent = CreateDefaultSubobject<UMyCollectableComponent>(TEXT("CollectableComponent"));
 
 	Collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
 
@@ -108,8 +110,18 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 		if (HasAuthority())
 		{
 			const auto& Inventory = Character->GetInventory();
+			const auto& Slot = CollectableComponent->GetSlotType();
+			const auto& SlotNum = static_cast<int32>(Slot) - 1;
 
-			if (Inventory->TryAddItem(this))
+			if (Slot == EMySlotType::Unknown)
+			{
+				LOG_FUNC(LogTemp, Warning, "Slot is unknown");
+				return false;
+			}
+
+			LOG_FUNC_PRINTF(LogTemp, Warning, "SlotNum: %d", SlotNum);
+
+			if (Inventory->TryAddItem(this, SlotNum))
 			{
 				LOG_FUNC_PRINTF(LogTemp, Warning, "Server-side Item Interacted: %s", *GetName());
 			}

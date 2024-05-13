@@ -71,6 +71,17 @@ public:
 };
 
 USTRUCT()
+struct FMyCollectableData : public FTableRowBase
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	EMySlotType SlotType;
+
+};
+
+USTRUCT()
 struct FMyWeaponStat : public FTableRowBase
 {
 	GENERATED_BODY()
