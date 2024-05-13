@@ -4,6 +4,7 @@
 #include "MyCollectable.h"
 
 #include "MyCharacter.h"
+#include "MyPlayerState.h"
 
 #include "Components/BoxComponent.h"
 
