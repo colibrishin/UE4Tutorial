@@ -121,11 +121,16 @@ void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 	{
 		const auto& Character = Cast<AMyCharacter>(NewPlayer->GetPawn());
 
+		if (IsValid(PlayerState))
+		{
+			PlayerState->BindOnWeaponChanged(Character, &AMyCharacter::OnWeaponChanged);
+		}
+
 		if (const auto& Weapon = PlayerState->GetWeapon())
 		{
 			if (IsValid(Character))
 			{
-				Weapon->TryAttachItem(Character);
+				PlayerState->SetWeapon(Weapon);
 			}
 		}
 
@@ -134,7 +139,7 @@ void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 			if (IsValid(Character))
 			{
 				// todo: need to be attaching to character
-				Item->Interact(Character);
+				PlayerState->SetCurrentItem(Item);
 			}
 		}
 	}

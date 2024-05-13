@@ -11,6 +11,7 @@ public class MyProject: ModuleRules
         bEnforceIWYU = true;
 		PrivatePCHHeaderFile = "ProjectPrecompiled.h";
 		MinFilesUsingPrecompiledHeaderOverride = 1;
+		bUseUnity = false;
 		CppStandard = CppStandardVersion.Cpp17;
 
 		PublicDependencyModuleNames.AddRange(new string[] 
