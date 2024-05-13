@@ -73,7 +73,7 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Horizontal = FVector::DotProduct(Velocity, Character->GetActorRightVector());
 	Yaw = Character->GetActorRotation().Yaw;
 	Pitch = Character->GetPitchInput();
-	bHasWeapon = IsValid(Cast<AMyAimableWeapon>(Character->GetWeapon()));
+	bHasWeapon = IsValid(Character->TryGetWeapon());
 }
 
 FName UMyAnimInstance::GetAttackMontageSectionName(const int32 NewIndex)
