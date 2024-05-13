@@ -39,6 +39,9 @@ public:
 	virtual bool TryAttachItem(const AMyCharacter* Character) override;
 	UTexture2D*  GetWeaponImage() const { return WeaponImage; }
 
+	void SetVisualDummy(const bool NewDummy) { bIsDummyVisually = NewDummy; }
+	bool IsDummyVisually() const { return bIsDummyVisually; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -61,6 +64,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool CanAttack;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bIsDummyVisually;
 
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* WeaponImage;
