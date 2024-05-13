@@ -112,6 +112,27 @@ FORCEINLINE const struct FMyStat* GetStatData(const UObject* InWorldContext, con
 	return Stat;
 }
 
+FORCEINLINE const struct FMyCollectableData* GetCollectableData(const UObject* InWorldContext, const int32 ID)
+{
+	const auto& Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
+
+	if (!IsValid(Instance))
+	{
+		LOG_FUNC(LogTemp, Error, "Invalid game instance");
+		return nullptr;
+	}
+
+	FMyCollectableData* Collectable = nullptr;
+	Instance->GetCollectableValue(ID, &Collectable);
+
+	if (Collectable == nullptr)
+	{
+		return nullptr;
+	}
+
+	return Collectable;
+}
+
 template <typename T , typename... Args>
 FORCEINLINE void ExecuteServer(
 	AActor* ActorContext, 
