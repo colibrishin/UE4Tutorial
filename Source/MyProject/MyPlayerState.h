@@ -40,15 +40,14 @@ public:
 
 	class UMyStatComponent* GetStatComponent() const { return StatComponent; }
 	class UMyInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
-	class AMyWeapon* GetWeapon() const { return Weapon; }
-	class AMyCollectable* GetCurrentItem() const { return CurrentItem; }
+	class AMyCollectable* GetCurrentHand() const { return CurrentHand; }
 
 	void Use(const int32 Index);
 
 	void SetState(const EMyCharacterState NewState);
 	void SetHP(const int32 NewHP);
 	void AddMoney(const int32 Amount);
-	void SetWeapon(class AMyWeapon* NewWeapon);
+	void SetCurrentWeapon(class AMyWeapon* NewWeapon);
 	void SetCurrentItem(class AMyCollectable* NewItem);
 
 	FORCEINLINE float GetHP() const
@@ -61,7 +60,7 @@ public:
 	DECL_BINDON(OnHPChanged, float)
 	DECL_BINDON(OnMoneyChanged, int32)
 	DECL_BINDON(OnStateChanged, class AMyPlayerState*, EMyCharacterState)
-	DECL_BINDON(OnWeaponChanged, class AMyPlayerState*)
+	DECL_BINDON(OnHandChanged, class AMyPlayerState*)
 	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 	FORCEINLINE int32 GetMoney() const { return Money; }
@@ -93,7 +92,7 @@ private:
 	void OnRep_HealthChanged() const;
 
 	UFUNCTION()
-	void OnRep_WeaponChanged();
+	void OnRep_HandChanged();
 
 	void SetTeam(const EMyTeam NewTeam)
 	{
@@ -136,11 +135,8 @@ private:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	class UMyInventoryComponent* InventoryComponent;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_WeaponChanged)
-	class AMyWeapon* Weapon;
-
-	UPROPERTY(Replicated, VisibleAnywhere)
-	class AMyCollectable* CurrentItem;
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_HandChanged)
+	class AMyCollectable* CurrentHand;
 
 	FOnDamageTaken OnDamageTaken;
 
@@ -148,7 +144,7 @@ private:
 
 	FOnHPChanged OnHPChanged;
 
-	FOnWeaponChanged OnWeaponChanged;
+	FOnWeaponChanged OnHandChanged;
 
 	FOnKillOccurred OnKillOccurred;
 
