@@ -155,6 +155,35 @@ private:
 
 	void AttachArmCollectableImpl();
 
+	// ============ Swap ============
+
+	void SwapPrimary();
+	UFUNCTION(Server, Reliable)
+	void Server_SwapPrimary();
+	void SwapPrimaryImpl() const;
+
+	void SwapSecondary();
+	UFUNCTION(Server, Reliable)
+	void Server_SwapSecondary();
+	void SwapSecondaryImpl() const;
+
+	void SwapMelee();
+	UFUNCTION(Server, Reliable)
+	void Server_SwapMelee();
+	void SwapMeleeImpl() const;
+
+	void SwapUtility();
+	UFUNCTION(Server, Reliable)
+	void Server_SwapUtility();
+	void SwapUtilityImpl() const;
+
+	void SwapBomb();
+	UFUNCTION(Server, Reliable)
+	void Server_SwapBomb();
+	void SwapBombImpl() const;
+
+	// ============ End of Swap ============
+
 	void Yaw(const float Value);
 	void Pitch(const float Value);
 	bool IsBuyMenuOpened() const;

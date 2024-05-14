@@ -27,6 +27,7 @@
 
 #include "Net/UnrealNetwork.h"
 #include "NiagaraComponent.h"
+#include "WeaponSwapUtility.hpp"
 
 #include "UObject/ConstructorHelpers.h"
 
@@ -212,6 +213,12 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Released, this, &AMyCharacter::UnAim);
 
 	PlayerInputComponent->BindAction(TEXT("Reload"), IE_Pressed, this, &AMyCharacter::Reload);
+
+	PlayerInputComponent->BindAction(TEXT("Primary"), IE_Pressed, this, &AMyCharacter::SwapPrimary);
+	PlayerInputComponent->BindAction(TEXT("Secondary"), IE_Pressed, this, &AMyCharacter::SwapSecondary);
+	PlayerInputComponent->BindAction(TEXT("Melee"), IE_Pressed, this, &AMyCharacter::SwapMelee);
+	PlayerInputComponent->BindAction(TEXT("Grenade"), IE_Pressed, this, &AMyCharacter::SwapUtility);
+	PlayerInputComponent->BindAction(TEXT("Bomb"), IE_Pressed, this, &AMyCharacter::SwapBomb);
 
 	// Somehow BindAction with IE_Repeat doesn't work, move Attack to axis.
 	PlayerInputComponent->BindAxis(TEXT("Attack"), this, &AMyCharacter::Attack);
@@ -790,6 +797,133 @@ void AMyCharacter::AttachArmCollectableImpl()
 			LOG_FUNC(LogTemp, Error, "Failed to attach weapon to arm");
 		}
 	}
+}
+
+// todo: Meta-programming?
+
+void AMyCharacter::SwapPrimary()
+{
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
+	ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_SwapPrimary,
+		 &AMyCharacter::SwapPrimaryImpl
+		);
+}
+
+void AMyCharacter::Server_SwapPrimary_Implementation()
+{
+	SwapPrimaryImpl();
+}
+
+void AMyCharacter::SwapPrimaryImpl() const
+{
+	CharacterSwapHand(this, 1);
+}
+
+void AMyCharacter::SwapSecondary()
+{
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
+	ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_SwapSecondary,
+		 &AMyCharacter::SwapSecondaryImpl
+		);
+}
+
+void AMyCharacter::Server_SwapSecondary_Implementation()
+{
+	SwapSecondaryImpl();
+}
+
+void AMyCharacter::SwapSecondaryImpl() const
+{
+	CharacterSwapHand(this, 2);
+}
+
+void AMyCharacter::SwapMelee()
+{
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
+	ExecuteServer
+	(
+		this,
+		 &AMyCharacter::Server_SwapMelee,
+		 &AMyCharacter::SwapMeleeImpl
+	);
+}
+
+void AMyCharacter::Server_SwapMelee_Implementation()
+{
+	SwapMeleeImpl();
+}
+
+void AMyCharacter::SwapMeleeImpl() const
+{
+	CharacterSwapHand(this, 3);
+}
+
+void AMyCharacter::SwapUtility()
+{
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
+	ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_SwapUtility,
+		 &AMyCharacter::SwapUtilityImpl
+		);
+}
+
+void AMyCharacter::Server_SwapUtility_Implementation()
+{
+	SwapUtilityImpl();
+}
+
+void AMyCharacter::SwapUtilityImpl() const
+{
+	CharacterSwapHand(this, 4);
+}
+
+void AMyCharacter::SwapBomb()
+{
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
+	ExecuteServer
+		(
+		 this,
+		 &AMyCharacter::Server_SwapBomb,
+		 &AMyCharacter::SwapBombImpl
+		);
+}
+
+void AMyCharacter::Server_SwapBomb_Implementation()
+{
+	SwapBombImpl();
+}
+
+void AMyCharacter::SwapBombImpl() const
+{
+	CharacterSwapHand(this, 5);
 }
 
 void AMyCharacter::Yaw(const float Value)
