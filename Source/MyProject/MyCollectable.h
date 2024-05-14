@@ -79,6 +79,9 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	class USkeletalMeshComponent* SkeletalMeshComponent;
 
+    UPROPERTY(VisibleAnywhere)
+    class UMyCollectableComponent* CollectableComponent;
+
 	FDelegateHandle OnInteractInterruptedHandle;
 
 	FDelegateHandle OnUseInterruptedHandle;

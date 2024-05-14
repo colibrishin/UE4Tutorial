@@ -214,7 +214,7 @@ void AMyPlayerState::AssignTeam()
 
 void AMyPlayerState::Use(const int32 Index)
 {
-	SetCurrentItem(InventoryComponent->Use(Index));
+	SetCurrentItem(InventoryComponent->Get(Index));
 }
 
 void AMyPlayerState::SetState(const EMyCharacterState NewState)

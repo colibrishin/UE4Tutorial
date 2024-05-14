@@ -16,7 +16,8 @@ UMyInventoryComponent::UMyInventoryComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	// ...
+	Inventory.Reserve(InventorySize);
+	Inventory.SetNum(InventorySize);
 }
 
 
@@ -32,10 +33,17 @@ bool UMyInventoryComponent::TryAddItem(AMyCollectable* Item)
 {
 	LOG_FUNC_PRINTF(LogTemp, Warning, "Trying add the item : %s", *Item->GetName())
 
-	if (Inventory.Num() < InventorySize)
+	size_t Pos = 0;
+
+	while (Pos < Inventory.Num() && Inventory[Pos] != nullptr)
+	{
+		++Pos;
+	}
+
+	if (Pos < InventorySize)
 	{
 		LOG_FUNC(LogTemp, Warning, "Item added to inventory");
-		Inventory.Add(Item);
+		Inventory[Pos] = Item;
 		Item->OnDestroyed.AddDynamic(this, &UMyInventoryComponent::HandleItemDestroy);
 		return true;
 	}
@@ -46,32 +54,43 @@ bool UMyInventoryComponent::TryAddItem(AMyCollectable* Item)
 	}
 }
 
-AMyCollectable* UMyInventoryComponent::Use(const int32 Index)
+bool UMyInventoryComponent::TryAddItem(AMyCollectable* Item, const int32 Index)
 {
-	if (Index < Inventory.Num())
-	{
-		AMyCollectable* Item = Inventory[Index].Get();
+	LOG_FUNC_PRINTF(LogTemp, Warning, "Trying add the item : %s", *Item->GetName())
 
-		if (Item)
+	if (Inventory.IsValidIndex(Index))
+	{
+		if (Inventory[Index] != nullptr)
 		{
-			Item->OnDestroyed.RemoveDynamic(this, &UMyInventoryComponent::HandleItemDestroy);
-			Inventory.RemoveAt(Index);
-			return Item;
+			LOG_FUNC(LogTemp, Warning, "Item already exists in the inventory");
+			return false;
 		}
 
-		LOG_FUNC(LogTemp, Warning, "Item is not valid");
-		return nullptr;
+		Inventory[Index] = Item;
+		Item->OnDestroyed.AddDynamic(this, &UMyInventoryComponent::HandleItemDestroy);
+		return true;
 	}
 	else
 	{
-		UE_LOG(LogTemp , Warning , TEXT("Item not found"));
-		return nullptr;
+		LOG_FUNC(LogTemp, Warning, "Index is out of bounds");
+		return false;
 	}
+}
+
+AMyCollectable* UMyInventoryComponent::Get(const int32 Index) const
+{
+	if (Inventory.IsValidIndex(Index))
+	{
+		return Inventory[Index].Get();
+	}
+
+	return nullptr;
 }
 
 void UMyInventoryComponent::Remove(AMyCollectable* MyCollectable)
 {
-	Inventory.Remove(MyCollectable);
+	MyCollectable->OnDestroyed.RemoveDynamic(this, &UMyInventoryComponent::HandleItemDestroy);
+	Inventory.RemoveSwap(MyCollectable, false);
 }
 
 bool UMyInventoryComponent::Find(AMyCollectable* MyCollectable) const
@@ -107,6 +126,6 @@ void UMyInventoryComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 void UMyInventoryComponent::HandleItemDestroy(AActor* ToBeDestroyed)
 {
 	const auto& Collectable = Cast<AMyCollectable>(ToBeDestroyed);
-	Inventory.Remove(Collectable);
+	Inventory.RemoveSwap(Collectable, false);
 }
 
