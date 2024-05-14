@@ -77,27 +77,14 @@ bool UMyInventoryComponent::TryAddItem(AMyCollectable* Item, const int32 Index)
 	}
 }
 
-AMyCollectable* UMyInventoryComponent::Use(const int32 Index)
+AMyCollectable* UMyInventoryComponent::Get(const int32 Index) const
 {
-	if (Index < Inventory.Num())
+	if (Inventory.IsValidIndex(Index))
 	{
-		AMyCollectable* Item = Inventory[Index].Get();
-
-		if (Item)
-		{
-			Item->OnDestroyed.RemoveDynamic(this, &UMyInventoryComponent::HandleItemDestroy);
-			Inventory[Index] = nullptr;
-			return Item;
-		}
-
-		LOG_FUNC(LogTemp, Warning, "Item is not valid");
-		return nullptr;
+		return Inventory[Index].Get();
 	}
-	else
-	{
-		UE_LOG(LogTemp , Warning , TEXT("Item not found"));
-		return nullptr;
-	}
+
+	return nullptr;
 }
 
 void UMyInventoryComponent::Remove(AMyCollectable* MyCollectable)
