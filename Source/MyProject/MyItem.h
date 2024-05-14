@@ -16,7 +16,6 @@ class MYPROJECT_API AMyItem : public AMyCollectable
 
 public:
 	AMyItem();
-	virtual bool PostInteract(class AMyCharacter* Character) override;
 
 protected:
 	virtual void PostInitializeComponents() override;

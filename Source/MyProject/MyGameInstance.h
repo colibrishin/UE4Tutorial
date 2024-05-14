@@ -28,6 +28,7 @@ public:
 
 	void __vectorcall GetStatValue(const int32 Level, struct FMyStat** const OutStat) const;
 	void __vectorcall GetWeaponValue(const int32 ID, struct FMyWeaponData** const OutData) const;
+	void __vectorcall GetCollectableValue(const int32 ID, struct FMyCollectableData** const OutData) const;
 
 	FORCEINLINE int32 GetWeaponCount() const
 	{
@@ -40,5 +41,8 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(AllowPrivateAccess))
 	UDataTable* WeaponStatTable;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(AllowPrivateAccess))
+	UDataTable* CollectableDataTable;
 
 };
