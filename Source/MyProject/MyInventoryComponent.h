@@ -24,7 +24,7 @@ public:
 
 	bool TryAddItem(class AMyCollectable* Item, const int32 Index);
 
-	class AMyCollectable* Use(const int32 Index);
+	class AMyCollectable* Get(const int32 Index) const;
 
 	template <typename T, typename CollectableLock = std::enable_if_t<std::is_base_of_v<AMyCollectable, T>>>
 	T* Get() const
