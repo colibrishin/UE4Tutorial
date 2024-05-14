@@ -111,7 +111,7 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 		{
 			const auto& Inventory = Character->GetInventory();
 			const auto& Slot = CollectableComponent->GetSlotType();
-			const auto& SlotNum = static_cast<int32>(Slot) - 1;
+			const auto& SlotNum = static_cast<int32>(Slot);
 
 			if (Slot == EMySlotType::Unknown)
 			{
