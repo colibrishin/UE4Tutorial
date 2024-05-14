@@ -773,6 +773,12 @@ void AMyCharacter::AttachArmCollectableImpl()
 	{
 		const auto& Collectable = MyPlayerState->GetCurrentHand();
 
+		if (IsValid(Collectable) && IsValid(HandCollectable))
+		{
+			HandCollectable->Destroy();
+			HandCollectable = nullptr;
+		}
+
 		HandCollectable = GetWorld()->SpawnActor<AMyCollectable>(Collectable->GetClass());
 		HandCollectable->GetMesh()->SetSimulatePhysics(false);
 
