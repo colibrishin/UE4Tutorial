@@ -7,7 +7,8 @@ enum class EMyWeaponType : uint8
 {
 	Unknown,
 	Range,
-	Melee
+	Melee,
+	Throwable
 };
 
 UENUM()
