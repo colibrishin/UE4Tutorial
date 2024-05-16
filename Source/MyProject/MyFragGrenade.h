@@ -19,10 +19,14 @@ class MYPROJECT_API AMyFragGrenade : public AMyWeapon
 public:
     AMyFragGrenade();
 
+	class AMyCharacter* GetPreviousOwner() const { return PreviousOwner.Get(); }
+
 protected:
 	virtual bool AttackImpl() override;
 
 	virtual bool ReloadImpl() override;
+
+	virtual void DropLocation() override;
 
 private:
 	void Throw();
@@ -41,5 +45,7 @@ private:
 	bool IsExploded;
 
 	FTimerHandle OnExplosionTimerExpiredHandle;
+
+	TWeakObjectPtr<class AMyCharacter> PreviousOwner;
 
 };

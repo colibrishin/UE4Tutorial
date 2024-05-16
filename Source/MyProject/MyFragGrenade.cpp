@@ -24,19 +24,23 @@ AMyFragGrenade::AMyFragGrenade() : IsThrown(false), IsExploded(false)
 
 bool AMyFragGrenade::AttackImpl()
 {
-	const auto& Result = Super::AttackImpl();
+	// todo: cooking
+	Throw();
 
-	if (Result)
-	{
-		Throw();
-	}
-
-	return Result;
+	return true;
 }
 
 bool AMyFragGrenade::ReloadImpl()
 {
 	return false;
+}
+
+void AMyFragGrenade::DropLocation()
+{
+	// Override base DropLocation
+
+	const auto& ForwardPosition = GetActorLocation() + PreviousOwner->GetActorForwardVector() * 100.f;
+	SetActorLocation(ForwardPosition);
 }
 
 void AMyFragGrenade::Throw()
@@ -58,9 +62,9 @@ void AMyFragGrenade::ThrowImpl()
 		return;
 	}
 
-	// todo: object will be thrown at the bottom of the character
-	Drop();
+	PreviousOwner = GetItemOwner();
 
+	Drop();
 	GetSkeletalMeshComponent()->AddImpulse(FVector::ForwardVector * 1000.f, NAME_None, true);
 
 	GetWorldTimerManager().SetTimer
@@ -94,6 +98,12 @@ void AMyFragGrenade::OnExplosionTimerExpired()
 			FCollisionShape::MakeSphere(500.f)
 		);
 
+		if (!PreviousOwner.IsValid())
+		{
+			LOG_FUNC(LogTemp, Error, "Previous owner is not noted");
+			return;
+		}
+
 		for (const auto& Result : HitResults)
 		{
 			if (const auto& Character = Cast<AMyCharacter>(Result.GetActor()))
@@ -106,12 +116,12 @@ void AMyFragGrenade::OnExplosionTimerExpired()
 				(
 					Damage, 
 					{}, 
-					Cast<AMyPlayerController>(GetItemOwner()->GetOwner()), 
-					GetItemOwner()
+					Cast<AMyPlayerController>(PreviousOwner->GetOwner()), 
+					PreviousOwner.Get()
 				);
 			}
 		}
-
-		Destroy(true);
 	}
+
+	Destroy(true);
 }
