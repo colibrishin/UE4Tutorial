@@ -61,6 +61,13 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 		ArmMeshComponent->SetSkeletalMesh(SK_ArmMesh.Object);
 	}
 
+	static ConstructorHelpers::FObjectFinder<USoundWave> SW_Footstep(TEXT("SoundWave'/Game/Models/sounds/footstep1.footstep1'"));
+
+	if (SW_Footstep.Succeeded())
+	{
+		FootstepSound = SW_Footstep.Object;
+	}
+
 	SpringArm->SetupAttachment(GetCapsuleComponent());
 	Camera->SetupAttachment(SpringArm);
 	ArmMeshComponent->SetupAttachment(Camera);
@@ -91,6 +98,8 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	GetMesh()->SetCastShadow(true);
 	ArmMeshComponent->SetOnlyOwnerSee(true);
 	ArmMeshComponent->SetCastShadow(false);
+
+	
 }
 
 AMyWeapon* AMyCharacter::TryGetWeapon() const
@@ -188,6 +197,12 @@ float AMyCharacter::TakeDamage(
 	}
 
 	return Damage;
+}
+
+void AMyCharacter::Landed(const FHitResult& Hit)
+{
+	Super::Landed(Hit);
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), FootstepSound, GetActorLocation(), FRotator::ZeroRotator);
 }
 
 // Called every frame
