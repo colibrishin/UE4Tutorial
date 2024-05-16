@@ -166,6 +166,38 @@ void AMyCollectable::DropImpl()
 {
 }
 
+void AMyCollectable::DropLocation()
+{
+	FVector PreviousLocation = GetActorLocation();
+	FHitResult HitResult;
+	FCollisionQueryParams Params {NAME_None, false, this};
+
+	const auto& Result = GetWorld()->LineTraceSingleByProfile
+	(
+		HitResult,
+		PreviousLocation,
+		PreviousLocation - FVector::UpVector * 1000.f,
+		TEXT("IgnoreOnlyPawn"),
+		Params
+	);
+
+	if (Result)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Drop success"));
+		UE_LOG(LogTemp, Warning, TEXT("HitResult.Location: %s"), *HitResult.ImpactPoint.ToString());
+		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
+		SetActorLocation(HitResult.Location);
+		SetActorRotation(FRotator::ZeroRotator);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Drop Fallbacked"));
+		UE_LOG(LogTemp, Warning, TEXT("PreviousLocation: %s"), *PreviousLocation.ToString());
+		SetActorLocation(PreviousLocation);
+		SetActorRotation(FRotator::ZeroRotator);
+	}
+}
+
 AMyCharacter* AMyCollectable::GetItemOwner() const
 {
 	const auto& CollectableOwner = GetAttachParentActor();
@@ -232,39 +264,11 @@ bool AMyCollectable::Drop()
 	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
 	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
 
-	FVector PreviousLocation = GetActorLocation();
-
-	FHitResult HitResult;
-	FCollisionQueryParams Params {NAME_None, false, this};
-
-	const auto& Result = GetWorld()->LineTraceSingleByProfile
-	(
-		HitResult,
-		PreviousLocation,
-		PreviousLocation - FVector::UpVector * 1000.f,
-		TEXT("IgnoreOnlyPawn"),
-		Params
-	);
-
 	DropImpl();
 
 	GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 
-	if (Result)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Drop success"));
-		UE_LOG(LogTemp, Warning, TEXT("HitResult.Location: %s"), *HitResult.ImpactPoint.ToString());
-		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.GetActor()->GetName());
-		SetActorLocation(HitResult.Location);
-		SetActorRotation(FRotator::ZeroRotator);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Drop Fallbacked"));
-		UE_LOG(LogTemp, Warning, TEXT("PreviousLocation: %s"), *PreviousLocation.ToString());
-		SetActorLocation(PreviousLocation);
-		SetActorRotation(FRotator::ZeroRotator);
-	}
+	DropLocation();
 
 	Show();
 	GetMesh()->SetSimulatePhysics(true);
