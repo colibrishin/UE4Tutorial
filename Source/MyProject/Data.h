@@ -71,6 +71,27 @@ public:
 };
 
 USTRUCT()
+struct FMyThrowableWeaponStat : public FMyWeaponStatBase
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float Radius;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float CookingTime;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ThrowForce;
+
+	// todo: can be replaced with a mass
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float ThrowForceMultiplier;
+
+};
+
+USTRUCT()
 struct FMyCollectableData : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -106,6 +127,9 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
 	FMyRangeWeaponStat RangeWeaponStat{};
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
+	FMyThrowableWeaponStat ThrowableWeaponStat{};
+
 public:
 	template <typename T, typename BaseLock = std::enable_if_t<std::is_base_of_v<FMyWeaponStatBase, T>>>
 	FORCEINLINE const T* Get() const
@@ -117,6 +141,10 @@ public:
 		if constexpr (std::is_same_v<T, FMyRangeWeaponStat>)
 		{
 			return &RangeWeaponStat;
+		}
+		if constexpr (std::is_same_v<T, FMyThrowableWeaponStat>)
+		{
+			return &ThrowableWeaponStat;
 		}
 
 		return nullptr;
