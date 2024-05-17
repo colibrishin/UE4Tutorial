@@ -268,6 +268,20 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	}
 }
 
+void AMyCharacter::Server_AttackInterrupted_Implementation(const float Value)
+{
+	Multi_AttackInterrupted(Value);
+}
+
+void AMyCharacter::Multi_AttackInterrupted_Implementation(const float Value)
+{
+	// Will not reset attack here. There could be a case where player is doing the short burst shooting.
+	if (IsValid(TryGetWeapon()))
+	{
+		TryGetWeapon()->AttackInterrupted();
+	}
+}
+
 void AMyCharacter::Reload()
 {
 	if (IsBuyMenuOpened())
@@ -444,6 +458,23 @@ void AMyCharacter::Attack(const float Value)
 		return;
 	}
 
+	// todo: analogue input support?
+	if (PreviousAttack == 1.f && Value == 0.f)
+	{
+		ExecuteServer
+			(
+			 this ,
+			 &AMyCharacter::Server_AttackInterrupted,
+			 &AMyCharacter::Multi_AttackInterrupted,
+			 Value
+			);
+
+		PreviousAttack = Value;
+		return;
+	}
+
+	PreviousAttack = Value;
+
 	if (Value == 0.f)
 	{
 		return;
@@ -499,31 +530,37 @@ void AMyCharacter::AttackStart(const float Value)
 
 		// todo: process client before sending rpc to server.
 
-		switch (TryGetWeapon()->GetWeaponStatComponent()->GetWeaponType())
+		if (IsValid(TryGetWeapon()))
 		{
-		case EMyWeaponType::Range:
-			UE_LOG(LogTemp, Warning, TEXT("Range Attack"));
-			// todo: unbind the fire when player drops.
-			OnAttackEndedHandle = TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
-
-			if (TryGetWeapon()->GetWeaponStatComponent()->IsHitscan())
+			switch (TryGetWeapon()->GetWeaponStatComponent()->GetWeaponType())
 			{
-				UE_LOG(LogTemp, Warning, TEXT("Hitscan Attack"));
+			case EMyWeaponType::Range:
+				LOG_FUNC(LogTemp, Warning, "Range Attack");
 
-				FHitResult HitResult;
-				if (HitscanAttack(HitResult))
+				// todo: unbind the fire when player drops.
+				TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+
+				if (TryGetWeapon()->GetWeaponStatComponent()->IsHitscan())
 				{
-					NotifyDamage(Cast<AMyCharacter>(HitResult.Actor.Get()));
+					LOG_FUNC(LogTemp, Warning, "Hitscan Attack");
+
+					FHitResult HitResult;
+					if (HitscanAttack(HitResult))
+					{
+						NotifyDamage(Cast<AMyCharacter>(HitResult.Actor.Get()));
+					}
 				}
+				break;
+			case EMyWeaponType::Melee:
+				LOG_FUNC(LogTemp, Warning, "Melee Attack");
+				MeleeAttack();
+				break;
+			default:
+			case EMyWeaponType::Unknown:
+				LOG_FUNC(LogTemp, Error, "Unknown Weapon Type");
+				MeleeAttack();
+				break;
 			}
-			break;
-		case EMyWeaponType::Melee:
-			MeleeAttack();
-			break;
-		default:
-		case EMyWeaponType::Unknown: 
-			UE_LOG(LogTemp, Error, TEXT("Unknown Weapon Type"));
-			return;
 		}
 	}
 	else

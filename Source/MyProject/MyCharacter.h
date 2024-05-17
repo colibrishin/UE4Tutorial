@@ -76,6 +76,8 @@ public:
 
 private:
 
+	friend void CharacterSwapHand(AMyCharacter* Character, const int Index);
+
 	// ============ Attacking ============
 	UFUNCTION(Server, Reliable)
 	void Server_Attack(const float Value);
@@ -94,6 +96,11 @@ private:
 
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
+
+	UFUNCTION(Server, Reliable)
+	void Server_AttackInterrupted(const float Value);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_AttackInterrupted(const float Value);
 
 	// ============ End of Attacking ============
 
@@ -192,6 +199,9 @@ private:
 
 	UFUNCTION(Server, Unreliable)
 	void Server_SyncPitch(const float NewPitch);
+
+	UPROPERTY(VisibleAnywhere)
+	float PreviousAttack;
 
 	UPROPERTY(VisibleAnywhere)
 	float ForwardInput;
