@@ -149,13 +149,16 @@ void AMyFragGrenade::OnExplosionTimerExpired()
 				const auto& Ratio = 1.f - Distance / Radius;
 				const auto& RatioDamage = Damage * Ratio;
 
-				Character->GetPlayerState<AMyPlayerState>()->TakeDamage
-				(
-					RatioDamage, 
-					{}, 
-					Cast<AMyPlayerController>(PreviousOwner->GetOwner()), 
-					PreviousOwner.Get()
-				);
+				if (const auto& MyPlayerState = Character->GetPlayerState<AMyPlayerState>())
+				{
+					MyPlayerState->TakeDamage
+					(
+						RatioDamage, 
+						{}, 
+						Cast<AMyPlayerController>(PreviousOwner->GetOwner()), 
+						PreviousOwner.Get()
+					);
+				}
 			}
 		}
 	}
