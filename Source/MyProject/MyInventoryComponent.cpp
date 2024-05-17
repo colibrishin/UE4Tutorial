@@ -102,8 +102,11 @@ void UMyInventoryComponent::Clear()
 {
 	for (int32 i = 0; i < Inventory.Num(); ++i)
 	{
-		Inventory[i]->Destroy();
-		Inventory[i] = nullptr;
+		if (Inventory[i] != nullptr)
+		{
+			Inventory[i]->Destroy();
+			Inventory[i] = nullptr;
+		}
 	}
 }
 
@@ -111,8 +114,11 @@ void UMyInventoryComponent::DropAll()
 {
 	for (int32 i = 0; i < Inventory.Num(); ++i)
 	{
-		Inventory[i]->Drop();
-		Inventory[i] = nullptr;
+		if (Inventory[i] != nullptr)
+		{
+			Inventory[i]->Drop();
+			Inventory[i] = nullptr;
+		}
 	}
 }
 
