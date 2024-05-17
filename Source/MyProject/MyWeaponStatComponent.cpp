@@ -66,24 +66,59 @@ float UMyWeaponStatComponent::GetFireRate() const
 	return PrintErrorAndReturnDefault<float>("Trying to get fire rate from non-range weapon", GetOwner());
 }
 
+float UMyWeaponStatComponent::GetCookingTime() const
+{
+	if (WeaponType == EMyWeaponType::Throwable)
+	{
+		return GetThrowableStat()->CookingTime;
+	}
+
+	return PrintErrorAndReturnDefault<float>("Trying to get cooking time from non-throwable weapon", GetOwner());
+}
+
+float UMyWeaponStatComponent::GetRadius() const
+{
+	if (WeaponType == EMyWeaponType::Melee)
+	{
+		return GetMeleeStat()->Radius;
+	}
+	else if (WeaponType == EMyWeaponType::Throwable)
+	{
+		return GetThrowableStat()->Radius;
+	}
+
+	return PrintErrorAndReturnDefault<float>("Trying to get radius from non-melee and non-throwable weapon", GetOwner());
+}
+
 bool UMyWeaponStatComponent::ConsumeAmmo()
 {
-	if (WeaponType == EMyWeaponType::Range)
+	switch (WeaponType)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Consume ammo: %d"), AmmoSpent);
-
-		if (LoadedAmmoCount - AmmoSpent <= 0)
+	case EMyWeaponType::Range:
 		{
-			AmmoSpent = LoadedAmmoCount;
-			return false;
-		}
+			LOG_FUNC_PRINTF(LogTemp , Warning , "Consume ammo: %d" , AmmoSpent);
 
-		++AmmoSpent;
-		return true;
-	}
-	else if (WeaponType == EMyWeaponType::Melee)
-	{
-		return true;
+			if (LoadedAmmoCount - AmmoSpent <= 0)
+			{
+				AmmoSpent = LoadedAmmoCount;
+				return false;
+			}
+
+			++AmmoSpent;
+			return true;
+		}
+	case EMyWeaponType::Melee:
+		{
+			LOG_FUNC_PRINTF(LogTemp , Warning , "Melee weapon does not need to consume ammo");
+			return true;
+		}
+	case EMyWeaponType::Throwable:
+		{
+			LOG_FUNC_PRINTF(LogTemp , Warning , "Throwable weapon does not need to consume ammo");
+			return true;
+		}
+	case EMyWeaponType::Unknown:
+	default: break;
 	}
 
 	return PrintErrorAndReturnDefault<bool>("Trying to consume ammo from unknown weapon type", GetOwner());
@@ -91,35 +126,46 @@ bool UMyWeaponStatComponent::ConsumeAmmo()
 
 void UMyWeaponStatComponent::Reload()
 {
-	if (WeaponType == EMyWeaponType::Range)
+	switch (WeaponType)
 	{
-		if (TotalAmmoCount <= 0)
+	case EMyWeaponType::Range:
 		{
-			UE_LOG(LogTemp, Warning, TEXT("No ammo to reload"));
-			return;
+			if (TotalAmmoCount <= 0)
+			{
+				LOG_FUNC(LogTemp , Warning , "No ammo to reload");
+				return;
+			}
+
+			TotalAmmoCount -= AmmoSpent;
+
+			if (TotalAmmoCount <= AmmoPerLoad)
+			{
+				LoadedAmmoCount = TotalAmmoCount;
+			}
+			else
+			{
+				LoadedAmmoCount = AmmoPerLoad;
+			}
+
+			AmmoSpent = 0;
+			break;
 		}
-
-		TotalAmmoCount -= AmmoSpent;
-
-		if (TotalAmmoCount <= AmmoPerLoad)
+	case EMyWeaponType::Melee:
 		{
-			LoadedAmmoCount = TotalAmmoCount;
+			LOG_FUNC(LogTemp, Warning, "Melee weapon does not need to reload");
+			break;
 		}
-		else
+	case EMyWeaponType::Throwable:
 		{
-			LoadedAmmoCount = AmmoPerLoad;
+			LOG_FUNC(LogTemp, Warning, "Throwable weapon does not need to reload");
+			break;
 		}
-
-		AmmoSpent = 0;
-
-	}
-	else if (WeaponType == EMyWeaponType::Melee)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Melee weapon does not need to reload"));
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Unknown weapon type in %s"), *GetOwner()->GetName());
+	case EMyWeaponType::Unknown:
+	default:
+		{
+			LOG_FUNC_PRINTF(LogTemp, Error , "Unknown weapon type in %s" , *GetOwner()->GetName());
+			break;
+		}
 	}
 }
 
@@ -182,9 +228,16 @@ void UMyWeaponStatComponent::InitializeComponent()
 		AmmoPerLoad = LoadedAmmoCount;
 		TotalAmmoCount = (GetRangeStat()->MaxAmmo * GetRangeStat()->Magazine) + LoadedAmmoCount;
 		break;
+	case EMyWeaponType::Throwable:
+		WeaponStat = WeaponStatData.Get<FMyThrowableWeaponStat>();
+		LoadedAmmoCount = 0;
+		AmmoSpent = 0;
+		AmmoPerLoad = 0;
+		TotalAmmoCount = 0;
+		break;
 	case EMyWeaponType::Unknown:
 	default:
-		UE_LOG(LogTemp, Error, TEXT("Unknown weapon type in %s"), *GetOwner()->GetName());
+		LOG_FUNC_PRINTF(LogTemp, Error, "Unknown weapon type in %s", *GetOwner()->GetName());
 	}
 
 	Name = WeaponStatData.Name;
@@ -203,3 +256,8 @@ const FMyMeleeWeaponStat* UMyWeaponStatComponent::GetMeleeStat() const
 	return MeleeWeaponStat;
 }
 
+const FMyThrowableWeaponStat* UMyWeaponStatComponent::GetThrowableStat() const
+{
+	static const auto& ThrowableWeaponStat = static_cast<const FMyThrowableWeaponStat*>(WeaponStat);
+	return ThrowableWeaponStat;
+}
