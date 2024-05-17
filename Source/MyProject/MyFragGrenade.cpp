@@ -24,10 +24,20 @@ AMyFragGrenade::AMyFragGrenade() : IsThrown(false), IsExploded(false)
 
 bool AMyFragGrenade::AttackImpl()
 {
-	// todo: cooking
-	Throw();
-
+	Charge();
 	return true;
+}
+
+bool AMyFragGrenade::AttackInterruptedImpl()
+{
+	const auto& Result = Super::AttackInterruptedImpl();
+
+	if (Result)
+	{
+		Throw();
+	}
+
+	return Result;
 }
 
 bool AMyFragGrenade::ReloadImpl()
@@ -38,7 +48,6 @@ bool AMyFragGrenade::ReloadImpl()
 void AMyFragGrenade::DropLocation()
 {
 	// Override base DropLocation
-
 	const auto& ForwardPosition = GetActorLocation() + PreviousOwner->GetActorForwardVector() * 100.f;
 	SetActorLocation(ForwardPosition);
 }
@@ -48,6 +57,33 @@ void AMyFragGrenade::Throw()
 	ExecuteServer(this, 
 				   &AMyFragGrenade::Multi_Throw,
 				   &AMyFragGrenade::ThrowImpl);
+}
+
+void AMyFragGrenade::Charge()
+{
+	ExecuteServer
+		(
+		 this,
+		 &AMyFragGrenade::Multi_Charge,
+		 &AMyFragGrenade::ChargeImpl
+		);
+}
+
+void AMyFragGrenade::Multi_Charge_Implementation()
+{
+	ChargeImpl();
+}
+
+void AMyFragGrenade::ChargeImpl()
+{
+	GetWorldTimerManager().SetTimer
+	(
+		OnExplosionTimerExpiredHandle,
+		this,
+		&AMyFragGrenade::OnExplosionTimerExpired,
+		3.f,
+		false
+	);
 }
 
 void AMyFragGrenade::Multi_Throw_Implementation()
@@ -67,15 +103,6 @@ void AMyFragGrenade::ThrowImpl()
 	Drop();
 	GetSkeletalMeshComponent()->AddImpulse(FVector::ForwardVector * 1000.f, NAME_None, true);
 
-	GetWorldTimerManager().SetTimer
-	(
-		OnExplosionTimerExpiredHandle,
-		this,
-		&AMyFragGrenade::OnExplosionTimerExpired,
-		3.f,
-		false
-	);
-
 	IsThrown = true;
 }
 
@@ -89,13 +116,16 @@ void AMyFragGrenade::OnExplosionTimerExpired()
 	{
 		TArray<FOverlapResult> HitResults;
 
+		const auto& Radius = GetWeaponStatComponent()->GetRadius();
+		const auto& Damage = GetWeaponStatComponent()->GetDamage();
+
 		GetWorld()->OverlapMultiByChannel
 		(
 			OUT HitResults,
 			GetActorLocation(),
 			FQuat::Identity,
 			ECollisionChannel::ECC_Pawn,
-			FCollisionShape::MakeSphere(500.f)
+			FCollisionShape::MakeSphere(Radius)
 		);
 
 		if (!PreviousOwner.IsValid())
@@ -109,12 +139,12 @@ void AMyFragGrenade::OnExplosionTimerExpired()
 			if (const auto& Character = Cast<AMyCharacter>(Result.GetActor()))
 			{
 				const auto& Distance = FVector::Distance(Character->GetActorLocation(), GetActorLocation());
-				const auto& Ratio = 1.f - Distance / 500.f;
-				const auto& Damage = 100.f * Ratio;
+				const auto& Ratio = 1.f - Distance / Radius;
+				const auto& RatioDamage = Damage * Ratio;
 
 				Character->GetPlayerState<AMyPlayerState>()->TakeDamage
 				(
-					Damage, 
+					RatioDamage, 
 					{}, 
 					Cast<AMyPlayerController>(PreviousOwner->GetOwner()), 
 					PreviousOwner.Get()
