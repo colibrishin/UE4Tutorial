@@ -24,17 +24,22 @@ public:
 protected:
 	virtual bool AttackImpl() override;
 
+	virtual bool AttackInterruptedImpl() override;
+
 	virtual bool ReloadImpl() override;
 
 	virtual void DropLocation() override;
 
 private:
 	void Throw();
-
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_Throw();
-
 	void ThrowImpl();
+
+	void Charge();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Charge();
+	void ChargeImpl();
 
 	void OnExplosionTimerExpired();
 
