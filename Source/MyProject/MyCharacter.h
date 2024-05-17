@@ -247,7 +247,4 @@ private:
 
 	FOnInteractInterrupted OnInteractInterrupted;
 
-	FDelegateHandle OnAttackEndedHandle;
-
-	FDelegateHandle OnHandWeaponAttackEndedHandle;
 };

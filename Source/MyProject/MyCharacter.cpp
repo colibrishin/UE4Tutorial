@@ -493,7 +493,7 @@ void AMyCharacter::AttackStart(const float Value)
 			if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
 			{
 				HandWeapon->Attack();
-				OnHandWeaponAttackEndedHandle = HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+				HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
 			}
 	    }
 
@@ -545,7 +545,6 @@ void AMyCharacter::ResetAttack()
 	OnAttackEnded.Broadcast();
 
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
-	TryGetWeapon()->UnbindOnFireReady(OnAttackEndedHandle);
 }
 
 void AMyCharacter::Server_Interactive_Implementation()
