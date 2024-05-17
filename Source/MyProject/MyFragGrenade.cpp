@@ -47,9 +47,16 @@ bool AMyFragGrenade::ReloadImpl()
 
 void AMyFragGrenade::DropLocation()
 {
-	// Override base DropLocation
-	const auto& ForwardPosition = GetActorLocation() + PreviousOwner->GetActorForwardVector() * 100.f;
-	SetActorLocation(ForwardPosition);
+	if (IsThrown)
+	{
+		// Override base DropLocation
+		const auto& ForwardPosition = GetActorLocation() + PreviousOwner->GetActorForwardVector() * 100.f;
+		SetActorLocation(ForwardPosition);
+	}
+	else
+	{
+		Super::DropLocation();
+	}
 }
 
 void AMyFragGrenade::Throw()
@@ -98,12 +105,12 @@ void AMyFragGrenade::ThrowImpl()
 		return;
 	}
 
+	IsThrown = true;
+
 	PreviousOwner = GetItemOwner();
 
 	Drop();
 	GetSkeletalMeshComponent()->AddImpulse(FVector::ForwardVector * 1000.f, NAME_None, true);
-
-	IsThrown = true;
 }
 
 void AMyFragGrenade::OnExplosionTimerExpired()
