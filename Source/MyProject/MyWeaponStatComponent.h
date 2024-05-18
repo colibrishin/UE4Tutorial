@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data.h"
 #include "Enum.h"
 
 #include "Components/ActorComponent.h"
@@ -24,6 +25,8 @@ public:
 	bool          IsHitscan() const;
 	EMyWeaponType GetWeaponType() const { return WeaponType; }
 	float         GetFireRate() const;
+	float         GetCookingTime() const;
+	float         GetRadius() const;
 
 	int32         GetCurrentAmmoCount() const
 	{
@@ -41,8 +44,8 @@ public:
 		return LoadedAmmoCount;
 	}
 
-	bool  ConsumeAmmo();
-	void  Reload();
+	bool ConsumeAmmo();
+	void Reload();
 
 protected:
 	// Called when the game starts
@@ -51,8 +54,9 @@ protected:
 	virtual void InitializeComponent() override;
 
 private:
-	FORCEINLINE const struct FMyRangeWeaponStat* GetRangeStat() const;
-	FORCEINLINE const struct FMyMeleeWeaponStat* GetMeleeStat() const;
+	FORCEINLINE const struct FMyRangeWeaponStat*     GetRangeStat() const;
+	FORCEINLINE const struct FMyMeleeWeaponStat*     GetMeleeStat() const;
+	FORCEINLINE const struct FMyThrowableWeaponStat* GetThrowableStat() const;
 
 	UPROPERTY(EditAnywhere, Category=Stats)
 	int32 ID;

@@ -32,6 +32,21 @@ void AMyWeapon::PostInitializeComponents()
 	Super::PostInitializeComponents();
 }
 
+bool AMyWeapon::AttackInterruptedImpl()
+{
+	if (!FireRateTimerHandle.IsValid())
+	{
+		CanAttack = true;
+	}
+
+	if (!ReloadTimerHandle.IsValid())
+	{
+		CanReload = true;
+	}
+
+	return true;
+}
+
 bool AMyWeapon::TryAttachItem(const AMyCharacter* Character)
 {
 	if (GetMesh()->AttachToComponent
@@ -74,9 +89,17 @@ void AMyWeapon::OnFireRateTimed()
 
 void AMyWeapon::OnReloadDone()
 {
+	CanAttack = true;
 	CanReload = true;
 	OnReloadReady.Broadcast();
 	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+}
+
+void AMyWeapon::OnCookingTimed()
+{
+	CanAttack = false;
+	CanReload = false;
+	GetWorld()->GetTimerManager().ClearTimer(CookingTimerHandle);
 }
 
 void AMyWeapon::DropImpl()
@@ -96,20 +119,33 @@ bool AMyWeapon::Attack()
 {
 	if (CanAttack)
 	{
-		if (GetWeaponStatComponent()->GetWeaponType() == EMyWeaponType::Range)
+		switch (GetWeaponStatComponent()->GetWeaponType())
 		{
+		case EMyWeaponType::Range: 
 			GetWorld()->GetTimerManager().SetTimer
-			(
-				FireRateTimerHandle, 
-				this, 
-				&AMyWeapon::OnFireRateTimed, 
-				GetWeaponStatComponent()->GetFireRate(), 
-				false
-			);
-		}
-		else if (GetWeaponStatComponent()->GetWeaponType() == EMyWeaponType::Melee)
-		{
+				(
+				 FireRateTimerHandle,
+				 this,
+				 &AMyWeapon::OnFireRateTimed,
+				 GetWeaponStatComponent()->GetFireRate(),
+				 false
+				);
+			break;
+		case EMyWeaponType::Melee:
 			LOG_FUNC(LogTemp, Warning, "Melee attack, Not implemented");
+			return AttackImpl();
+		case EMyWeaponType::Throwable: 
+			GetWorld()->GetTimerManager().SetTimer
+				(
+				 CookingTimerHandle,
+				 this,
+				 &AMyWeapon::OnCookingTimed,
+				 GetWeaponStatComponent()->GetCookingTime(),
+				 false
+				);
+			return AttackImpl();
+		case EMyWeaponType::Unknown:
+		default:
 			return AttackImpl();
 		}
 
@@ -121,27 +157,36 @@ bool AMyWeapon::Attack()
 	return false;
 }
 
+bool AMyWeapon::AttackInterrupted()
+{
+	LOG_FUNC(LogTemp, Warning, "AttackInterrupted");
+	return AttackInterruptedImpl();
+}
+
 bool AMyWeapon::Reload()
 {
 	if (CanReload)
 	{
-		if (GetWeaponStatComponent()->GetWeaponType() == EMyWeaponType::Range)
+		switch (GetWeaponStatComponent()->GetWeaponType())
 		{
+		case EMyWeaponType::Range: 
 			GetWorld()->GetTimerManager().SetTimer
-			(
-				 ReloadTimerHandle ,
-				 this ,
-				 &AMyWeapon::OnReloadDone ,
-				 GetWeaponStatComponent()->GetReloadTime() ,
+				(
+				 ReloadTimerHandle,
+				 this,
+				 &AMyWeapon::OnReloadDone,
+				 GetWeaponStatComponent()->GetReloadTime(),
 				 false
-			);
-		}
-		else if (GetWeaponStatComponent()->GetWeaponType() == EMyWeaponType::Melee)
-		{
-			LOG_FUNC(LogTemp, Warning, "Melee reload, Not implemented");
+				);
+			break;
+		case EMyWeaponType::Unknown:
+		case EMyWeaponType::Melee:
+		case EMyWeaponType::Throwable:
+		default:
 			return ReloadImpl();
 		}
 
+		CanAttack = false;
 		CanReload = false;
 
 		return ReloadImpl();
