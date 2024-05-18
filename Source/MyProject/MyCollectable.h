@@ -57,6 +57,7 @@ protected:
 	virtual bool PostUse(class AMyCharacter* Character);
 
 	virtual void DropImpl();
+	virtual void DropLocation();
 
 	bool IsBelongToCharacter() const;
 

@@ -33,8 +33,9 @@ public:
 	bool CanBeReloaded() const { return CanReload; }
 	bool CanDoAttack() const { return CanAttack; }
 
-	virtual bool Attack() final;
-	virtual bool Reload() final;
+	bool Attack();
+	bool AttackInterrupted();
+	bool Reload();
 
 	virtual bool TryAttachItem(const AMyCharacter* Character) override;
 	UTexture2D*  GetWeaponImage() const { return WeaponImage; }
@@ -49,12 +50,14 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual bool AttackImpl() PURE_VIRTUAL(AMyWeapon::AttackImpl, return false;);
+	virtual bool AttackInterruptedImpl();
 	virtual bool ReloadImpl() PURE_VIRTUAL(AMyWeapon::ReloadImpl, return false;);
 
 	virtual bool PostInteract(AMyCharacter* Character) override;
 
 	virtual void OnFireRateTimed();
 	virtual void OnReloadDone();
+	virtual void OnCookingTimed();
 
 	virtual void DropImpl() override;
 
@@ -74,6 +77,8 @@ private:
 	FTimerHandle FireRateTimerHandle;
 
 	FTimerHandle ReloadTimerHandle;
+
+	FTimerHandle CookingTimerHandle;
 	
 	FOnFireReady OnFireReady;
 
