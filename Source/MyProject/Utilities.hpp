@@ -1,6 +1,8 @@
 #pragma once
 #include <functional>
 
+#include "Data.h"
+#include "MyCollectableComponent.h"
 #include "MyGameInstance.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -70,28 +72,8 @@ FORCEINLINE T PrintErrorAndReturnDefault(const FString& Message, const UObject* 
 #define LOG_FUNC_PRINTF(CategoryName, Verbosity, StringAndFormat, ...) \
 	UE_LOG(CategoryName, Verbosity, TEXT("%hs: %s"), __FUNCTION__, *FString::Printf(TEXT(StringAndFormat), __VA_ARGS__))
 
-FORCEINLINE const struct FMyWeaponData* GetWeaponData(const UObject* InWorldContext, const int32 ID)
-{
-	const auto&     Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
-
-	if (!IsValid(Instance))
-	{
-		LOG_FUNC(LogTemp, Error, "Invalid game instance");
-		return nullptr;
-	}
-
-	FMyWeaponData* Weapon   = nullptr;
-	Instance->GetWeaponValue(ID, &Weapon);
-
-	if (Weapon == nullptr)
-	{
-		return nullptr;
-	}
-
-	return Weapon;
-}
-
-FORCEINLINE const struct FMyStat* GetStatData(const UObject* InWorldContext, const int32 Level)
+template <typename T, typename U = std::enable_if_t<std::is_base_of_v<FTableRowBase, T>>>
+FORCEINLINE const T* GetRowData(const UObject* InWorldContext, const int32 ID)
 {
 	const auto& Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
 
@@ -101,36 +83,16 @@ FORCEINLINE const struct FMyStat* GetStatData(const UObject* InWorldContext, con
 		return nullptr;
 	}
 
-	FMyStat* Stat     = nullptr;
-	Instance->GetStatValue(Level, &Stat);
+	T* Row = nullptr;
+	Instance->GetValue<T>(ID, &Row);
 
-	if (Stat == nullptr)
+	if (!Row)
 	{
+		LOG_FUNC(LogTemp, Error, "Invalid table");
 		return nullptr;
 	}
 
-	return Stat;
-}
-
-FORCEINLINE const struct FMyCollectableData* GetCollectableData(const UObject* InWorldContext, const int32 ID)
-{
-	const auto& Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
-
-	if (!IsValid(Instance))
-	{
-		LOG_FUNC(LogTemp, Error, "Invalid game instance");
-		return nullptr;
-	}
-
-	FMyCollectableData* Collectable = nullptr;
-	Instance->GetCollectableValue(ID, &Collectable);
-
-	if (Collectable == nullptr)
-	{
-		return nullptr;
-	}
-
-	return Collectable;
+	return Row;
 }
 
 template <typename T , typename... Args>

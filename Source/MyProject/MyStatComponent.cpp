@@ -43,7 +43,7 @@ void UMyStatComponent::InitializeComponent()
 
 	if (IsValid(GameInstance))
 	{
-		const FMyStat* Data = GetStatData(this, Level);
+		const FMyStat* Data = GetRowData<FMyStat>(this, Level);
 
 		// IsValid 스킵
 
