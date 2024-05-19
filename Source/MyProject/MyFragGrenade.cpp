@@ -50,7 +50,7 @@ void AMyFragGrenade::DropLocation()
 	if (IsThrown)
 	{
 		// Override base DropLocation
-		const auto& ForwardPosition = GetActorLocation() + PreviousOwner->GetActorForwardVector() * 100.f;
+		const auto& ForwardPosition = PreviousOwner->GetActorLocation() + PreviousOwner->GetActorForwardVector() * 100.f;
 		SetActorLocation(ForwardPosition);
 	}
 	else
