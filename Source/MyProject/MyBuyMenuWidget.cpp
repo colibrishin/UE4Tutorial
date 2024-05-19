@@ -34,7 +34,7 @@ void UMyBuyMenuWidget::Populate()
 	{
 		for (int i = 1; i < Instance->GetWeaponCount(); ++i)
 		{
-			const auto& WeaponData = GetWeaponData(this, i);
+			const auto& WeaponData = GetRowData<FMyWeaponData>(this, i);
 
 			if (WeaponData == nullptr)
 			{

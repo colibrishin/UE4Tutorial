@@ -200,7 +200,7 @@ void UMyWeaponStatComponent::InitializeComponent()
 		return;
 	}
 
-	const auto& WeaponData = GetWeaponData(this, ID);
+	const auto& WeaponData = GetRowData<FMyWeaponData>(this, ID);
 
 	if (WeaponData == nullptr)
 	{

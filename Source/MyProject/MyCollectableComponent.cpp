@@ -41,7 +41,7 @@ void UMyCollectableComponent::InitializeComponent()
 		return;
 	}
 
-	Stat = GetCollectableData(GetWorld(), ID);
+	Stat = GetRowData<FMyCollectableData>(GetWorld(), ID);
 
 	if (Stat)
 	{
