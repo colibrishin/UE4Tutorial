@@ -22,7 +22,7 @@ public:
 
 private:
 	void HandleStateChanged(class AMyPlayerState* PlayerState, const EMyCharacterState State) const;
-	void HandleWeaponChanged(class AMyPlayerState* PlayerState) const;
+	void HandleWeaponChanged(class AMyCollectable* Previous, class AMyCollectable* New, class AMyPlayerState* PlayerState) const;
 
 	UPROPERTY(Meta = (BindWidget))
 	class UTextBlock* AmmoText;

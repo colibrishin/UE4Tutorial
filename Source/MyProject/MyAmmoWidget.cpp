@@ -44,9 +44,9 @@ void UMyAmmoWidget::HandleStateChanged(AMyPlayerState* PlayerState, const EMyCha
 	}
 }
 
-void UMyAmmoWidget::HandleWeaponChanged(AMyPlayerState* PlayerState) const
+void UMyAmmoWidget::HandleWeaponChanged(AMyCollectable* Previous, AMyCollectable* New, AMyPlayerState* PlayerState) const
 {
-	const auto& Weapon = Cast<AMyWeapon>(PlayerState->GetCurrentHand());
+	const auto& Weapon = Cast<AMyWeapon>(New);
 
 	if (IsValid(Weapon))
 	{
