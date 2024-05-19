@@ -29,21 +29,22 @@ public:
 	template <typename T, typename U = std::enable_if_t<std::is_base_of_v<FTableRowBase, T>>>
 	void __vectorcall GetValue(const int32 ID, T** const OutData) const
 	{
+		T* Row = nullptr;
+
 		if constexpr (std::is_same_v<struct FMyStat, T>)
 		{
-			const auto Row = StatTable->FindRow<struct FMyStat>(*FString::FromInt(ID), TEXT(""));
-			*OutData = Row;
+			Row = StatTable->FindRow<T>(*FString::FromInt(ID), TEXT(""));
 		}
 		if constexpr (std::is_same_v<struct FMyWeaponData, T>)
 		{
-			const auto Row = WeaponStatTable->FindRow<struct FMyWeaponData>(*FString::FromInt(ID), TEXT(""));
-			*OutData = Row;
+			Row = WeaponStatTable->FindRow<T>(*FString::FromInt(ID), TEXT(""));
 		}
 		if constexpr (std::is_same_v<struct FMyCollectableData, T>)
 		{
-			const auto Row = CollectableDataTable->FindRow<struct FMyCollectableData>(*FString::FromInt(ID), TEXT(""));
-			*OutData = Row;
+			Row = CollectableDataTable->FindRow<T>(*FString::FromInt(ID), TEXT(""));
 		}
+
+		*OutData = Row;
 	}
 
 	FORCEINLINE int32 GetWeaponCount() const
