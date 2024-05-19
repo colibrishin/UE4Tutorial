@@ -158,6 +158,7 @@ private:
 	void UseInterruptImpl() const;
 
 	// ============ End of Using ============
+
 	void AttachArmCollectable(class AMyCollectable* Previous, class AMyCollectable* New);
 
 	// ============ Swap ============

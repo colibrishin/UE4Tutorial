@@ -714,16 +714,20 @@ void AMyCharacter::OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, 
 	}
 	else
 	{
-		Previous->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	    // Defensive condition for dropping weapon.
+		if (Previous->GetItemOwner() == this)
+		{
+			Previous->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-		Previous->AttachToComponent
-		(
-		GetMesh(),
-			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-			AMyCharacter::ChestSocketName
-		);
+			Previous->AttachToComponent
+			(
+			  GetMesh(),
+			  FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+			  AMyCharacter::ChestSocketName
+			);
 
-		Previous->Hide();
+			Previous->Hide();
+		}
 
 		if (IsValid(HandCollectable))
 		{
