@@ -27,20 +27,3 @@ void UMyGameInstance::Init()
 {
 	Super::Init();
 }
-
-void UMyGameInstance::GetStatValue(const int32 Level, FMyStat** OutStat) const
-{
-	const auto Row = StatTable->FindRow<FMyStat>(*FString::FromInt(Level), TEXT(""));
-	*OutStat = Row;
-}
-void UMyGameInstance::GetWeaponValue(const int32 ID, FMyWeaponData** OutData) const
-{
-	const auto Row = WeaponStatTable->FindRow<FMyWeaponData>(*FString::FromInt(ID), TEXT(""));
-	*OutData = Row;
-}
-
-void UMyGameInstance::GetCollectableValue(const int32 ID, FMyCollectableData** const OutData) const
-{
-	const auto Row = CollectableDataTable->FindRow<FMyCollectableData>(*FString::FromInt(ID), TEXT(""));
-	*OutData = Row;
-}

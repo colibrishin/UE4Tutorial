@@ -59,7 +59,7 @@ inline bool IsPlayerInBuyZone(AMyCharacter* Character)
 inline bool ValidateBuyRequest(const int32 ID, AMyCharacter* const& Character)
 {
 	const auto& Instance   = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(Character));
-	const auto& WeaponData = GetWeaponData(Character, ID);
+	const auto& WeaponData = GetRowData<FMyWeaponData>(Character, ID);
 	const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
 
 	if (WeaponData == nullptr)

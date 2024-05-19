@@ -36,7 +36,7 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 {
 	if (HasAuthority())
 	{
-		const auto& WeaponData        = GetWeaponData(this, WeaponID);
+		const auto& WeaponData        = GetRowData<FMyWeaponData>(this, WeaponID);
 		const auto& WeaponClass       = WeaponData->WeaponDataAsset->GetWeaponClass();
 		const auto& CharacterLocation = RequestCharacter->GetActorLocation();
 
