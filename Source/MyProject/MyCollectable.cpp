@@ -164,6 +164,8 @@ bool AMyCollectable::PostUse(AMyCharacter* Character)
 
 void AMyCollectable::DropImpl()
 {
+	const auto& MyCharacter = GetItemOwner();
+	MyCharacter->GetInventory()->Remove(this);
 }
 
 void AMyCollectable::DropLocation()
