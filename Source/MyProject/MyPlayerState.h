@@ -17,7 +17,7 @@ DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStateChanged, class AMyPlayerState*, EMy
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnHPChanged, float)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, int32)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, class AMyPlayerState*)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnWeaponChanged, class AMyPlayerState*)
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnHandChanged, class AMyCollectable*, class AMyCollectable*, class AMyPlayerState*)
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 /**
@@ -60,7 +60,7 @@ public:
 	DECL_BINDON(OnHPChanged, float)
 	DECL_BINDON(OnMoneyChanged, int32)
 	DECL_BINDON(OnStateChanged, class AMyPlayerState*, EMyCharacterState)
-	DECL_BINDON(OnHandChanged, class AMyPlayerState*)
+	DECL_BINDON(OnHandChanged, class AMyCollectable*, class AMyCollectable*, class AMyPlayerState*)
 	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 	FORCEINLINE int32 GetMoney() const { return Money; }
@@ -92,7 +92,7 @@ private:
 	void OnRep_HealthChanged() const;
 
 	UFUNCTION()
-	void OnRep_HandChanged();
+	void OnRep_HandChanged(class AMyCollectable* PreviousHand);
 
 	void SetTeam(const EMyTeam NewTeam)
 	{
@@ -144,7 +144,7 @@ private:
 
 	FOnHPChanged OnHPChanged;
 
-	FOnWeaponChanged OnHandChanged;
+	FOnHandChanged OnHandChanged;
 
 	FOnKillOccurred OnKillOccurred;
 

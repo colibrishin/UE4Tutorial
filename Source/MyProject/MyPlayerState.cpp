@@ -146,9 +146,9 @@ void AMyPlayerState::OnRep_HealthChanged() const
 	OnHPChanged.Broadcast(GetHPRatio());
 }
 
-void AMyPlayerState::OnRep_HandChanged()
+void AMyPlayerState::OnRep_HandChanged(class AMyCollectable* PreviousHand)
 {
-	OnHandChanged.Broadcast(this);
+	OnHandChanged.Broadcast(PreviousHand, CurrentHand, this);
 }
 
 void AMyPlayerState::Client_OnDamageTaken_Implementation(AMyPlayerState* DamageGiver)
@@ -272,8 +272,8 @@ void AMyPlayerState::SetCurrentWeapon(AMyWeapon* NewWeapon)
 			LOG_FUNC(LogTemp, Warning, "SetCurrentWeapon: nullptr");
 		}
 
+		OnHandChanged.Broadcast(CurrentHand, NewWeapon, this);
 		CurrentHand = NewWeapon;
-		OnHandChanged.Broadcast(this);
 	}
 }
 
@@ -290,8 +290,8 @@ void AMyPlayerState::SetCurrentItem(AMyCollectable* NewItem)
 			LOG_FUNC(LogTemp, Warning, "SetCurrentItem: nullptr");
 		}
 
+		OnHandChanged.Broadcast(CurrentHand, NewItem, this);
 		CurrentHand = NewItem;
-		OnHandChanged.Broadcast(this);
 	}
 }
 	
