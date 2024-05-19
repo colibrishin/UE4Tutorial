@@ -48,7 +48,7 @@ public:
 
 	float GetPitchInput() const { return PitchInput; }
 
-	void OnHandChanged(class AMyPlayerState* ThisPlayerState);
+	void OnHandChanged(class AMyCollectable* Previous, class AMyCollectable* New, class AMyPlayerState* ThisPlayerState);
 
 protected:
 	// Called when the game starts or when spawned
@@ -158,11 +158,7 @@ private:
 	void UseInterruptImpl() const;
 
 	// ============ End of Using ============
-
-	UFUNCTION(Server, Reliable)
-	void Server_AttachArmCollectable();
-
-	void AttachArmCollectableImpl();
+	void AttachArmCollectable(class AMyCollectable* Previous, class AMyCollectable* New);
 
 	// ============ Swap ============
 

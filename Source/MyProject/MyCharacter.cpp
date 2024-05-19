@@ -694,53 +694,43 @@ void AMyCharacter::UseInterruptImpl() const
 	OnUseInterrupted.Broadcast();
 }
 
-void AMyCharacter::OnHandChanged(AMyPlayerState* ThisPlayerState)
+void AMyCharacter::OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, AMyPlayerState* ThisPlayerState)
 {
 	LOG_FUNC(LogTemp, Warning, "Weapon change caught");
-	const auto& Collectable = ThisPlayerState->GetCurrentHand();
 
-	if (IsValid(Collectable))
+	if (IsValid(New))
 	{
-		Collectable->AttachToComponent
+		New->AttachToComponent
 		(
 			GetMesh(), 
 			FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
 			AMyCharacter::RightHandSocketName
 		);
 
-		ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_AttachArmCollectable,
-		 &AMyCharacter::AttachArmCollectableImpl
-		);
+		if (HasAuthority())
+		{
+			AttachArmCollectable(Previous, New);
+		}
 	}
 	else
 	{
-		const auto& List = GetMesh()->GetAttachChildren();
+		Previous->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-		for (size_t i = 0; i < List.Num(); ++i)
-		{
-			if (List[i]->GetAttachSocketName() == AMyCharacter::RightHandSocketName)
-			{
-				List[i]->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-			}
-		}
+		Previous->AttachToComponent
+		(
+		GetMesh(),
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+			AMyCharacter::ChestSocketName
+		);
 
-		if (IsLocallyControlled())
+		Previous->Hide();
+
+		if (IsValid(HandCollectable))
 		{
-			if (IsValid(HandCollectable))
-			{
-				HandCollectable->Destroy();
-				HandCollectable = nullptr;
-			}
+			HandCollectable->Destroy(true);
+			HandCollectable = nullptr;
 		}
 	}
-}
-
-void AMyCharacter::Server_AttachArmCollectable_Implementation()
-{
-	AttachArmCollectableImpl();
 }
 
 int32 AMyCharacter::GetDamage() const
@@ -814,23 +804,20 @@ void AMyCharacter::OnAttackAnimNotify()
 	);
 }
 
-void AMyCharacter::AttachArmCollectableImpl()
+void AMyCharacter::AttachArmCollectable(class AMyCollectable* Previous, class AMyCollectable* New)
 {
-	LOG_FUNC(LogTemp, Warning, "AttachArmCollectableImpl");
+	LOG_FUNC(LogTemp, Warning, "AttachArmCollectable");
 
-	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
-
-	if (IsValid(MyPlayerState))
+	if (IsValid(HandCollectable))
 	{
-		const auto& Collectable = MyPlayerState->GetCurrentHand();
+		HandCollectable->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		HandCollectable->Destroy();
+		HandCollectable = nullptr;
+	}
 
-		if (IsValid(Collectable) && IsValid(HandCollectable))
-		{
-			HandCollectable->Destroy();
-			HandCollectable = nullptr;
-		}
-
-		HandCollectable = GetWorld()->SpawnActor<AMyCollectable>(Collectable->GetClass());
+	if (IsValid(New))
+	{
+		HandCollectable = GetWorld()->SpawnActor<AMyCollectable>(New->GetClass());
 		HandCollectable->GetMesh()->SetSimulatePhysics(false);
 
 		if (HandCollectable->GetMesh()->AttachToComponent
