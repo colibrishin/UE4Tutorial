@@ -25,9 +25,12 @@ public:
 	virtual bool PreUse(AMyCharacter* Character) override;
 	virtual bool PostUse(AMyCharacter* Character) override;
 
+	bool Hitscan(IN const FVector& Position, IN const FVector& Forward, OUT FHitResult& OutHitResult);
 
 protected:
 	virtual void PostInitializeComponents() override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void BeginPlay() override;
 
@@ -37,8 +40,14 @@ protected:
 	virtual void OnFireRateTimed() override;
 	virtual void OnReloadDone() override;
 
+	float GetHSpreadDegree(const float Point, const float OscillationRate, const float Min = 0, const float Max = PI / 8.f);
+	float GetVSpreadDegree(const float Point, const float OscillationRate, const float Min = 0, const float Max = PI / 8.f);
+
 private:
 	void UpdateAmmoDisplay() const;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	FVector Normal;
 
 	UPROPERTY(EditAnywhere, Category = "Aimable Weapon")
 	class UNiagaraComponent* BulletTrail;

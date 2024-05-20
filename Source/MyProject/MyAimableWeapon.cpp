@@ -8,11 +8,15 @@
 #include "MyInGameHUD.h"
 #include "NiagaraComponent.h"
 
+#include "Algo/Rotate.h"
+
 #include "Camera/CameraComponent.h"
 
 #include "Components/BoxComponent.h"
 
 #include "Kismet/GameplayStatics.h"
+
+#include "Net/UnrealNetwork.h"
 
 AMyAimableWeapon::AMyAimableWeapon()
 {
@@ -84,9 +88,78 @@ bool AMyAimableWeapon::PostUse(AMyCharacter* Character)
 	return Super::PostUse(Character);
 }
 
+bool AMyAimableWeapon::Hitscan(const FVector& Position, const FVector& Forward, FHitResult& OutHitResult)
+{
+	if (!GetWeaponStatComponent()->IsHitscan())
+	{
+		LOG_FUNC(LogTemp, Warning, "Not a hitscan weapon");
+		return false;
+	}
+
+	if (IsDummyVisually())
+	{
+		return false;
+	}
+
+	LOG_FUNC(LogTemp, Warning, "Hitscan Fire!");
+
+	FCollisionQueryParams Params{NAME_None, false, this};
+	Params.AddIgnoredActor(GetItemOwner());
+	Params.AddIgnoredActor(GetItemOwner()->GetCurrentHand());
+
+	Normal = Forward.RotateAngleAxis
+	(
+		GetHSpreadDegree(GetConsecutiveShots(), GetWeaponStatComponent()->GetHSpread()),
+		-GetActorForwardVector()
+	);
+	
+	Normal = Normal.RotateAngleAxis
+	(
+		GetVSpreadDegree(GetConsecutiveShots(), GetWeaponStatComponent()->GetVSpread()),
+		GetActorUpVector()
+	);
+
+	LOG_FUNC_PRINTF(LogTemp, Warning, "HSpread: %f", GetHSpreadDegree(GetConsecutiveShots(), GetWeaponStatComponent()->GetHSpread()));
+
+	LOG_FUNC_PRINTF(LogTemp, Warning, "Normal: %s", *Normal.ToString());
+
+	const FVector EndVector = 
+		Position + (Normal * GetWeaponStatComponent()->GetRange());
+
+	const auto& Result = GetWorld()->LineTraceSingleByChannel
+		(
+		 OUT OutHitResult,
+		 Position,
+		 EndVector,
+		 ECollisionChannel::ECC_Visibility,
+		 Params
+		);
+
+	if (Result)
+	{
+		DrawDebugBox
+		(
+			GetWorld(),
+			OutHitResult.ImpactPoint,
+			FVector(1.f),
+			FColor::Red,
+			false,
+			5.f
+		);
+	}
+
+	return Result;
+}
+
 void AMyAimableWeapon::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+}
+
+void AMyAimableWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyAimableWeapon, Normal);
 }
 
 void AMyAimableWeapon::BeginPlay()
@@ -103,21 +176,47 @@ bool AMyAimableWeapon::AttackImpl()
 {
 	if (GetWeaponStatComponent()->ConsumeAmmo())
 	{
-		// todo: Recoil
-		UpdateAmmoDisplay();
-
-		const auto& MuzzleLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle"));
+		// todo: Visual Recoil
 
 		const auto& PawnCamera = GetItemOwner()->FindComponentByClass<UCameraComponent>();
 		const auto& CameraLocation = PawnCamera->GetComponentLocation();
-		const auto& CameraForwardVector = PawnCamera->GetForwardVector();
-		const auto& WeaponRange = GetWeaponStatComponent()->GetRange();
-		const auto& EndLocation = CameraLocation + (CameraForwardVector * WeaponRange);
-		const auto& Delta = EndLocation - MuzzleLocation;
-		const auto& Normal = Delta.GetSafeNormal();
+		const auto& CameraForward = PawnCamera->GetForwardVector();
 
-		const auto& Yaw = FMath::RadiansToDegrees(FMath::Atan2(Normal.Y, Normal.X));
-		const auto& Pitch = FMath::RadiansToDegrees(FMath::Atan2(Normal.Z, Normal.X));
+		FHitResult HitResult;
+
+		if (!IsDummyVisually() && HasAuthority() && Hitscan(CameraLocation, CameraForward, HitResult))
+		{
+			if (const auto& Character = Cast<AMyCharacter>(HitResult.Actor)) 
+			{
+				Character->TakeDamage
+				(
+					GetWeaponStatComponent()->GetDamage(), 
+					FDamageEvent{}, 
+					GetItemOwner()->GetController(), 
+					this
+				);
+			}
+		}
+
+		UpdateAmmoDisplay();
+
+		const auto& MuzzleLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle"));
+		const auto& WeaponRange = GetWeaponStatComponent()->GetRange();
+
+		FVector TrailNormal = Normal;
+
+		if (IsDummyVisually())
+		{
+			const auto& MainWeapon = GetItemOwner()->TryGetWeapon();
+			TrailNormal = Cast<AMyAimableWeapon>(MainWeapon)->Normal;
+		}
+
+		const auto& EndLocation = CameraLocation + (TrailNormal * WeaponRange);
+		const auto& Delta       = EndLocation - MuzzleLocation;
+		const auto& DeltaNormal = Delta.GetSafeNormal();
+
+		const auto& Yaw = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Y, DeltaNormal.X));
+		const auto& Pitch = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Z, DeltaNormal.X));
 		const auto& Roll = 0.f;
 
 		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Yaw"), Yaw);
@@ -163,6 +262,35 @@ void AMyAimableWeapon::OnReloadDone()
 {
 	Super::OnReloadDone();
 	UpdateAmmoDisplay();
+}
+
+float AMyAimableWeapon::GetHSpreadDegree(const float Point, const float OscillationRate, const float Min, const float Max)
+{
+	const float Radian = FMath::Sin(Point / (OscillationRate * PI));
+
+	const float ClampQDH = FMath::Lerp
+	(
+		Min, 
+		Max, 
+		Radian
+	);
+
+	return FMath::RadiansToDegrees(ClampQDH);
+}
+float AMyAimableWeapon::GetVSpreadDegree(const float Point, const float OscillationRate, const float Min, const float Max)
+{
+	// todo: Better formula to control
+	const float Radian = FMath::Cos(Point / FMath::Sqrt(Point)) *
+		FMath::Sin(Point / OscillationRate * FMath::LogX(10, Point) * (Point / 10));
+	
+	const float ClampQDV = FMath::Lerp
+	(
+		Min,
+		Max,
+		Radian
+	);
+
+	return FMath::RadiansToDegrees(ClampQDV);
 }
 
 void AMyAimableWeapon::UpdateAmmoDisplay() const
