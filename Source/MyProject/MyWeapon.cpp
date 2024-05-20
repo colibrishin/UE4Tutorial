@@ -11,6 +11,8 @@
 
 #include "Components/BoxComponent.h"
 
+#include "Net/UnrealNetwork.h"
+
 // Sets default values
 AMyWeapon::AMyWeapon() : CanReload(true), CanAttack(true)
 {
@@ -30,6 +32,12 @@ void AMyWeapon::BeginPlay()
 void AMyWeapon::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
+}
+
+void AMyWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyWeapon, ConsecutiveShots);
 }
 
 bool AMyWeapon::AttackInterruptedImpl()
@@ -130,6 +138,11 @@ bool AMyWeapon::Attack()
 				 GetWeaponStatComponent()->GetFireRate(),
 				 false
 				);
+
+			if (HasAuthority())
+			{
+				++ConsecutiveShots;
+			}
 			break;
 		case EMyWeaponType::Melee:
 			LOG_FUNC(LogTemp, Warning, "Melee attack, Not implemented");
@@ -160,6 +173,7 @@ bool AMyWeapon::Attack()
 bool AMyWeapon::AttackInterrupted()
 {
 	LOG_FUNC(LogTemp, Warning, "AttackInterrupted");
+	ConsecutiveShots = 0;
 	return AttackInterruptedImpl();
 }
 
