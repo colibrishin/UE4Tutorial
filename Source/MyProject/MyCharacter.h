@@ -43,6 +43,8 @@ public:
 
 	class AMyWeapon* TryGetWeapon() const;
 	class AMyItem* TryGetItem() const;
+	class AMyCollectable* GetCurrentHand() const;
+	class USkeletalMeshComponent* GetArmMeshComponent() const;
 	class UMyInventoryComponent* GetInventory() const;
 	class UMyStatComponent* GetStatComponent() const;
 

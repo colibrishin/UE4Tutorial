@@ -130,6 +130,16 @@ AMyItem* AMyCharacter::TryGetItem() const
 	}
 }
 
+AMyCollectable*         AMyCharacter::GetCurrentHand() const
+{
+	return HandCollectable;
+}
+
+USkeletalMeshComponent* AMyCharacter::GetArmMeshComponent() const
+{
+	return ArmMeshComponent;
+}
+
 UMyInventoryComponent* AMyCharacter::GetInventory() const
 {
 	const auto& State = GetPlayerState<AMyPlayerState>();
