@@ -43,11 +43,15 @@ public:
 	void SetVisualDummy(const bool NewDummy) { bIsDummyVisually = NewDummy; }
 	bool IsDummyVisually() const { return bIsDummyVisually; }
 
+	uint32 GetConsecutiveShots() const { return ConsecutiveShots; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void PostInitializeComponents() override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual bool AttackImpl() PURE_VIRTUAL(AMyWeapon::AttackImpl, return false;);
 	virtual bool AttackInterruptedImpl();
@@ -70,6 +74,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	bool bIsDummyVisually;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	uint32 ConsecutiveShots;
 
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* WeaponImage;
