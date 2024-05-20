@@ -57,6 +57,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float Range;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float VSpread;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float HSpread;
 };
 
 USTRUCT()
