@@ -254,4 +254,6 @@ private:
 
 	FOnInteractInterrupted OnInteractInterrupted;
 
+	FDelegateHandle OnFireReadyHandle;
+	
 };
