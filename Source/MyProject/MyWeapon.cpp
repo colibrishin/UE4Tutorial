@@ -173,6 +173,7 @@ bool AMyWeapon::Attack()
 bool AMyWeapon::AttackInterrupted()
 {
 	LOG_FUNC(LogTemp, Warning, "AttackInterrupted");
+	// todo: Consecutive shot decay
 	ConsecutiveShots = 0;
 	return AttackInterruptedImpl();
 }
