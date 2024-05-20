@@ -90,6 +90,27 @@ float UMyWeaponStatComponent::GetRadius() const
 	return PrintErrorAndReturnDefault<float>("Trying to get radius from non-melee and non-throwable weapon", GetOwner());
 }
 
+
+float UMyWeaponStatComponent::GetVSpread() const
+{
+	if (WeaponType == EMyWeaponType::Range)
+	{
+		return GetRangeStat()->VSpread;
+	}
+
+	return PrintErrorAndReturnDefault<float>("Trying to get vspread from non-range weapon", GetOwner());
+}
+
+float UMyWeaponStatComponent::GetHSpread() const
+{
+	if (WeaponType == EMyWeaponType::Range)
+	{
+		return GetRangeStat()->HSpread;
+	}
+
+	return PrintErrorAndReturnDefault<float>("Trying to get hspread from non-range weapon", GetOwner());
+}
+
 bool UMyWeaponStatComponent::ConsumeAmmo()
 {
 	switch (WeaponType)
