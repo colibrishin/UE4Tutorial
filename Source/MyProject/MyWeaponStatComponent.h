@@ -27,6 +27,8 @@ public:
 	float         GetFireRate() const;
 	float         GetCookingTime() const;
 	float         GetRadius() const;
+	float		  GetVSpread() const;
+	float         GetHSpread() const;
 
 	int32         GetCurrentAmmoCount() const
 	{
