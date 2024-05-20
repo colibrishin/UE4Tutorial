@@ -29,6 +29,8 @@
 #include "NiagaraComponent.h"
 #include "WeaponSwapUtility.hpp"
 
+#include "Kismet/KismetMathLibrary.h"
+
 #include "UObject/ConstructorHelpers.h"
 
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
@@ -484,26 +486,23 @@ void AMyCharacter::AttackStart(const float Value)
 		return;
 	}
 
-	constexpr int32 MaxAttackIndex = 3;
-
 	if (IsValid(TryGetWeapon()))
 	{
 		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack with weapon, Is Client? : %d"), !HasAuthority()));
 
-		if (!TryGetWeapon()->Attack())
+		if (TryGetWeapon()->Attack())
+		{
+			if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
+			{
+				HandWeapon->Attack();
+				//HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+			}
+		}
+		else
 		{
 			LOG_FUNC(LogTemp, Error, "Failed to attack");
 			return;
 		}
-
-		if (IsLocallyControlled() && IsValid(HandCollectable))
-	    {
-			if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
-			{
-				HandWeapon->Attack();
-				HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
-			}
-	    }
 
 		// todo: process client before sending rpc to server.
 
@@ -513,9 +512,8 @@ void AMyCharacter::AttackStart(const float Value)
 			{
 			case EMyWeaponType::Range:
 				LOG_FUNC(LogTemp, Warning, "Range Attack");
-
 				// todo: unbind the fire when player drops.
-				TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+				OnFireReadyHandle = TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
 				break;
 			case EMyWeaponType::Melee:
 				LOG_FUNC(LogTemp, Warning, "Melee Attack");
@@ -547,6 +545,11 @@ void AMyCharacter::ResetAttack()
 	CanAttack = true;
 	OnAttackEnded.Broadcast();
 
+	if (IsValid(TryGetWeapon()))
+	{
+		TryGetWeapon()->UnbindOnFireReady(OnFireReadyHandle);
+	}
+	
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
 
@@ -558,7 +561,6 @@ void AMyCharacter::Server_Interactive_Implementation()
 void AMyCharacter::InteractiveImpl()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Interactive"));
-	FHitResult HitResult;
 	const FCollisionQueryParams Params(NAME_None, false, this);
 	TArray<FOverlapResult> HitResults;
 
@@ -666,6 +668,15 @@ void AMyCharacter::OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, 
 
 	if (IsValid(New))
 	{
+		if (IsValid(Previous))
+		{
+			if (const auto& WeaponCast = Cast<AMyWeapon>(Previous);
+				IsValid(WeaponCast) && OnFireReadyHandle.IsValid())
+			{
+				WeaponCast->UnbindOnFireReady(OnFireReadyHandle);
+			}
+		}
+		
 		New->AttachToComponent
 		(
 			GetMesh(), 
@@ -722,7 +733,7 @@ int32 AMyCharacter::GetDamage() const
 
 void AMyCharacter::OnAttackAnimNotify()
 {
-	FHitResult HitResult;
+	TArray<FHitResult> HitResults;
 	// 포인터를 직접 비교하기보단 세번째 인자 InIgnoreActors로 본인을 제외할 수 있음
 	FCollisionQueryParams Params(NAME_None, false, this);
 
@@ -735,9 +746,9 @@ void AMyCharacter::OnAttackAnimNotify()
 	FVector Center = GetActorLocation() + ForwardCompensation + (AttackEndVec * 0.5f) + (UpCompensation * 0.5f);
 	float HalfHeight = AttackRange * 0.5f + AttackRadius;
 
-	bool Result = GetWorld()->SweepSingleByChannel
+	bool Result = GetWorld()->SweepMultiByChannel
 	(
-		OUT HitResult, 
+		OUT HitResults, 
 		Center,
 		GetActorLocation() + AttackEndVec,
 		FQuat::Identity,
@@ -745,15 +756,29 @@ void AMyCharacter::OnAttackAnimNotify()
 		FCollisionShape::MakeSphere(AttackRadius),
 		Params // 까먹지 않도록 조심, 기본인자가 있음
 	);
+	
+	FHitResult FirstHit;
 
-	bool ActualHit = Result && HitResult.Actor.IsValid();
+	for (const auto& Element : HitResults)
+	{
+		if (const auto& CastTest = Cast<AMyCharacter>(Element.Actor))
+		{
+			if (IsValid(CastTest->GetPlayerState<AMyPlayerState>()))
+			{
+				FirstHit = Element;
+				break;
+			}
+		}
+	}
 
+	bool ActualHit = Result && FirstHit.Actor.IsValid();
+	
 	if (ActualHit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *HitResult.Actor->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *FirstHit.Actor->GetName());
 
 		FDamageEvent DamageEvent;
-		HitResult.Actor->TakeDamage
+		FirstHit.Actor->TakeDamage
 		(
 			GetDamage(), 
 			DamageEvent, 
