@@ -267,18 +267,18 @@ void UMyWeaponStatComponent::InitializeComponent()
 
 const FMyRangeWeaponStat* UMyWeaponStatComponent::GetRangeStat() const
 {
-	static const auto& RangeWeaponStat = static_cast<const FMyRangeWeaponStat*>(WeaponStat);
+	const auto& RangeWeaponStat = static_cast<const FMyRangeWeaponStat*>(WeaponStat);
 	return RangeWeaponStat;
 }
 
 const FMyMeleeWeaponStat* UMyWeaponStatComponent::GetMeleeStat() const
 {
-	static const auto& MeleeWeaponStat = static_cast<const FMyMeleeWeaponStat*>(WeaponStat);
+	const auto& MeleeWeaponStat = static_cast<const FMyMeleeWeaponStat*>(WeaponStat);
 	return MeleeWeaponStat;
 }
 
 const FMyThrowableWeaponStat* UMyWeaponStatComponent::GetThrowableStat() const
 {
-	static const auto& ThrowableWeaponStat = static_cast<const FMyThrowableWeaponStat*>(WeaponStat);
+	const auto& ThrowableWeaponStat = static_cast<const FMyThrowableWeaponStat*>(WeaponStat);
 	return ThrowableWeaponStat;
 }
