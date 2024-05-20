@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeSettings" AUTO_RELOAD="true">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" ENABLED="true" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="82bdd9e8-9da2-40e7-b320-8849184ee349" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../../Content/Data/Weapon/CV47WeaponData.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../../Content/Data/Weapon/CV47WeaponData.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Content/Data/Weapon/FragGrenadeData.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../../Content/Data/Weapon/FragGrenadeData.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Content/Data/Weapon/M4A1WeaponData.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../../Content/Data/Weapon/M4A1WeaponData.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../Content/Data/Weapon/SplineWeaponData.uasset" beforeDir="false" afterPath="$PROJECT_DIR$/../../Content/Data/Weapon/SplineWeaponData.uasset" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MyAimableWeapon.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/MyAimableWeapon.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MyAimableWeapon.h" beforeDir="false" afterPath="$PROJECT_DIR$/MyAimableWeapon.h" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MyWeaponStatComponent.cpp" beforeDir="false" afterPath="$PROJECT_DIR$/MyWeaponStatComponent.cpp" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MyWeaponStatComponent.h" beforeDir="false" afterPath="$PROJECT_DIR$/MyWeaponStatComponent.h" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
+  </component>
+  <component name="ProjectApplicationVersion">
+    <option name="ide" value="CLion" />
+    <option name="majorVersion" value="2024" />
+    <option name="minorVersion" value="1.1" />
+    <option name="productBranch" value="Classic" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 3
+}</component>
+  <component name="ProjectId" id="2giQvm8A0ZNwa71g6r8c134iKHy" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "refactor/generic-row-getter-rebase",
+    "last_opened_file_path": "E:/Projects/UE4Tutorial",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "CMakeSettings",
+    "structure.view.defaults.are.configured": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="82bdd9e8-9da2-40e7-b320-8849184ee349" name="Changes" comment="" />
+      <created>1716178150447</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1716178150447</updated>
+      <workItem from="1716178151509" duration="36000" />
+      <workItem from="1716178194505" duration="81000" />
+      <workItem from="1716178282020" duration="65000" />
+      <workItem from="1716178387210" duration="69000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VCPKGProject">
+    <isAutomaticCheckingOnLaunch value="false" />
+    <isAutomaticFoundErrors value="true" />
+    <isAutomaticReloadCMake value="true" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>
