@@ -312,39 +312,6 @@ void AMyCharacter::Server_Reload_Implementation()
 	Multi_Reload();
 }
 
-void AMyCharacter::NotifyDamage(AMyCharacter* const Target) const
-{
-	if (IsValid(Target))
-	{
-		UE_LOG(LogTemp, Warning , TEXT("Hit Actor: %s"), *Target->GetName());
-		const FDamageEvent DamageEvent;
-		Target->TakeDamage(GetDamage(), DamageEvent, GetController(), TryGetWeapon());
-	}
-}
-
-bool AMyCharacter::HitscanAttack(OUT FHitResult& OutHitResult)
-{
-	UE_LOG(LogTemp, Warning, TEXT("Hitscan Fire!"));
-
-	FCollisionQueryParams Params{NAME_None, false, this};
-
-	const FVector EndVector = 
-		Camera->GetComponentLocation() + 
-		Camera->GetForwardVector() * 
-		TryGetWeapon()->GetWeaponStatComponent()->GetRange();
-
-	const auto& Result = GetWorld()->LineTraceSingleByChannel
-		(
-		 OUT OutHitResult,
-		 Camera->GetComponentLocation() ,
-		 EndVector,
-		 ECollisionChannel::ECC_Visibility,
-		 Params
-		);
-
-	return Result;
-}
-
 void AMyCharacter::MeleeAttack()
 {
 	if (!CanAttack)
@@ -539,17 +506,6 @@ void AMyCharacter::AttackStart(const float Value)
 
 				// todo: unbind the fire when player drops.
 				TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
-
-				if (TryGetWeapon()->GetWeaponStatComponent()->IsHitscan())
-				{
-					LOG_FUNC(LogTemp, Warning, "Hitscan Attack");
-
-					FHitResult HitResult;
-					if (HitscanAttack(HitResult))
-					{
-						NotifyDamage(Cast<AMyCharacter>(HitResult.Actor.Get()));
-					}
-				}
 				break;
 			case EMyWeaponType::Melee:
 				LOG_FUNC(LogTemp, Warning, "Melee Attack");

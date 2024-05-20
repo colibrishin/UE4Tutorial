@@ -50,6 +50,8 @@ public:
 
 	void OnHandChanged(class AMyCollectable* Previous, class AMyCollectable* New, class AMyPlayerState* ThisPlayerState);
 
+	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -57,8 +59,6 @@ protected:
 	virtual void PostInitializeComponents() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	virtual void Landed(const FHitResult& Hit) override;
 
@@ -86,8 +86,6 @@ private:
 
 	void AttackStart(const float Value);
 
-	void NotifyDamage(AMyCharacter* const Target) const;
-	bool HitscanAttack(FHitResult& OutHitResult);
 	void MeleeAttack();
 	void ResetAttack();
 
