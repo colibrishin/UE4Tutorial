@@ -8,7 +8,7 @@
 #include "MyPlayerState.h"
 #include "MyStatComponent.h"
 
-AMyFragGrenade::AMyFragGrenade() : IsThrown(false), IsExploded(false)
+AMyFragGrenade::AMyFragGrenade()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -22,102 +22,9 @@ AMyFragGrenade::AMyFragGrenade() : IsThrown(false), IsExploded(false)
 	}
 }
 
-bool AMyFragGrenade::AttackImpl()
+void AMyFragGrenade::OnExplosionTimerExpiredImpl()
 {
-	Charge();
-	return true;
-}
-
-bool AMyFragGrenade::AttackInterruptedImpl()
-{
-	const auto& Result = Super::AttackInterruptedImpl();
-
-	if (Result)
-	{
-		Throw();
-	}
-
-	return Result;
-}
-
-bool AMyFragGrenade::ReloadImpl()
-{
-	return false;
-}
-
-void AMyFragGrenade::DropLocation()
-{
-	if (IsThrown)
-	{
-		// Override base DropLocation
-		const auto& ForwardPosition = PreviousOwner->GetActorLocation() + PreviousOwner->GetActorForwardVector() * 100.f;
-		SetActorLocation(ForwardPosition);
-	}
-	else
-	{
-		Super::DropLocation();
-	}
-}
-
-void AMyFragGrenade::Throw()
-{
-	ExecuteServer(this, 
-				   &AMyFragGrenade::Multi_Throw,
-				   &AMyFragGrenade::ThrowImpl);
-}
-
-void AMyFragGrenade::Charge()
-{
-	ExecuteServer
-		(
-		 this,
-		 &AMyFragGrenade::Multi_Charge,
-		 &AMyFragGrenade::ChargeImpl
-		);
-}
-
-void AMyFragGrenade::Multi_Charge_Implementation()
-{
-	ChargeImpl();
-}
-
-void AMyFragGrenade::ChargeImpl()
-{
-	GetWorldTimerManager().SetTimer
-	(
-		OnExplosionTimerExpiredHandle,
-		this,
-		&AMyFragGrenade::OnExplosionTimerExpired,
-		3.f,
-		false
-	);
-}
-
-void AMyFragGrenade::Multi_Throw_Implementation()
-{
-	ThrowImpl();
-}
-
-void AMyFragGrenade::ThrowImpl()
-{
-	if (IsExploded || IsThrown)
-	{
-		return;
-	}
-
-	IsThrown = true;
-
-	PreviousOwner = GetItemOwner();
-
-	Drop();
-	GetSkeletalMeshComponent()->AddImpulse(FVector::ForwardVector * 1000.f, NAME_None, true);
-}
-
-void AMyFragGrenade::OnExplosionTimerExpired()
-{
-	IsExploded = true;
-
-	// todo: explosion effect
+	Super::OnExplosionTimerExpiredImpl();
 
 	if (HasAuthority())
 	{
@@ -131,11 +38,11 @@ void AMyFragGrenade::OnExplosionTimerExpired()
 			OUT HitResults,
 			GetActorLocation(),
 			FQuat::Identity,
-			ECollisionChannel::ECC_Pawn,
+			ECC_Pawn,
 			FCollisionShape::MakeSphere(Radius)
 		);
 
-		if (!PreviousOwner.IsValid())
+		if (IsValid(GetPreviousOwner()))
 		{
 			LOG_FUNC(LogTemp, Error, "Previous owner is not noted");
 			return;
@@ -155,8 +62,8 @@ void AMyFragGrenade::OnExplosionTimerExpired()
 					(
 						RatioDamage, 
 						{}, 
-						Cast<AMyPlayerController>(PreviousOwner->GetOwner()), 
-						PreviousOwner.Get()
+						Cast<AMyPlayerController>(GetPreviousOwner()->GetOwner()), 
+						GetPreviousOwner()
 					);
 				}
 			}
