@@ -17,6 +17,11 @@ AMySmokeGrenade::AMySmokeGrenade()
 	{
 		GetSkeletalMeshComponent()->SetSkeletalMesh(SK_Grenade.Object);
 	}
+
+	SmokeEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("SmokeEffect"));
+	SmokeEffect->SetupAttachment(GetRootComponent());
+	
+	SmokeEffect->SetAutoActivate(false);
 }
 
 void AMySmokeGrenade::OnExplosionTimerExpiredImpl()
