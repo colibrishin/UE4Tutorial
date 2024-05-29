@@ -22,6 +22,13 @@ AMySmokeGrenade::AMySmokeGrenade()
 	SmokeEffect->SetupAttachment(GetRootComponent());
 	
 	SmokeEffect->SetAutoActivate(false);
+
+	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> NS_SmokeEffect(TEXT("NiagaraSystem'/Game/Blueprints/BPNSSmoke.BPNSSmoke'"));
+
+	if (NS_SmokeEffect.Succeeded())
+	{
+		SmokeEffect->SetAsset(NS_SmokeEffect.Object);
+	}
 }
 
 void AMySmokeGrenade::OnExplosionTimerExpiredImpl()
