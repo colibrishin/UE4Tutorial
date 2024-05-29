@@ -3,54 +3,22 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyWeapon.h"
+#include "MyGrenade.h"
 
-#include "MyProject/MyItem.h"
 #include "MyFragGrenade.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MYPROJECT_API AMyFragGrenade : public AMyWeapon
+class MYPROJECT_API AMyFragGrenade : public AMyGrenade
 {
 	GENERATED_BODY()
 
 public:
     AMyFragGrenade();
 
-	class AMyCharacter* GetPreviousOwner() const { return PreviousOwner.Get(); }
-
 protected:
-	virtual bool AttackImpl() override;
-
-	virtual bool AttackInterruptedImpl() override;
-
-	virtual bool ReloadImpl() override;
-
-	virtual void DropLocation() override;
-
-private:
-	void Throw();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Throw();
-	void ThrowImpl();
-
-	void Charge();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Charge();
-	void ChargeImpl();
-
-	void OnExplosionTimerExpired();
-
-	UPROPERTY(VisibleAnywhere)
-	bool IsThrown;
-
-	UPROPERTY(VisibleAnywhere)
-	bool IsExploded;
-
-	FTimerHandle OnExplosionTimerExpiredHandle;
-
-	TWeakObjectPtr<class AMyCharacter> PreviousOwner;
+	virtual void OnExplosionTimerExpiredImpl() override;
 
 };
