@@ -42,7 +42,7 @@ void AMySmokeGrenade::OnExplosionTimerExpiredImpl()
 		IN OnSmokeEffectExpiredHandle,
 		this,
 		&AMySmokeGrenade::OnSmokeEffectExpired,
-		5.f,
+		15.f,
 		false
 	);
 }
