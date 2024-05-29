@@ -42,7 +42,7 @@ void AMyFragGrenade::OnExplosionTimerExpiredImpl()
 			FCollisionShape::MakeSphere(Radius)
 		);
 
-		if (IsValid(GetPreviousOwner()))
+		if (!IsValid(GetPreviousOwner()))
 		{
 			LOG_FUNC(LogTemp, Error, "Previous owner is not noted");
 			return;
