@@ -103,6 +103,7 @@ void AMyGrenade::ThrowImpl()
 
 void AMyGrenade::OnExplosionTimerExpired()
 {
+	LOG_FUNC_PRINTF(LogTemp, Warning, "Explosion Timer Expired");
 	IsExploded = true;
 
 	// todo: explosion effect
