@@ -21,7 +21,7 @@ public:
 
 	virtual bool PreInteract(AMyCharacter* Character) override;
 	virtual bool PostInteract(AMyCharacter* Character) override;
-	virtual bool TryAttachItem(const AMyCharacter* Character) override;
+	virtual bool TryAttachItem(AMyCharacter* Character) override;
 	virtual bool PreUse(AMyCharacter* Character) override;
 	virtual bool PostUse(AMyCharacter* Character) override;
 
@@ -44,7 +44,17 @@ protected:
 	float GetVSpreadDegree(const float Point, const float OscillationRate, const float Min = 0, const float Max = PI / 8.f);
 
 private:
-	void UpdateAmmoDisplay() const;
+	UFUNCTION(Reliable, NetMulticast)
+	void Multi_TriggerBulletTrail();
+
+	UFUNCTION(Reliable, Client)
+	void Client_UpdateAmmoDisplay() const;
+
+	UFUNCTION(Reliable, Client)
+	void Client_Attack();
+
+	UFUNCTION(Reliable, Client)
+	void Client_Reload();
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	FVector Normal;

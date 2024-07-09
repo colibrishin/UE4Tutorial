@@ -58,6 +58,91 @@ bool AMyCollectable::OnCharacterOverlap(
 	return false;
 }
 
+void AMyCollectable::Server_Drop_Implementation()
+{
+	if (!IsBelongToCharacter())
+	{
+		return;
+	}
+
+	const auto& MyCharacter = GetItemOwner();
+	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
+	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
+
+	DropBeforeCharacter();
+
+	GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+
+	DropLocation();
+	Multi_Drop();
+	return;
+}
+
+void AMyCollectable::Multi_Drop_Implementation()
+{
+	Show();
+	GetMesh()->SetSimulatePhysics(true);
+}
+
+void AMyCollectable::Server_Interact_Implementation(AMyCharacter* Character)
+{
+	Super::Server_Interact_Implementation(Character);
+
+	LOG_FUNC(LogTemp, Warning, "Interact");
+
+	if (!PreInteract(Character))
+	{
+		return;
+	}
+	if (!PostInteract(Character))
+	{
+		return;
+	}
+
+	//Client_Interact(Character);
+	Multi_Interact(Character);
+
+	return;
+}
+
+void AMyCollectable::Server_Use_Implementation(AMyCharacter* Character)
+{
+	Super::Server_Use_Implementation(Character);
+
+	if (!PreUse(Character))
+	{
+		return;
+	}
+
+	if (!PostUse(Character))
+	{
+		return;
+	}
+
+	//Client_Use(Character);
+	//Multi_Use(Character);
+
+	return;
+}
+
+void AMyCollectable::Server_InteractInterrupted_Implementation()
+{
+	Super::Server_InteractInterrupted_Implementation();
+	LOG_FUNC(LogTemp, Warning, "InteractInterrupted");
+}
+
+void AMyCollectable::Server_UseInterrupted_Implementation()
+{
+	Super::Server_UseInterrupted_Implementation();
+	LOG_FUNC(LogTemp, Warning, "UseInterrupted");
+}
+
+void AMyCollectable::Multi_Interact_Implementation(AMyCharacter* Character)
+{
+	GetMesh()->SetSimulatePhysics(false);
+	Hide();
+}
+
 bool AMyCollectable::PreInteract(AMyCharacter* Character)
 {
 	if (IsBelongToCharacter())
@@ -70,7 +155,7 @@ bool AMyCollectable::PreInteract(AMyCharacter* Character)
 	return true;
 }
 
-bool AMyCollectable::TryAttachItem(const AMyCharacter* Character)
+bool AMyCollectable::TryAttachItem(AMyCharacter* Character)
 {
 	LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Setting Owner to : %s"), *Character->GetName()));
 
@@ -85,8 +170,11 @@ bool AMyCollectable::TryAttachItem(const AMyCharacter* Character)
 
 		const auto& MyCharacter = GetItemOwner();
 
-		OnInteractInterruptedHandle = MyCharacter->BindOnInteractInterrupted(this, &AMyCollectable::InteractInterrupted);
-		OnUseInterruptedHandle = MyCharacter->BindOnUseInterrupted(this, &AMyCollectable::UseInterrupted);
+		OnInteractInterruptedHandle = MyCharacter->BindOnInteractInterrupted(this, &AMyCollectable::Server_InteractInterrupted);
+		OnUseInterruptedHandle = MyCharacter->BindOnUseInterrupted(this, &AMyCollectable::Server_UseInterrupted);
+
+		Client_TryAttachItem(Character);
+
 		return true;
 	}
 	else
@@ -105,38 +193,34 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 	if (TryAttachItem(Character))
 	{
 		LOG_FUNC(LogTemp, Warning, "PostInteract success");
-		Hide();
 
-		if (HasAuthority())
+		const auto& Inventory = Character->GetInventory();
+		const auto& Slot = CollectableComponent->GetSlotType();
+		const auto& SlotNum = static_cast<int32>(Slot);
+
+		if (Slot == EMySlotType::Unknown)
 		{
-			const auto& Inventory = Character->GetInventory();
-			const auto& Slot = CollectableComponent->GetSlotType();
-			const auto& SlotNum = static_cast<int32>(Slot);
+			LOG_FUNC(LogTemp, Warning, "Slot is unknown");
+			return false;
+		}
 
-			if (Slot == EMySlotType::Unknown)
-			{
-				LOG_FUNC(LogTemp, Warning, "Slot is unknown");
-				return false;
-			}
+		LOG_FUNC_PRINTF(LogTemp, Warning, "SlotNum: %d", SlotNum);
 
-			LOG_FUNC_PRINTF(LogTemp, Warning, "SlotNum: %d", SlotNum);
+		if (Inventory->TryAddItem(this, SlotNum))
+		{
+			LOG_FUNC_PRINTF(LogTemp, Warning, "Server-side Item Interacted: %s", *GetName());
+		}
+		else 
+		{
+			LOG_FUNC(LogTemp, Warning, "Server-side Item Interacted failed");
+			return false;
+		}
 
-			if (Inventory->TryAddItem(this, SlotNum))
+		if (const auto& TargetPlayerState = Character->GetPlayerState<AMyPlayerState>())
+		{
+			if (!IsValid(TargetPlayerState->GetCurrentHand()))
 			{
-				LOG_FUNC_PRINTF(LogTemp, Warning, "Server-side Item Interacted: %s", *GetName());
-			}
-			else 
-			{
-				LOG_FUNC(LogTemp, Warning, "Server-side Item Interacted failed");
-				return false;
-			}
-
-			if (const auto& TargetPlayerState = Character->GetPlayerState<AMyPlayerState>())
-			{
-				if (!IsValid(TargetPlayerState->GetCurrentHand()))
-				{
-					TargetPlayerState->SetCurrentItem(this);
-				}
+				TargetPlayerState->SetCurrentItem(this);
 			}
 		}
 
@@ -145,9 +229,15 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 	else
 	{
 		LOG_FUNC(LogTemp, Warning, "PostInteract failed");
-		Drop();
+		Server_Drop();
 		return false;
 	}
+}
+
+void AMyCollectable::Client_TryAttachItem_Implementation(AMyCharacter* Character)
+{
+	OnInteractInterruptedHandle = Character->BindOnInteractInterrupted(this, &AMyCollectable::Client_InteractInterrupted);
+	OnUseInterruptedHandle = Character->BindOnUseInterrupted(this, &AMyCollectable::Client_UseInterrupted);
 }
 
 bool AMyCollectable::PreUse(AMyCharacter* Character)
@@ -162,15 +252,16 @@ bool AMyCollectable::PostUse(AMyCharacter* Character)
 	return true;
 }
 
-void AMyCollectable::DropImpl()
+void AMyCollectable::DropBeforeCharacter()
 {
 	const auto& MyCharacter = GetItemOwner();
 	MyCharacter->GetInventory()->Remove(this);
 }
 
+
 void AMyCollectable::DropLocation()
 {
-	FVector PreviousLocation = GetActorLocation();
+	const FVector PreviousLocation = GetActorLocation();
 	FHitResult HitResult;
 	FCollisionQueryParams Params {NAME_None, false, this};
 
@@ -204,77 +295,6 @@ AMyCharacter* AMyCollectable::GetItemOwner() const
 {
 	const auto& CollectableOwner = GetAttachParentActor();
 	return Cast<AMyCharacter>(CollectableOwner);
-}
-
-void AMyCollectable::InteractImpl(class AMyCharacter* Character)
-{
-	Super::InteractImpl(Character);
-
-	LOG_FUNC(LogTemp, Warning, "Interact");
-
-	if (!PreInteract(Character))
-	{
-		return;
-	}
-	if (!PostInteract(Character))
-	{
-		return;
-	}
-
-	return;
-}
-
-void AMyCollectable::UseImpl(AMyCharacter* Character)
-{
-	Super::UseImpl(Character);
-
-	if (!PreUse(Character))
-	{
-		return;
-	}
-
-	if (!PostUse(Character))
-	{
-		return;
-	}
-
-	return;
-}
-
-void AMyCollectable::InteractInterruptedImpl()
-{
-	Super::InteractInterruptedImpl();
-
-	LOG_FUNC(LogTemp, Warning, "InteractInterrupted");
-}
-
-void AMyCollectable::UseInterruptedImpl()
-{
-	Super::UseInterruptedImpl();
-
-	LOG_FUNC(LogTemp, Warning, "UseInterrupted");
-}
-
-bool AMyCollectable::Drop()
-{
-	if (!IsBelongToCharacter())
-	{
-		return false;
-	}
-
-	const auto& MyCharacter = GetItemOwner();
-	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
-	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
-
-	DropImpl();
-
-	GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-
-	DropLocation();
-
-	Show();
-	GetMesh()->SetSimulatePhysics(true);
-	return true;
 }
 
 void AMyCollectable::Hide() const

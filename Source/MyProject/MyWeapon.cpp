@@ -55,7 +55,7 @@ bool AMyWeapon::AttackInterruptedImpl()
 	return true;
 }
 
-bool AMyWeapon::TryAttachItem(const AMyCharacter* Character)
+bool AMyWeapon::TryAttachItem(AMyCharacter* Character)
 {
 	if (GetMesh()->AttachToComponent
 		(
@@ -65,13 +65,19 @@ bool AMyWeapon::TryAttachItem(const AMyCharacter* Character)
 		))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+
+		const auto& MyCharacter = GetItemOwner();
+
+		OnInteractInterruptedHandle = MyCharacter->BindOnInteractInterrupted(this, &AMyCollectable::Server_InteractInterrupted);
+		OnUseInterruptedHandle = MyCharacter->BindOnUseInterrupted(this, &AMyCollectable::Server_UseInterrupted);
+
+		Client_TryAttachItem(Character);
+
 		return true;
 	}
 	else
 	{
-		const FVector PreviousLocation = GetActorLocation();
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
-		SetActorLocation(PreviousLocation);
 		return false;
 	}
 }
@@ -110,9 +116,9 @@ void AMyWeapon::OnCookingTimed()
 	GetWorld()->GetTimerManager().ClearTimer(CookingTimerHandle);
 }
 
-void AMyWeapon::DropImpl()
+void AMyWeapon::DropBeforeCharacter()
 {
-	Super::DropImpl();
+	Super::DropBeforeCharacter();
 
 	if (HasAuthority())
 	{
@@ -123,32 +129,9 @@ void AMyWeapon::DropImpl()
 	}
 }
 
-bool AMyWeapon::Attack()
+void AMyWeapon::Client_CookThrowable_Implementation()
 {
-	if (CanAttack)
-	{
-		switch (GetWeaponStatComponent()->GetWeaponType())
-		{
-		case EMyWeaponType::Range: 
-			GetWorld()->GetTimerManager().SetTimer
-				(
-				 FireRateTimerHandle,
-				 this,
-				 &AMyWeapon::OnFireRateTimed,
-				 GetWeaponStatComponent()->GetFireRate(),
-				 false
-				);
-
-			if (HasAuthority())
-			{
-				++ConsecutiveShots;
-			}
-			break;
-		case EMyWeaponType::Melee:
-			LOG_FUNC(LogTemp, Warning, "Melee attack, Not implemented");
-			return AttackImpl();
-		case EMyWeaponType::Throwable: 
-			GetWorld()->GetTimerManager().SetTimer
+	GetWorld()->GetTimerManager().SetTimer
 				(
 				 CookingTimerHandle,
 				 this,
@@ -156,14 +139,48 @@ bool AMyWeapon::Attack()
 				 GetWeaponStatComponent()->GetCookingTime(),
 				 false
 				);
-			return AttackImpl();
+}
+
+void AMyWeapon::Client_AttackRange_Implementation()
+{
+	GetWorld()->GetTimerManager().SetTimer
+				(
+				 FireRateTimerHandle,
+				 this,
+				 &AMyWeapon::OnFireRateTimed,
+				 GetWeaponStatComponent()->GetFireRate(),
+				 false
+				);
+}
+
+void AMyWeapon::Client_ReloadRange_Implementation()
+{
+	GetWorld()->GetTimerManager().SetTimer
+			(
+			 ReloadTimerHandle ,
+			 this ,
+			 &AMyWeapon::OnReloadDone ,
+			 GetWeaponStatComponent()->GetReloadTime() ,
+			 false
+			);
+}
+
+bool AMyWeapon::Attack()
+{
+	if (CanAttack)
+	{
+		switch (GetWeaponStatComponent()->GetWeaponType())
+		{
+		case EMyWeaponType::Range: 
+			break;
+		case EMyWeaponType::Melee:
+		case EMyWeaponType::Throwable: 
 		case EMyWeaponType::Unknown:
 		default:
 			return AttackImpl();
 		}
 
 		CanAttack = false;
-
 		return AttackImpl();
 	}
 
@@ -184,15 +201,7 @@ bool AMyWeapon::Reload()
 	{
 		switch (GetWeaponStatComponent()->GetWeaponType())
 		{
-		case EMyWeaponType::Range: 
-			GetWorld()->GetTimerManager().SetTimer
-				(
-				 ReloadTimerHandle,
-				 this,
-				 &AMyWeapon::OnReloadDone,
-				 GetWeaponStatComponent()->GetReloadTime(),
-				 false
-				);
+		case EMyWeaponType::Range:
 			break;
 		case EMyWeaponType::Unknown:
 		case EMyWeaponType::Melee:

@@ -24,13 +24,19 @@ public:
 	class UBoxComponent* GetCollider() const { return Collider; }
 	class AMyCharacter* GetItemOwner() const;
 
-	bool Drop();
+	UFUNCTION(Reliable, Server)
+	void Server_Drop();
+
+	UFUNCTION(Reliable, NetMulticast)
+	void Multi_Drop();
 
 	void Hide() const;
 	void Show() const;
 
 	void SetSkeletalMesh();
 	void SetStaticMesh();
+
+	bool IsBelongToCharacter() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -43,23 +49,34 @@ protected:
 		int32 OtherBodyIndex, bool bFromSweep, class AMyCharacter* Character, const FHitResult& SweepResult
 	);
 
-	virtual void InteractImpl(class AMyCharacter* Character) override;
-	virtual void UseImpl(class AMyCharacter* Character) override;
+	virtual void Server_Drop_Implementation();
+	virtual void Multi_Drop_Implementation();
 
-	virtual void InteractInterruptedImpl() override;
-	virtual void UseInterruptedImpl() override;
+	virtual void Server_Interact_Implementation(class AMyCharacter* Character) override;
+	virtual void Server_Use_Implementation(class AMyCharacter* Character) override;
+	
+	virtual void Server_InteractInterrupted_Implementation() override;
+	virtual void Server_UseInterrupted_Implementation() override;
+
+	virtual void Multi_Interact_Implementation(AMyCharacter* Character) override;
 
 	virtual bool PreInteract(class AMyCharacter* Character);
-	virtual bool TryAttachItem(const AMyCharacter* Character);
+	virtual bool TryAttachItem(AMyCharacter* Character);
 	virtual bool PostInteract(class AMyCharacter* Character);
+
+	UFUNCTION(Reliable, Client)
+	void Client_TryAttachItem(AMyCharacter* Character);
+	virtual void Client_TryAttachItem_Implementation(AMyCharacter* Character);
 
 	virtual bool PreUse(class AMyCharacter* Character);
 	virtual bool PostUse(class AMyCharacter* Character);
 
-	virtual void DropImpl();
+	virtual void DropBeforeCharacter();
 	virtual void DropLocation();
+	
+	FDelegateHandle OnInteractInterruptedHandle;
 
-	bool IsBelongToCharacter() const;
+	FDelegateHandle OnUseInterruptedHandle;
 
 public:	
 	// Called every frame
@@ -82,9 +99,5 @@ private:
 
     UPROPERTY(VisibleAnywhere)
     class UMyCollectableComponent* CollectableComponent;
-
-	FDelegateHandle OnInteractInterruptedHandle;
-
-	FDelegateHandle OnUseInterruptedHandle;
 
 };

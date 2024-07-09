@@ -20,6 +20,6 @@ public:
 protected:
 	virtual void PostInitializeComponents() override;
 
-	virtual void DropImpl() override;
+	virtual void DropBeforeCharacter() override;
 
 };

@@ -37,7 +37,7 @@ public:
 	bool AttackInterrupted();
 	bool Reload();
 
-	virtual bool TryAttachItem(const AMyCharacter* Character) override;
+	virtual bool TryAttachItem(AMyCharacter* Character) override;
 	UTexture2D*  GetWeaponImage() const { return WeaponImage; }
 
 	void SetVisualDummy(const bool NewDummy) { bIsDummyVisually = NewDummy; }
@@ -63,9 +63,19 @@ protected:
 	virtual void OnReloadDone();
 	virtual void OnCookingTimed();
 
-	virtual void DropImpl() override;
+	virtual void DropBeforeCharacter() override;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	uint32 ConsecutiveShots;
+
+	FTimerHandle FireRateTimerHandle;
+
+	FTimerHandle ReloadTimerHandle;
+
+	FTimerHandle CookingTimerHandle;
 
 private:
+
 	UPROPERTY(VisibleAnywhere)
 	bool CanReload;
 
@@ -75,17 +85,8 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	bool bIsDummyVisually;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
-	uint32 ConsecutiveShots;
-
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* WeaponImage;
-
-	FTimerHandle FireRateTimerHandle;
-
-	FTimerHandle ReloadTimerHandle;
-
-	FTimerHandle CookingTimerHandle;
 	
 	FOnFireReady OnFireReady;
 

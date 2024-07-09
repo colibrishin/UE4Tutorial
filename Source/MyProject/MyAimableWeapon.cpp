@@ -16,6 +16,8 @@
 
 #include "Kismet/GameplayStatics.h"
 
+#include "NiagaraSystem.h"
+#include "Engine/DamageEvents.h"
 #include "Net/UnrealNetwork.h"
 
 AMyAimableWeapon::AMyAimableWeapon()
@@ -49,13 +51,13 @@ bool AMyAimableWeapon::PostInteract(AMyCharacter* Character)
 
 	if (Result)
 	{
-		UpdateAmmoDisplay();
+		Client_UpdateAmmoDisplay();
 	}
 	
 	return Result;
 }
 
-bool AMyAimableWeapon::TryAttachItem(const AMyCharacter* Character)
+bool AMyAimableWeapon::TryAttachItem(AMyCharacter* Character)
 {
 	LOG_FUNC(LogTemp, Warning, "TryAttachItem");
 
@@ -67,13 +69,19 @@ bool AMyAimableWeapon::TryAttachItem(const AMyCharacter* Character)
 		))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+
+		const auto& MyCharacter = GetItemOwner();
+
+		OnInteractInterruptedHandle = MyCharacter->BindOnInteractInterrupted(this, &AMyCollectable::Server_InteractInterrupted);
+		OnUseInterruptedHandle = MyCharacter->BindOnUseInterrupted(this, &AMyCollectable::Server_UseInterrupted);
+
+		Client_TryAttachItem(Character);
+
 		return true;
 	}
 	else
 	{
-		const FVector PreviousLocation = GetActorLocation();
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
-		SetActorLocation(PreviousLocation);
 		return false;
 	}
 }
@@ -186,7 +194,7 @@ bool AMyAimableWeapon::AttackImpl()
 
 		if (!IsDummyVisually() && HasAuthority() && Hitscan(CameraLocation, CameraForward, HitResult))
 		{
-			if (const auto& Character = Cast<AMyCharacter>(HitResult.Actor)) 
+			if (const auto& Character = Cast<AMyCharacter>(HitResult.GetActor())) 
 			{
 				Character->TakeDamage
 				(
@@ -198,36 +206,29 @@ bool AMyAimableWeapon::AttackImpl()
 			}
 		}
 
-		UpdateAmmoDisplay();
-
-		const auto& MuzzleLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle"));
-		const auto& WeaponRange = GetWeaponStatComponent()->GetRange();
-
-		FVector TrailNormal = Normal;
-
-		if (IsDummyVisually())
-		{
-			const auto& MainWeapon = GetItemOwner()->TryGetWeapon();
-			TrailNormal = Cast<AMyAimableWeapon>(MainWeapon)->Normal;
-		}
-
-		const auto& EndLocation = CameraLocation + (TrailNormal * WeaponRange);
-		const auto& Delta       = EndLocation - MuzzleLocation;
-		const auto& DeltaNormal = Delta.GetSafeNormal();
-
-		const auto& Yaw = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Y, DeltaNormal.X));
-		const auto& Pitch = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Z, DeltaNormal.X));
-		const auto& Roll = 0.f;
-
-		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Yaw"), Yaw);
-		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Pitch"), Pitch);
-		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Roll"), Roll);
-		BulletTrail->Activate();
+		Multi_TriggerBulletTrail();
 
 		if (IsDummyVisually())
 		{
 			return false;
 		}
+
+		GetWorld()->GetTimerManager().SetTimer
+				(
+				 FireRateTimerHandle,
+				 this,
+				 &AMyWeapon::OnFireRateTimed,
+				 GetWeaponStatComponent()->GetFireRate(),
+				 false
+				);
+
+		if (HasAuthority())
+		{
+			++ConsecutiveShots;
+		}
+
+		Client_Attack();
+		Client_UpdateAmmoDisplay();
 
 		return true;
 	}
@@ -247,6 +248,20 @@ bool AMyAimableWeapon::ReloadImpl()
 			return false;
 		}
 
+		if (!ReloadTimerHandle.IsValid())
+		{
+			GetWorld()->GetTimerManager().SetTimer
+				(
+				 ReloadTimerHandle ,
+				 this ,
+				 &AMyWeapon::OnReloadDone ,
+				 GetWeaponStatComponent()->GetReloadTime() ,
+				 false
+				);
+
+			Client_Reload();
+		}
+
 		return true;
 	}
 
@@ -261,7 +276,7 @@ void AMyAimableWeapon::OnFireRateTimed()
 void AMyAimableWeapon::OnReloadDone()
 {
 	Super::OnReloadDone();
-	UpdateAmmoDisplay();
+	Client_UpdateAmmoDisplay();
 }
 
 float AMyAimableWeapon::GetHSpreadDegree(const float Point, const float OscillationRate, const float Min, const float Max)
@@ -293,7 +308,60 @@ float AMyAimableWeapon::GetVSpreadDegree(const float Point, const float Oscillat
 	return FMath::RadiansToDegrees(ClampQDV);
 }
 
-void AMyAimableWeapon::UpdateAmmoDisplay() const
+void AMyAimableWeapon::Client_Reload_Implementation()
+{
+	GetWorld()->GetTimerManager().SetTimer
+			(
+			 ReloadTimerHandle ,
+			 this ,
+			 &AMyWeapon::OnReloadDone ,
+			 GetWeaponStatComponent()->GetReloadTime() ,
+			 false
+			);
+}
+
+void AMyAimableWeapon::Client_Attack_Implementation()
+{
+	GetWorld()->GetTimerManager().SetTimer
+			(
+			 FireRateTimerHandle ,
+			 this ,
+			 &AMyWeapon::OnFireRateTimed ,
+			 GetWeaponStatComponent()->GetFireRate() ,
+			 false
+			);
+}
+
+void AMyAimableWeapon::Multi_TriggerBulletTrail_Implementation()
+{
+	const auto& PawnCamera = GetItemOwner()->FindComponentByClass<UCameraComponent>();
+	const auto& CameraLocation = PawnCamera->GetComponentLocation();
+	const auto& MuzzleLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle"));
+	const auto& WeaponRange = GetWeaponStatComponent()->GetRange();
+
+	FVector TrailNormal = Normal;
+
+	if (IsDummyVisually())
+	{
+		const auto& MainWeapon = GetItemOwner()->TryGetWeapon();
+		TrailNormal = Cast<AMyAimableWeapon>(MainWeapon)->Normal;
+	}
+
+	const auto& EndLocation = CameraLocation + (TrailNormal * WeaponRange);
+	const auto& Delta       = EndLocation - MuzzleLocation;
+	const auto& DeltaNormal = Delta.GetSafeNormal();
+
+	const auto& Yaw = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Y, DeltaNormal.X));
+	const auto& Pitch = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Z, DeltaNormal.X));
+	const auto& Roll = 0.f;
+
+	BulletTrail->SetNiagaraVariableFloat(TEXT("User.Yaw"), Yaw);
+	BulletTrail->SetNiagaraVariableFloat(TEXT("User.Pitch"), Pitch);
+	BulletTrail->SetNiagaraVariableFloat(TEXT("User.Roll"), Roll);
+	BulletTrail->Activate();
+}
+
+void AMyAimableWeapon::Client_UpdateAmmoDisplay_Implementation() const
 {
 	if (!IsValid(GetItemOwner()))
 	{
