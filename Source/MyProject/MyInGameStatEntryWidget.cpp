@@ -17,7 +17,7 @@ void UMyInGameStatEntryWidget::SetPlayer(AMyPlayerState* PlayerState)
 		KillCount->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetKill())));
 		DeathCount->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetDeath())));
 		AssistCount->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetAssist())));
-		PingValue->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetPing())));
+		PingValue->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetPingInMilliseconds())));
 	}
 }
 
@@ -45,7 +45,7 @@ void UMyInGameStatEntryWidget::ForceUpdatePlayerStats() const
 		KillCount->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetKill())));
 		DeathCount->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetDeath())));
 		AssistCount->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetAssist())));
-		PingValue->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetPing())));
+		PingValue->SetText(FText::FromString(FString::FromInt(DesignatedPlayerState->GetPingInMilliseconds())));
 	}
 }
 

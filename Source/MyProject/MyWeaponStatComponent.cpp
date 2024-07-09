@@ -130,12 +130,12 @@ bool UMyWeaponStatComponent::ConsumeAmmo()
 		}
 	case EMyWeaponType::Melee:
 		{
-			LOG_FUNC_PRINTF(LogTemp , Warning , "Melee weapon does not need to consume ammo");
+			UE_LOG(LogTemp, Warning, TEXT("%hs: %s"), __FUNCTION__, *FString::Printf(TEXT("Melee weapon does not need to consume ammo")));
 			return true;
 		}
 	case EMyWeaponType::Throwable:
 		{
-			LOG_FUNC_PRINTF(LogTemp , Warning , "Throwable weapon does not need to consume ammo");
+			UE_LOG(LogTemp, Warning, TEXT("%hs: %s"), __FUNCTION__, *FString::Printf(TEXT("Throwable weapon does not need to consume ammo")));
 			return true;
 		}
 	case EMyWeaponType::Unknown:

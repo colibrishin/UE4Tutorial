@@ -12,6 +12,7 @@
 
 #include "UObject/ConstructorHelpers.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BlackboardData.h"
 
 AMyAIController::AMyAIController()
@@ -47,7 +48,8 @@ void AMyAIController::OnPossess(APawn* InPawn)
 		true
 	);*/
 
-	if (UseBlackboard(BlackboardData, Blackboard))
+	if (auto BlackboardComponent = GetBlackboardComponent();
+		UseBlackboard(BlackboardData, BlackboardComponent))
 	{
 		if (!RunBehaviorTree(BehaviorTree))
 		{
