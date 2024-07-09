@@ -1,11 +1,14 @@
 #pragma once
 #include <functional>
+#include <string>
 
 #include "Data.h"
 #include "MyCollectableComponent.h"
 #include "MyGameInstance.h"
 
 #include "Kismet/GameplayStatics.h"
+
+#include "Containers/UnrealString.h"
 
 #define DECL_BINDON_NATIVE(Delegate, ...) \
 	FDelegateHandle Bind##Delegate(TMulticastDelegate<void(__VA_ARGS__)>::FDelegate& Func) \

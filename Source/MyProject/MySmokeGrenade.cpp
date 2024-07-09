@@ -5,6 +5,8 @@
 
 #include "NiagaraComponent.h"
 
+#include "NiagaraSystem.h"
+
 AMySmokeGrenade::AMySmokeGrenade()
 {
 	PrimaryActorTick.bCanEverTick = true;

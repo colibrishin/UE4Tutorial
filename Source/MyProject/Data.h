@@ -152,8 +152,6 @@ public:
 		{
 			return &ThrowableWeaponStat;
 		}
-
-		return nullptr;
 	}
 };
 

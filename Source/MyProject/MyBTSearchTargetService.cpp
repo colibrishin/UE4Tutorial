@@ -9,6 +9,8 @@
 #include "DrawDebugHelpers.h"
 #include "BehaviorTree/BlackboardComponent.h"
 
+#include "Engine/OverlapResult.h"
+
 UMyBTSearchTargetService::UMyBTSearchTargetService()
 {
 	NodeName = TEXT("Search Target");
@@ -44,9 +46,9 @@ void UMyBTSearchTargetService::TickNode(UBehaviorTreeComponent& OwnerComp, uint8
 
 		if (Result)
 		{
-			for (const auto& Actor : Overlaps)
+			for (const auto& Overlap : Overlaps)
 			{
-				const auto& Character = Cast<AMyCharacter>(Actor.GetActor());
+				const auto& Character = Cast<AMyCharacter>(Overlap.GetActor());
 
 				if (IsValid(Character))
 				{
