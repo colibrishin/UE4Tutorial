@@ -74,21 +74,22 @@ public:
 	float GetForwardInput() const { return ForwardInput; }
 	float GetRightInput() const { return RightInput; }
 
-	void Attack(const float Value);
-
 private:
 
 	friend void CharacterSwapHand(AMyCharacter* Character, const int Index);
 
 	// ============ Attacking ============
+
+	void Attack(const float Value);
+
 	UFUNCTION(Server, Reliable)
 	void Server_Attack(const float Value);
+	UFUNCTION(Client, Reliable)
+	void Client_Attack();
+
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Attack(const float Value);
+	void Multi_MeleeAttack();
 
-	void AttackStart(const float Value);
-
-	void MeleeAttack();
 	void ResetAttack();
 
 	int32 GetDamage() const;
@@ -99,21 +100,19 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void Server_AttackInterrupted(const float Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_AttackInterrupted(const float Value);
 
 	// ============ End of Attacking ============
 
 
 	// ============ Reloading ============
+
 	void Reload();
 
 	UFUNCTION(Server, Reliable)
 	void Server_Reload();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Reload();
 
-	void ReloadStart() const;
+	UFUNCTION(Client, Reliable)
+	void Client_Reload();
 
 	// ============ End of Reloading ============
 
@@ -130,14 +129,13 @@ private:
 	UFUNCTION(Server, Reliable)
 	void Server_Interactive();
 
-	void InteractiveImpl();
-
 	void InteractInterrupted();
 
 	UFUNCTION(Server, Reliable)
 	void Server_InteractInterrupted();
 
-	void InteractInterruptedImpl() const;
+	UFUNCTION(Client, Reliable)
+	void Client_InteractInterrupted();
 
 	// ============ End of Interacting ============
 
@@ -145,17 +143,13 @@ private:
 
 	void Use();
 
-	UFUNCTION(Server, Reliable)
-	void Server_Use();
-
-	void UseImpl();
-
 	void UseInterrupt();
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseInterrupt();
 
-	void UseInterruptImpl() const;
+	UFUNCTION(Client, Reliable)
+	void Client_UseInterrupted();
 
 	// ============ End of Using ============
 
@@ -166,27 +160,22 @@ private:
 	void SwapPrimary();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapPrimary();
-	void SwapPrimaryImpl() const;
 
 	void SwapSecondary();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapSecondary();
-	void SwapSecondaryImpl() const;
 
 	void SwapMelee();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapMelee();
-	void SwapMeleeImpl() const;
 
 	void SwapUtility();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapUtility();
-	void SwapUtilityImpl() const;
 
 	void SwapBomb();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapBomb();
-	void SwapBombImpl() const;
 
 	// ============ End of Swap ============
 

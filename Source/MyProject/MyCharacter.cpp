@@ -15,7 +15,6 @@
 #include "DrawDebugHelpers.h"
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
-#include "ConstantFVector.hpp"
 #include "MyAIController.h"
 #include "MyAimableWeapon.h"
 #include "MyC4.h"
@@ -28,6 +27,9 @@
 #include "Net/UnrealNetwork.h"
 #include "NiagaraComponent.h"
 #include "WeaponSwapUtility.hpp"
+
+#include "Engine/DamageEvents.h"
+#include "Engine/OverlapResult.h"
 
 #include "Kismet/KismetMathLibrary.h"
 
@@ -268,7 +270,64 @@ void AMyCharacter::Server_Attack_Implementation(const float Value)
 		return;
 	}
 
-	Multi_Attack(Value);
+	if (Value == 0.f)
+	{
+		return;
+	}
+
+	if (IsValid(TryGetWeapon()))
+	{
+		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack with weapon, Is Client? : %d"), !HasAuthority()));
+
+		if (TryGetWeapon()->Attack())
+		{
+			if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
+			{
+				HandWeapon->Attack();
+				//HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+			}
+		}
+		else
+		{
+			LOG_FUNC(LogTemp, Error, "Failed to attack");
+			return;
+		}
+
+		// todo: process client before sending rpc to server.
+
+		if (IsValid(TryGetWeapon()))
+		{
+			switch (TryGetWeapon()->GetWeaponStatComponent()->GetWeaponType())
+			{
+			case EMyWeaponType::Range:
+				LOG_FUNC(LogTemp, Warning, "Range Attack");
+				// todo: unbind the fire when player drops.
+				OnFireReadyHandle = TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
+				break;
+			case EMyWeaponType::Melee:
+				LOG_FUNC(LogTemp, Warning, "Melee Attack");
+				Multi_MeleeAttack();
+				break;
+			default:
+			case EMyWeaponType::Unknown:
+				LOG_FUNC(LogTemp, Error, "Unknown Weapon Type");
+				Multi_MeleeAttack();
+				break;
+			}
+		}
+	}
+	else
+	{
+		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack without weapon, Is Client? : %d"), HasAuthority()));
+		Multi_MeleeAttack();
+	}
+
+	OnAttackStarted.Broadcast();
+
+	CanAttack = false;
+	GetCharacterMovement()->MaxWalkSpeed = 150.f;
+
+	Client_Attack();
 }
 
 
@@ -280,20 +339,6 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	}
 }
 
-void AMyCharacter::Server_AttackInterrupted_Implementation(const float Value)
-{
-	Multi_AttackInterrupted(Value);
-}
-
-void AMyCharacter::Multi_AttackInterrupted_Implementation(const float Value)
-{
-	// Will not reset attack here. There could be a case where player is doing the short burst shooting.
-	if (IsValid(TryGetWeapon()))
-	{
-		TryGetWeapon()->AttackInterrupted();
-	}
-}
-
 void AMyCharacter::Reload()
 {
 	if (IsBuyMenuOpened())
@@ -301,12 +346,28 @@ void AMyCharacter::Reload()
 		return;
 	}
 
-	ExecuteServer
-	(
-	 this,
-		 &AMyCharacter::Server_Reload,
-		 &AMyCharacter::Multi_Reload
-	);
+	if (!IsValid(TryGetWeapon()))
+	{
+		return;
+	}
+
+	if (!TryGetWeapon()->CanBeReloaded())
+	{
+		return;
+	}
+
+	Server_Reload();
+}
+
+void AMyCharacter::Server_AttackInterrupted_Implementation(const float Value)
+{
+	PreviousAttack = Value;
+
+	// Will not reset attack here. There could be a case where player is doing the short burst shooting.
+	if (IsValid(TryGetWeapon()))
+	{
+		TryGetWeapon()->AttackInterrupted();
+	}
 }
 
 void AMyCharacter::Server_Reload_Implementation()
@@ -321,31 +382,6 @@ void AMyCharacter::Server_Reload_Implementation()
 		return;
 	}
 
-	Multi_Reload();
-}
-
-void AMyCharacter::MeleeAttack()
-{
-	if (!CanAttack)
-	{
-		return;
-	}
-
-	constexpr int32 MaxAttackSection = 3;
-
-	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
-	AttackIndex = (AttackIndex + 1) % MaxAttackSection;
-	AnimInstance->PlayAttackMontage(AttackIndex);
-	ArmAnimInstance->PlayAttackMontage(AttackIndex);
-}
-
-void AMyCharacter::Multi_Reload_Implementation()
-{
-	ReloadStart();
-}
-
-void AMyCharacter::ReloadStart() const
-{
 	if (!IsValid(TryGetWeapon()))
 	{
 		return;
@@ -353,8 +389,12 @@ void AMyCharacter::ReloadStart() const
 
 	UE_LOG(LogTemp, Warning, TEXT("Reload"));
 	TryGetWeapon()->Reload();
+	Client_Reload();
+}
 
-	if (IsLocallyControlled() && IsValid(HandCollectable))
+void AMyCharacter::Client_Reload_Implementation()
+{
+	if (IsValid(HandCollectable))
 	{
 		if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
 		{
@@ -422,143 +462,10 @@ void AMyCharacter::Interactive()
 		return;
 	}
 
-	ExecuteServer
-	(
-	 this,
-		 &AMyCharacter::Server_Interactive,
-		 &AMyCharacter::InteractiveImpl
-	);
-}
-
-void AMyCharacter::Attack(const float Value)
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	// todo: analogue input support?
-	if (PreviousAttack == 1.f && Value == 0.f)
-	{
-		ExecuteServer
-			(
-			 this ,
-			 &AMyCharacter::Server_AttackInterrupted,
-			 &AMyCharacter::Multi_AttackInterrupted,
-			 Value
-			);
-
-		PreviousAttack = Value;
-		return;
-	}
-
-	PreviousAttack = Value;
-
-	if (Value == 0.f)
-	{
-		return;
-	}
-
-	if (!CanAttack)
-	{
-		return;
-	}
-
-	ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_Attack,
-		 &AMyCharacter::Multi_Attack,
-		 Value
-		);
-}
-
-
-void AMyCharacter::Multi_Attack_Implementation(const float Value)
-{
-	AttackStart(Value);
-}
-
-void AMyCharacter::AttackStart(const float Value)
-{
-	if (Value == 0.f)
-	{
-		return;
-	}
-
-	if (IsValid(TryGetWeapon()))
-	{
-		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack with weapon, Is Client? : %d"), !HasAuthority()));
-
-		if (TryGetWeapon()->Attack())
-		{
-			if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
-			{
-				HandWeapon->Attack();
-				//HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
-			}
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Error, "Failed to attack");
-			return;
-		}
-
-		// todo: process client before sending rpc to server.
-
-		if (IsValid(TryGetWeapon()))
-		{
-			switch (TryGetWeapon()->GetWeaponStatComponent()->GetWeaponType())
-			{
-			case EMyWeaponType::Range:
-				LOG_FUNC(LogTemp, Warning, "Range Attack");
-				// todo: unbind the fire when player drops.
-				OnFireReadyHandle = TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
-				break;
-			case EMyWeaponType::Melee:
-				LOG_FUNC(LogTemp, Warning, "Melee Attack");
-				MeleeAttack();
-				break;
-			default:
-			case EMyWeaponType::Unknown:
-				LOG_FUNC(LogTemp, Error, "Unknown Weapon Type");
-				MeleeAttack();
-				break;
-			}
-		}
-	}
-	else
-	{
-		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack without weapon, Is Client? : %d"), HasAuthority()));
-		MeleeAttack();
-	}
-
-	OnAttackStarted.Broadcast();
-
-	CanAttack = false;
-	GetCharacterMovement()->MaxWalkSpeed = 150.f;
-}
-
-void AMyCharacter::ResetAttack()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Reset Attack"));
-	CanAttack = true;
-	OnAttackEnded.Broadcast();
-
-	if (IsValid(TryGetWeapon()))
-	{
-		TryGetWeapon()->UnbindOnFireReady(OnFireReadyHandle);
-	}
-	
-	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+	Server_Interactive();
 }
 
 void AMyCharacter::Server_Interactive_Implementation()
-{
-	InteractiveImpl();
-}
-
-void AMyCharacter::InteractiveImpl()
 {
 	UE_LOG(LogTemp, Warning, TEXT("Interactive"));
 	const FCollisionQueryParams Params(NAME_None, false, this);
@@ -584,7 +491,7 @@ void AMyCharacter::InteractiveImpl()
 			{
 				if (Interactive->GetItemOwner() != this)
 				{
-					Interactive->Interact(this);
+					Interactive->Server_Interact(this);
 					break;
 				}
 			}
@@ -592,24 +499,88 @@ void AMyCharacter::InteractiveImpl()
 	}
 }
 
+void AMyCharacter::Attack(const float Value)
+{
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
+	// todo: analogue input support?
+	if (PreviousAttack == 1.f && Value == 0.f)
+	{
+		Server_AttackInterrupted(Value);
+		return;
+	}
+
+	PreviousAttack = Value;
+
+	if (Value == 0.f)
+	{
+		return;
+	}
+
+	if (!CanAttack)
+	{
+		return;
+	}
+
+	Server_Attack(Value);
+}
+
+void AMyCharacter::Multi_MeleeAttack_Implementation()
+{
+	constexpr int32 MaxAttackSection = 3;
+
+	UE_LOG(LogTemp, Warning, TEXT("Melee Attack"));
+	AttackIndex = (AttackIndex + 1) % MaxAttackSection;
+	AnimInstance->PlayAttackMontage(AttackIndex);
+	ArmAnimInstance->PlayAttackMontage(AttackIndex);
+}
+
+void AMyCharacter::Client_Attack_Implementation()
+{
+	OnAttackStarted.Broadcast();
+
+	CanAttack = false;
+	GetCharacterMovement()->MaxWalkSpeed = 150.f;
+}
+
+void AMyCharacter::ResetAttack()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Reset Attack"));
+	CanAttack = true;
+	OnAttackEnded.Broadcast();
+
+	if (IsValid(TryGetWeapon()))
+	{
+		TryGetWeapon()->UnbindOnFireReady(OnFireReadyHandle);
+	}
+	
+	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+}
+
 void AMyCharacter::InteractInterrupted()
 {
-	ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_InteractInterrupted,
-		 &AMyCharacter::InteractInterruptedImpl
-		);
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
+	Server_InteractInterrupted();
 }
 
 void AMyCharacter::Server_InteractInterrupted_Implementation()
 {
-	InteractInterruptedImpl();
+	UE_LOG(LogTemp, Warning, TEXT("Server Interact Interrupted"));
+	OnInteractInterrupted.Broadcast();
+
+	Client_InteractInterrupted();
 }
 
-void AMyCharacter::InteractInterruptedImpl() const
+void AMyCharacter::Client_InteractInterrupted_Implementation()
 {
-	UE_LOG(LogTemp, Warning, TEXT("Interact Interrupted"));
+	UE_LOG(LogTemp, Warning, TEXT("Client Interact Interrupted"));
 	OnInteractInterrupted.Broadcast();
 }
 
@@ -620,46 +591,35 @@ void AMyCharacter::Use()
 		return;
 	}
 
-	ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_Use,
-		 &AMyCharacter::UseImpl
-		);
-}
-
-void AMyCharacter::Server_Use_Implementation()
-{
-	UseImpl();
-}
-
-void AMyCharacter::UseImpl()
-{
-	if (IsValid(TryGetItem()))
+	if (!IsValid(TryGetItem()))
 	{
-		TryGetItem()->Use(this);
+		return;
 	}
+
+	TryGetItem()->Server_Use(this);
 }
 
 void AMyCharacter::UseInterrupt()
 {
-	ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_UseInterrupt,
-		 &AMyCharacter::UseInterruptImpl
-		);
+	if (IsBuyMenuOpened())
+	{
+		return;
+	}
+
+	if (!IsValid(TryGetItem()))
+	{
+		return;
+	}
+
+	Server_UseInterrupt();
 }
 
 void AMyCharacter::Server_UseInterrupt_Implementation()
 {
-	UseInterruptImpl();
-}
-
-void AMyCharacter::UseInterruptImpl() const
-{
-	UE_LOG(LogTemp, Warning, TEXT("Use Interrupted"));
+	UE_LOG(LogTemp, Warning, TEXT("Server Use Interrupted"));
 	OnUseInterrupted.Broadcast();
+
+	Client_UseInterrupted();
 }
 
 void AMyCharacter::OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, AMyPlayerState* ThisPlayerState)
@@ -741,8 +701,8 @@ void AMyCharacter::OnAttackAnimNotify()
 	constexpr float AttackRadius = 50.f;
 
 	FVector AttackEndVec = GetActorForwardVector() * AttackRange;
-	constexpr FConstantFVector UpCompensation = FConstantFVector::UpVector * 50.f;
-	constexpr FConstantFVector ForwardCompensation = FConstantFVector::ForwardVector * 25.f;
+	const FVector UpCompensation = FVector::UpVector * 50.f;
+	const FVector ForwardCompensation = FVector::ForwardVector * 25.f;
 	FVector Center = GetActorLocation() + ForwardCompensation + (AttackEndVec * 0.5f) + (UpCompensation * 0.5f);
 	float HalfHeight = AttackRange * 0.5f + AttackRadius;
 
@@ -761,7 +721,7 @@ void AMyCharacter::OnAttackAnimNotify()
 
 	for (const auto& Element : HitResults)
 	{
-		if (const auto& CastTest = Cast<AMyCharacter>(Element.Actor))
+		if (const auto& CastTest = Cast<AMyCharacter>(Element.GetActor()))
 		{
 			if (IsValid(CastTest->GetPlayerState<AMyPlayerState>()))
 			{
@@ -771,14 +731,14 @@ void AMyCharacter::OnAttackAnimNotify()
 		}
 	}
 
-	bool ActualHit = Result && FirstHit.Actor.IsValid();
+	const bool ActualHit = Result && IsValid(FirstHit.GetActor());
 	
 	if (ActualHit)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *FirstHit.Actor->GetName());
+		UE_LOG(LogTemp, Warning, TEXT("Hit Actor: %s"), *FirstHit.GetActor()->GetName());
 
-		FDamageEvent DamageEvent;
-		FirstHit.Actor->TakeDamage
+		const FDamageEvent DamageEvent;
+		FirstHit.GetActor()->TakeDamage
 		(
 			GetDamage(), 
 			DamageEvent, 
@@ -797,6 +757,12 @@ void AMyCharacter::OnAttackAnimNotify()
 		false,
 		1.f
 	);
+}
+
+void AMyCharacter::Client_UseInterrupted_Implementation()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Use Interrupted"));
+	OnUseInterrupted.Broadcast();
 }
 
 void AMyCharacter::AttachArmCollectable(class AMyCollectable* Previous, class AMyCollectable* New)
@@ -847,20 +813,10 @@ void AMyCharacter::SwapPrimary()
 		return;
 	}
 
-	ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_SwapPrimary,
-		 &AMyCharacter::SwapPrimaryImpl
-		);
+	Server_SwapPrimary();
 }
 
 void AMyCharacter::Server_SwapPrimary_Implementation()
-{
-	SwapPrimaryImpl();
-}
-
-void AMyCharacter::SwapPrimaryImpl() const
 {
 	CharacterSwapHand(this, 1);
 }
@@ -872,20 +828,10 @@ void AMyCharacter::SwapSecondary()
 		return;
 	}
 
-	ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_SwapSecondary,
-		 &AMyCharacter::SwapSecondaryImpl
-		);
+	Server_SwapSecondary();
 }
 
 void AMyCharacter::Server_SwapSecondary_Implementation()
-{
-	SwapSecondaryImpl();
-}
-
-void AMyCharacter::SwapSecondaryImpl() const
 {
 	CharacterSwapHand(this, 2);
 }
@@ -897,20 +843,10 @@ void AMyCharacter::SwapMelee()
 		return;
 	}
 
-	ExecuteServer
-	(
-		this,
-		 &AMyCharacter::Server_SwapMelee,
-		 &AMyCharacter::SwapMeleeImpl
-	);
+	Server_SwapMelee();
 }
 
 void AMyCharacter::Server_SwapMelee_Implementation()
-{
-	SwapMeleeImpl();
-}
-
-void AMyCharacter::SwapMeleeImpl() const
 {
 	CharacterSwapHand(this, 3);
 }
@@ -922,20 +858,10 @@ void AMyCharacter::SwapUtility()
 		return;
 	}
 
-	ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_SwapUtility,
-		 &AMyCharacter::SwapUtilityImpl
-		);
+	Server_SwapUtility();
 }
 
 void AMyCharacter::Server_SwapUtility_Implementation()
-{
-	SwapUtilityImpl();
-}
-
-void AMyCharacter::SwapUtilityImpl() const
 {
 	CharacterSwapHand(this, 4);
 }
@@ -947,20 +873,10 @@ void AMyCharacter::SwapBomb()
 		return;
 	}
 
-	ExecuteServer
-		(
-		 this,
-		 &AMyCharacter::Server_SwapBomb,
-		 &AMyCharacter::SwapBombImpl
-		);
+	Server_SwapBomb();
 }
 
 void AMyCharacter::Server_SwapBomb_Implementation()
-{
-	SwapBombImpl();
-}
-
-void AMyCharacter::SwapBombImpl() const
 {
 	CharacterSwapHand(this, 5);
 }
@@ -1003,9 +919,7 @@ void AMyCharacter::Pitch(const float Value)
 
 bool AMyCharacter::IsBuyMenuOpened() const
 {
-	const auto& HUD = Cast<AMyInGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD());
-
-	if (HUD)
+	if (const auto& HUD = Cast<AMyInGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
 	{
 		return HUD->IsBuyMenuOpened();
 	}
