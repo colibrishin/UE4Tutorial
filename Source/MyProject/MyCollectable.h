@@ -68,6 +68,9 @@ protected:
 	void Client_TryAttachItem(AMyCharacter* Character);
 	virtual void Client_TryAttachItem_Implementation(AMyCharacter* Character);
 
+	UFUNCTION(Reliable, Client)
+	void Client_UnbindInterruption();
+
 	virtual bool PreUse(class AMyCharacter* Character);
 	virtual bool PostUse(class AMyCharacter* Character);
 

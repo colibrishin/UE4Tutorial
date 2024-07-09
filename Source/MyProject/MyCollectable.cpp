@@ -69,6 +69,8 @@ void AMyCollectable::Server_Drop_Implementation()
 	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
 	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
 
+	Client_UnbindInterruption();
+
 	DropBeforeCharacter();
 
 	GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
@@ -236,8 +238,15 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 
 void AMyCollectable::Client_TryAttachItem_Implementation(AMyCharacter* Character)
 {
-	OnInteractInterruptedHandle = Character->BindOnInteractInterrupted(this, &AMyCollectable::Client_InteractInterrupted);
-	OnUseInterruptedHandle = Character->BindOnUseInterrupted(this, &AMyCollectable::Client_UseInterrupted);
+	OnInteractInterruptedHandle = Character->BindOnInteractInterrupted(this, &AMyCollectable::Server_InteractInterrupted);
+	OnUseInterruptedHandle = Character->BindOnUseInterrupted(this, &AMyCollectable::Server_UseInterrupted);
+}
+
+void AMyCollectable::Client_UnbindInterruption_Implementation()
+{
+	const auto& MyCharacter = GetItemOwner();
+	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
+	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
 }
 
 bool AMyCollectable::PreUse(AMyCharacter* Character)
