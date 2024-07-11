@@ -789,6 +789,11 @@ void AMyCharacter::AttachArmCollectable(class AMyCollectable* Previous, class AM
 			HandCollectable->GetMesh()->SetOnlyOwnerSee(true);
 			HandCollectable->GetMesh()->SetCastShadow(false);
 
+			if (const auto& Weapon = Cast<AMyWeapon>(HandCollectable))
+			{
+				Weapon->SetVisualDummy(true);
+			}
+
 			LOG_FUNC(LogTemp, Warning, "Weapon attached to arm");
 		}
 		else

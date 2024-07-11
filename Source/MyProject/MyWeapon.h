@@ -97,7 +97,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	bool CanAttack;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bIsDummyVisually;
 
 	UPROPERTY(EditAnywhere)

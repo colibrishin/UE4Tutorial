@@ -38,6 +38,7 @@ void AMyWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyWeapon, ConsecutiveShots);
+	DOREPLIFETIME(AMyWeapon, bIsDummyVisually);
 }
 
 bool AMyWeapon::AttackInterruptedImpl()
