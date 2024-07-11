@@ -74,7 +74,6 @@ bool AMyAimableWeapon::TryAttachItem(AMyCharacter* Character)
 
 		MyCharacter->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
 		MyCharacter->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
-		// todo: unbind client side binding
 		OnFireReady.AddUniqueDynamic(MyCharacter, &AMyCharacter::ResetAttack);
 
 		Client_TryAttachItem(Character);
@@ -175,7 +174,6 @@ void AMyAimableWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 void AMyAimableWeapon::Client_TryAttachItem_Implementation(AMyCharacter* Character)
 {
 	Super::Client_TryAttachItem_Implementation(Character);
-	// todo: unbind client side binding
 	OnFireReady.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
 
 	const auto& LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0);
