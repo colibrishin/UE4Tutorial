@@ -93,6 +93,6 @@ void UMyBombProgressWidget::OnBombStateChanged(const EMyBombState NewState)
 	else
 	{
 		SetRenderOpacity(0.f);
-		RemoveFromViewport();
+		RemoveFromParent();
 	}
 }
