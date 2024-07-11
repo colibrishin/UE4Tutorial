@@ -68,7 +68,6 @@ void AMyCollectable::Server_Drop_Implementation()
 	const auto& MyCharacter = GetItemOwner();
 	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
 	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
-
 	Client_UnbindInterruption();
 
 	DropBeforeCharacter();
@@ -88,8 +87,6 @@ void AMyCollectable::Multi_Drop_Implementation()
 
 void AMyCollectable::Server_Interact_Implementation(AMyCharacter* Character)
 {
-	Super::Server_Interact_Implementation(Character);
-
 	LOG_FUNC(LogTemp, Warning, "Interact");
 
 	if (!PreInteract(Character))
@@ -109,8 +106,6 @@ void AMyCollectable::Server_Interact_Implementation(AMyCharacter* Character)
 
 void AMyCollectable::Server_Use_Implementation(AMyCharacter* Character)
 {
-	Super::Server_Use_Implementation(Character);
-
 	if (!PreUse(Character))
 	{
 		return;
@@ -129,13 +124,11 @@ void AMyCollectable::Server_Use_Implementation(AMyCharacter* Character)
 
 void AMyCollectable::Server_InteractInterrupted_Implementation()
 {
-	Super::Server_InteractInterrupted_Implementation();
 	LOG_FUNC(LogTemp, Warning, "InteractInterrupted");
 }
 
 void AMyCollectable::Server_UseInterrupted_Implementation()
 {
-	Super::Server_UseInterrupted_Implementation();
 	LOG_FUNC(LogTemp, Warning, "UseInterrupted");
 }
 

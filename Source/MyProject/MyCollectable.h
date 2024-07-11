@@ -3,13 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyInteractiveActor.h"
 
 #include "GameFramework/Actor.h"
 #include "MyCollectable.generated.h"
 
 UCLASS()
-class MYPROJECT_API AMyCollectable : public AMyInteractiveActor
+class MYPROJECT_API AMyCollectable : public AActor
 {
 	GENERATED_BODY()
 	
@@ -30,6 +29,18 @@ public:
 	UFUNCTION(Reliable, NetMulticast)
 	void Multi_Drop();
 
+	UFUNCTION(Reliable, Server)
+	void Server_Interact(AMyCharacter* Character);
+
+	UFUNCTION(Reliable, Server)
+	void Server_Use(AMyCharacter* Character);
+
+	UFUNCTION(Reliable, Server)
+	void Server_InteractInterrupted();
+
+	UFUNCTION(Reliable, Server)
+	void Server_UseInterrupted();
+
 	void Hide() const;
 	void Show() const;
 
@@ -49,16 +60,24 @@ protected:
 		int32 OtherBodyIndex, bool bFromSweep, class AMyCharacter* Character, const FHitResult& SweepResult
 	);
 
-	virtual void Server_Drop_Implementation();
 	virtual void Multi_Drop_Implementation();
 
-	virtual void Server_Interact_Implementation(class AMyCharacter* Character) override;
-	virtual void Server_Use_Implementation(class AMyCharacter* Character) override;
-	
-	virtual void Server_InteractInterrupted_Implementation() override;
-	virtual void Server_UseInterrupted_Implementation() override;
+	virtual void Server_Drop_Implementation();
 
-	virtual void Multi_Interact_Implementation(AMyCharacter* Character) override;
+	virtual void Client_TryAttachItem_Implementation(AMyCharacter* Character);
+
+	virtual void Multi_Interact_Implementation(AMyCharacter* Character);
+
+	virtual void Server_Interact_Implementation(class AMyCharacter* Character);
+
+	virtual void Server_Use_Implementation(class AMyCharacter* Character);
+	
+	virtual void Server_InteractInterrupted_Implementation();
+
+	virtual void Server_UseInterrupted_Implementation();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Interact(AMyCharacter* Character);
 
 	virtual bool PreInteract(class AMyCharacter* Character);
 	virtual bool TryAttachItem(AMyCharacter* Character);
@@ -66,7 +85,6 @@ protected:
 
 	UFUNCTION(Reliable, Client)
 	void Client_TryAttachItem(AMyCharacter* Character);
-	virtual void Client_TryAttachItem_Implementation(AMyCharacter* Character);
 
 	UFUNCTION(Reliable, Client)
 	void Client_UnbindInterruption();
