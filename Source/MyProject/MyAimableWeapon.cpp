@@ -252,7 +252,9 @@ bool AMyAimableWeapon::AttackImpl()
 
 		const auto& PlayerCharacter = Cast<AMyCharacter>(GetItemOwner());
 
-		GetWorld()->GetTimerManager().SetTimer
+		if (!OnFireReadyTimerHandle.IsValid())
+		{
+			GetWorld()->GetTimerManager().SetTimer
 				(
 				 OnFireReadyTimerHandle,
 				 this,
@@ -260,6 +262,7 @@ bool AMyAimableWeapon::AttackImpl()
 				 GetWeaponStatComponent()->GetFireRate(),
 				 false
 				);
+		}
 
 		// Note that ConsecutiveShots is replicated.
 		++ConsecutiveShots;
@@ -309,11 +312,13 @@ bool AMyAimableWeapon::ReloadImpl()
 void AMyAimableWeapon::OnFireRateTimed()
 {
 	Super::OnFireRateTimed();
+	OnFireReadyTimerHandle.Invalidate();
 }
 
 void AMyAimableWeapon::OnReloadDone()
 {
 	Super::OnReloadDone();
+	OnReloadDoneTimerHandle.Invalidate();
 	Client_UpdateAmmoDisplay();
 }
 
