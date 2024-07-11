@@ -13,20 +13,19 @@
 #include "GameFramework/SpringArmComponent.h"
 
 #include "DrawDebugHelpers.h"
-#include "MyStatComponent.h"
-#include "MyWeapon.h"
 #include "MyAIController.h"
 #include "MyAimableWeapon.h"
 #include "MyC4.h"
 #include "MyCharacterWidget.h"
 #include "MyInGameHUD.h"
 #include "MyInventoryComponent.h"
+#include "MyStatComponent.h"
+#include "MyWeapon.h"
 
 #include "Components/WidgetComponent.h"
 
-#include "Net/UnrealNetwork.h"
 #include "NiagaraComponent.h"
-#include "WeaponSwapUtility.hpp"
+#include "Net/UnrealNetwork.h"
 
 #include "Engine/DamageEvents.h"
 #include "Engine/OverlapResult.h"
@@ -818,7 +817,7 @@ void AMyCharacter::SwapPrimary()
 
 void AMyCharacter::Server_SwapPrimary_Implementation()
 {
-	CharacterSwapHand(this, 1);
+	WeaponSwap(1);
 }
 
 void AMyCharacter::SwapSecondary()
@@ -833,7 +832,7 @@ void AMyCharacter::SwapSecondary()
 
 void AMyCharacter::Server_SwapSecondary_Implementation()
 {
-	CharacterSwapHand(this, 2);
+	WeaponSwap(2);
 }
 
 void AMyCharacter::SwapMelee()
@@ -848,7 +847,7 @@ void AMyCharacter::SwapMelee()
 
 void AMyCharacter::Server_SwapMelee_Implementation()
 {
-	CharacterSwapHand(this, 3);
+	WeaponSwap(3);
 }
 
 void AMyCharacter::SwapUtility()
@@ -863,7 +862,7 @@ void AMyCharacter::SwapUtility()
 
 void AMyCharacter::Server_SwapUtility_Implementation()
 {
-	CharacterSwapHand(this, 4);
+	WeaponSwap(4);
 }
 
 void AMyCharacter::SwapBomb()
@@ -878,7 +877,27 @@ void AMyCharacter::SwapBomb()
 
 void AMyCharacter::Server_SwapBomb_Implementation()
 {
-	CharacterSwapHand(this, 5);
+	WeaponSwap(5);
+}
+
+void AMyCharacter::WeaponSwap(const int32 Index) const
+{
+	const auto& Inventory = GetInventory();
+
+	if (const auto& Collectable = Inventory->Get(Index))
+	{
+		const auto& ThisPlayerState = GetPlayerState<AMyPlayerState>();
+
+		if (Collectable == ThisPlayerState->GetCurrentHand())
+		{
+			return;
+		}
+
+		if (IsValid(Collectable))
+		{
+			ThisPlayerState->SetCurrentItem(Collectable);
+		}
+	}
 }
 
 void AMyCharacter::Yaw(const float Value)
