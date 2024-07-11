@@ -177,6 +177,33 @@ void AMyAimableWeapon::Client_TryAttachItem_Implementation(AMyCharacter* Charact
 	Super::Client_TryAttachItem_Implementation(Character);
 	// todo: unbind client side binding
 	OnFireReady.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
+
+	const auto& LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	if (const auto& HUD = LocalPlayer->GetHUD<AMyInGameHUD>())
+	{
+		GetWeaponStatComponent()->OnAmmoConsumed.AddUniqueDynamic(HUD, &AMyInGameHUD::UpdateAmmo);
+	}
+}
+
+void AMyAimableWeapon::DropBeforeCharacter()
+{
+	Super::DropBeforeCharacter();
+	Client_DropBeforeCharacter();
+}
+
+void AMyAimableWeapon::Client_DropBeforeCharacter_Implementation()
+{
+	const auto& Character = Cast<AMyCharacter>(GetItemOwner());
+
+	OnFireReady.RemoveDynamic(Character, &AMyCharacter::ResetAttack);
+
+	const auto& LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	if (const auto& HUD = LocalPlayer->GetHUD<AMyInGameHUD>())
+	{
+		GetWeaponStatComponent()->OnAmmoConsumed.RemoveDynamic(HUD, &AMyInGameHUD::UpdateAmmo);
+	}
 }
 
 void AMyAimableWeapon::BeginPlay()
@@ -201,6 +228,7 @@ bool AMyAimableWeapon::AttackImpl()
 
 		FHitResult HitResult;
 
+		// Check hit in server side.
 		if (!IsDummyVisually() && HasAuthority() && Hitscan(CameraLocation, CameraForward, HitResult))
 		{
 			if (const auto& Character = Cast<AMyCharacter>(HitResult.GetActor())) 
@@ -222,7 +250,6 @@ bool AMyAimableWeapon::AttackImpl()
 			return false;
 		}
 
-		// todo: unbind the fire when player drops.
 		const auto& PlayerCharacter = Cast<AMyCharacter>(GetItemOwner());
 
 		GetWorld()->GetTimerManager().SetTimer
@@ -234,14 +261,11 @@ bool AMyAimableWeapon::AttackImpl()
 				 false
 				);
 
-		if (HasAuthority())
-		{
-			++ConsecutiveShots;
-		}
+		// Note that ConsecutiveShots is replicated.
+		++ConsecutiveShots;
 
 		Client_PlayAttackSound();
 		Client_Attack();
-		Client_UpdateAmmoDisplay();
 
 		return true;
 	}
@@ -379,19 +403,15 @@ void AMyAimableWeapon::Multi_TriggerBulletTrail_Implementation()
 
 void AMyAimableWeapon::Client_UpdateAmmoDisplay_Implementation() const
 {
+	// todo: no need to update the ammo display by server
+	// this should be bound with weapon component and hud 
 	if (!IsValid(GetItemOwner()))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Owner is not valid"));
 		return;
 	}
 
-	if (GetItemOwner() != GetWorld()->GetFirstPlayerController()->GetPawn())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Owner is not a player, Skip"));
-		return;
-	}
-
-	const auto& PlayerController = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+	const auto& PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
 	if (!IsValid(PlayerController))
 	{

@@ -34,6 +34,8 @@ protected:
 
 	virtual void Client_TryAttachItem_Implementation(AMyCharacter* Character) override;
 
+	virtual void DropBeforeCharacter() override;
+
 	virtual void BeginPlay() override;
 
 	virtual bool AttackImpl() override;
@@ -57,6 +59,9 @@ private:
 
 	UFUNCTION(Reliable, Client)
 	void Client_Reload();
+
+	UFUNCTION(Reliable, Client)
+	void Client_DropBeforeCharacter();
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	FVector Normal;
