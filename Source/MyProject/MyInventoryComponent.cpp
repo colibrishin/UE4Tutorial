@@ -116,7 +116,7 @@ void UMyInventoryComponent::DropAll()
 	{
 		if (Inventory[i] != nullptr)
 		{
-			Inventory[i]->Drop();
+			Inventory[i]->Server_Drop();
 			Inventory[i] = nullptr;
 		}
 	}

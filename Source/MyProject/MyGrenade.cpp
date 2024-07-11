@@ -7,11 +7,11 @@
 
 bool AMyGrenade::AttackImpl()
 {
-	if (!CookingTimerHandle.IsValid())
+	if (!OnCookingTimerHandle.IsValid())
 	{
 		GetWorld()->GetTimerManager().SetTimer
 				(
-				 CookingTimerHandle ,
+				 OnCookingTimerHandle ,
 				 this ,
 				 &AMyWeapon::OnCookingTimed ,
 				 GetWeaponStatComponent()->GetCookingTime() ,
@@ -65,7 +65,7 @@ void AMyGrenade::Client_CookThrowable_Implementation()
 {
 	GetWorld()->GetTimerManager().SetTimer
 			(
-			 CookingTimerHandle ,
+			 OnCookingTimerHandle ,
 			 this ,
 			 &AMyWeapon::OnCookingTimed ,
 			 GetWeaponStatComponent()->GetCookingTime() ,

@@ -8,6 +8,9 @@
 #include "MyPlayerState.h"
 #include "MyStatComponent.h"
 
+#include "Engine/OverlapResult.h"
+#include "Engine/DamageEvents.h"
+
 AMyFragGrenade::AMyFragGrenade()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -61,7 +64,7 @@ void AMyFragGrenade::OnExplosionTimerExpiredImpl()
 					MyPlayerState->TakeDamage
 					(
 						RatioDamage, 
-						{}, 
+						FDamageEvent{}, 
 						Cast<AMyPlayerController>(GetPreviousOwner()->GetOwner()), 
 						GetPreviousOwner()
 					);
