@@ -236,9 +236,9 @@ void AMyC4::Client_TryDefusing_Implementation(AMyCharacter* Character)
 void AMyC4::PresetPlant(AMyCharacter* Character)
 {
 	// Planting condition check is okay, set the status and event for plant.
+	// Note that, Preset series function will be executed same code for server and client.
 	Character->GetMovementComponent()->StopMovementImmediately();
 	Character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
-
 	GetItemOwner()->OnAttackStarted.AddUniqueDynamic(this, &AMyC4::Server_UseInterrupted);
 	
 	UE_LOG(LogTemp, Warning, TEXT("Bomb planting"));
@@ -263,6 +263,7 @@ void AMyC4::PresetPlant(AMyCharacter* Character)
 void AMyC4::PresetDefuse(AMyCharacter* Character)
 {
 	// Defusing condition check is okay, set the status and event for defusing.
+	// Note that, Preset series function will be executed same code for server and client.
 	Character->GetMovementComponent()->StopMovementImmediately();
 	Character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_None);
 
@@ -271,11 +272,7 @@ void AMyC4::PresetDefuse(AMyCharacter* Character)
 	if (HasAuthority())
 	{
 		// Attach to defusing player so we can do client replication.
-		if (!AttachToActor(Character, FAttachmentTransformRules::KeepWorldTransform))
-		{
-			LOG_FUNC(LogTemp, Error, "C4 cannot be attached to.");
-			return;
-		}
+		SetOwner(DefusingCharacter.Get());
 	}
 	
 	LOG_FUNC(LogTemp, Warning, "Establish Defusing handle");
@@ -293,35 +290,62 @@ void AMyC4::PresetDefuse(AMyCharacter* Character)
 	 false
 	);
 
+	SetDefusing(Character);
+
 	DefusingCharacter->OnAttackStarted.AddDynamic(this, &AMyC4::Server_InteractInterrupted);
 	DefusingCharacter->OnInteractInterrupted.AddDynamic(this, &AMyC4::Server_InteractInterrupted);
-	
-	SetDefusing(Character);
 }
 
 void AMyC4::Client_UnsetDefuse_Implementation(AMyCharacter* Character)
 {
-	// Remove event handler from client
+	// Remove observer and constraint on client side.
 	Character->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 	Character->OnAttackStarted.RemoveDynamic(this, &AMyC4::Server_InteractInterrupted);
 	Character->OnInteractInterrupted.RemoveDynamic(this, &AMyC4::Server_InteractInterrupted);
+	GetWorldTimerManager().ClearTimer(OnBombDefusingHandle);
+}
+
+void AMyC4::Client_UnsetPlanting_Implementation(AMyCharacter* Character)
+{
+	// Remove observer and constraint on server side.
+	GetItemOwner()->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+	GetItemOwner()->OnAttackStarted.RemoveDynamic(this, &AMyC4::Server_UseInterrupted);
+	GetWorldTimerManager().ClearTimer(OnBombPlantingHandle);
+}
+
+void AMyC4::Multi_StartBombTick_Implementation()
+{
+	// Execute bomb tick timer for every clients.
+	GetWorldTimerManager().SetTimer
+			(
+			 OnBombExplodedHandle ,
+			 this ,
+			 &AMyC4::OnBombExplodedImpl ,
+			 FullExplodingTime ,
+			 false
+			);
+
+	// Freeze the bomb position!
+	GetMesh()->SetSimulatePhysics(false);
 }
 
 void AMyC4::OnBombExplodedImpl()
 {
+	// Trigger by server.
 	if (HasAuthority())
 	{
 		if (IsDefusing())
 		{
+			// Remove observer and constraint.
 			DefusingCharacter->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
 			DefusingCharacter->OnAttackStarted.RemoveDynamic(this, &AMyC4::Server_InteractInterrupted);
 			DefusingCharacter->OnInteractInterrupted.RemoveDynamic(this, &AMyC4::Server_InteractInterrupted);
 
+			// Also unset the client side defusing status of defusing character.
 			Client_UnsetDefuse(DefusingCharacter.Get());
 
 			// Detach from defuser.
-			DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
+			SetOwner(nullptr);
 			SetDefusing(nullptr);
 		}
 
@@ -355,18 +379,23 @@ void AMyC4::OnBombPlantedImpl()
 		SetState(EMyBombState::Planted);
 		Elapsed = 0.f;
 
+		// Remove observer and constraint on server side.
 		GetItemOwner()->GetCharacterMovement()->SetMovementMode(EMovementMode::MOVE_Walking);
+		GetItemOwner()->OnAttackStarted.RemoveDynamic(this, &AMyC4::Server_UseInterrupted);
+		GetWorldTimerManager().ClearTimer(OnBombPlantingHandle);
+
+		// Remove observer and constraint on client side.
+		Client_UnsetPlanting(GetItemOwner());
 
 		Server_Drop();
 
-		GetWorldTimerManager().ClearTimer(OnBombPlantingHandle);
+		// Freeze the bomb position!
+		GetMesh()->SetSimulatePhysics(false);
 
-		GetWorldTimerManager().SetTimer(
-			OnBombExplodedHandle,
-			this,
-			&AMyC4::OnBombExplodedImpl,
-			FullExplodingTime,
-			false);
+		// Execute bomb tick timer for every clients.
+		Multi_StartBombTick();
+
+		SetOwner(nullptr);
 	}
 }
 
@@ -401,7 +430,7 @@ void AMyC4::OnBombDefusedImpl()
 		GetWorldTimerManager().ClearTimer(OnBombDefusingHandle);
 
 		// Detach from defuser.
-		DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+		SetOwner(nullptr);
 	}
 }
 
@@ -488,7 +517,13 @@ bool AMyC4::PostInteract(AMyCharacter* Character)
 
 bool AMyC4::TryAttachItem(AMyCharacter* Character)
 {
-	return Super::TryAttachItem(Character);
+	if (Super::TryAttachItem(Character))
+	{
+		SetOwner(Character);
+		return true;
+	}
+
+	return false;
 }
 
 bool AMyC4::PreUse(AMyCharacter* Character)
@@ -568,13 +603,13 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 		return false;
 	}
 
-	DefusingCharacter = Character;
-
 	if (!IsPlanted())
 	{
 		LOG_FUNC(LogTemp, Warning, "Bomb is not planted");
 		return false;
 	}
+
+	DefusingCharacter = Character;
 
 	if (!IsDefusable(false))
 	{
@@ -588,7 +623,8 @@ bool AMyC4::TryDefuse(AMyCharacter* Character)
 	// Set the defusing status in client side.
 	Client_TryDefusing(Character);
 
-	return true;
+	// Even if it is success, keep the post interact failing to not pick up.
+	return false;
 }
 
 void AMyC4::DefuseInterrupted()
@@ -604,8 +640,7 @@ void AMyC4::DefuseInterrupted()
 		GetWorldTimerManager().ClearTimer(OnBombDefusingHandle);
 
 		SetDefusing(nullptr);
-
-		DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		SetOwner(nullptr);
 	}
 }
 

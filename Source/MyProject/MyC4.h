@@ -77,9 +77,15 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void Client_UnsetDefuse(AMyCharacter* Character);
 
-	void         OnBombExplodedImpl();
-	void         OnBombPlantedImpl();
-	void         OnBombDefusedImpl();
+	UFUNCTION(Client, Reliable)
+	void Client_UnsetPlanting(AMyCharacter* Character);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_StartBombTick();
+
+	void OnBombExplodedImpl();
+	void OnBombPlantedImpl();
+	void OnBombDefusedImpl();
 
 	virtual void Destroyed() override;
 
