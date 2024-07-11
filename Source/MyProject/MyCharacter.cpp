@@ -325,6 +325,7 @@ void AMyCharacter::Server_Attack_Implementation(const float Value)
 
 	CanAttack = false;
 	GetCharacterMovement()->MaxWalkSpeed = 150.f;
+	PreviousAttack = Value;
 
 	Client_Attack();
 }
@@ -511,8 +512,6 @@ void AMyCharacter::Attack(const float Value)
 		Server_AttackInterrupted(Value);
 		return;
 	}
-
-	PreviousAttack = Value;
 
 	if (Value == 0.f)
 	{
