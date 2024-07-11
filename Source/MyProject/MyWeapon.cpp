@@ -20,6 +20,9 @@ AMyWeapon::AMyWeapon() : CanReload(true), CanAttack(true)
 	PrimaryActorTick.bCanEverTick = true;
 
 	WeaponStatComponent = CreateDefaultSubobject<UMyWeaponStatComponent>(TEXT("WeaponStatComponent"));
+	WeaponStatComponent->SetNetAddressable();
+	WeaponStatComponent->SetIsReplicated(true);
+	AddOwnedComponent(WeaponStatComponent);
 }
 
 // Called when the game starts or when spawned
@@ -37,6 +40,7 @@ void AMyWeapon::PostInitializeComponents()
 void AMyWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyWeapon, WeaponStatComponent);
 	DOREPLIFETIME(AMyWeapon, ConsecutiveShots);
 	DOREPLIFETIME(AMyWeapon, bIsDummyVisually);
 }

@@ -103,7 +103,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* WeaponImage;
 
-	UPROPERTY(EditAnywhere, Category = "Weapon")
+	UPROPERTY(EditAnywhere, Category = "Weapon", Replicated)
 	class UMyWeaponStatComponent* WeaponStatComponent;
 
 };
