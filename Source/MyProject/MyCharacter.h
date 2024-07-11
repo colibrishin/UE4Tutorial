@@ -177,6 +177,8 @@ private:
 	UFUNCTION(Server, Reliable)
 	void Server_SwapBomb();
 
+	void WeaponSwap(const int32 Index) const;
+
 	// ============ End of Swap ============
 
 	void Yaw(const float Value);
