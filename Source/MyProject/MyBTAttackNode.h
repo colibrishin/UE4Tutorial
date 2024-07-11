@@ -25,6 +25,10 @@ protected:
 	virtual void OnInstanceCreated(UBehaviorTreeComponent& OwnerComp) override;
 
 private:
+
+	UFUNCTION()
+	void OnAttackEnded();
+
 	bool bIsAttacking;
 
 };

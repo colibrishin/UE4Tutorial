@@ -57,8 +57,10 @@ void UMyBTAttackNode::OnInstanceCreated(UBehaviorTreeComponent& OwnerComp)
 
 	if (!IsValid(AIOwner)) { return; }
 
-	AIOwner->BindOnAttackEnded([this]()
-	{
-		bIsAttacking = false;
-	});
+	AIOwner->OnAttackEnded.AddUniqueDynamic(this, &UMyBTAttackNode::OnAttackEnded);
+}
+
+void UMyBTAttackNode::OnAttackEnded()
+{
+	bIsAttacking = false;
 }
