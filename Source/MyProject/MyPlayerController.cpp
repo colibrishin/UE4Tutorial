@@ -44,11 +44,11 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 			(
 			 -WeaponData->WeaponDataAsset->GetWeaponStat().Price
 			);
-		
+
 		const auto& GeneratedWeapon = GetWorld()->SpawnActor
 			(
-			 WeaponClass,
-			 &CharacterLocation,
+				WeaponClass,
+				&CharacterLocation,
 			 nullptr
 			);
 
@@ -58,7 +58,8 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 		{
 			GeneratedWeapon->SetReplicateMovement(true);
 			GeneratedWeapon->SetReplicates(true);
-			Cast<AMyWeapon>(GeneratedWeapon)->Interact(RequestCharacter);
+			GeneratedWeapon->SetOwner(RequestCharacter);
+			Cast<AMyWeapon>(GeneratedWeapon)->Server_Interact(RequestCharacter);
 		}
 	}
 }

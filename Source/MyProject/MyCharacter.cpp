@@ -507,6 +507,7 @@ void AMyCharacter::Attack(const float Value)
 	// todo: analogue input support?
 	if (PreviousAttack == 1.f && Value == 0.f)
 	{
+		PreviousAttack = Value;
 		Server_AttackInterrupted(Value);
 		return;
 	}
@@ -520,6 +521,7 @@ void AMyCharacter::Attack(const float Value)
 
 	if (!CanAttack)
 	{
+		LOG_FUNC(LogTemp, Log, "Unable to attack.");
 		return;
 	}
 
@@ -782,7 +784,6 @@ void AMyCharacter::AttachArmCollectable(class AMyCollectable* Previous, class AM
 		))
 		{
 			HandCollectable->SetOwner(this);
-			HandCollectable->bOnlyRelevantToOwner = true;
 			HandCollectable->SetReplicates(true);
 			HandCollectable->GetMesh()->SetVisibility(true);
 			HandCollectable->GetMesh()->SetOnlyOwnerSee(true);
