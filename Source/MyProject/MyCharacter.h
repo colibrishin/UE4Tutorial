@@ -60,6 +60,8 @@ public:
 
 	void Attack(const float Value);
 
+
+	UFUNCTION()
 	void ResetAttack();
 
 protected:

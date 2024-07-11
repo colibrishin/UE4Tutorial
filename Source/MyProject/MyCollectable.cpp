@@ -69,7 +69,6 @@ void AMyCollectable::Server_Drop_Implementation()
 	{
 		MyCharacter->OnInteractInterrupted.RemoveDynamic(this, &AMyCollectable::Server_InteractInterrupted);
 		MyCharacter->OnUseInterrupted.RemoveDynamic(this, &AMyCollectable::Server_UseInterrupted);
-		MyCharacter->OnAttackEnded.RemoveDynamic(MyCharacter, &AMyCharacter::AMyCharacter::ResetAttack);
 		Client_UnbindInterruption();
 	}
 
@@ -170,7 +169,6 @@ bool AMyCollectable::TryAttachItem(AMyCharacter* Character)
 		{
 			Character->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
 			Character->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
-			Character->OnAttackEnded.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
 			Client_TryAttachItem(Character);
 		}
 
@@ -237,7 +235,6 @@ void AMyCollectable::Client_TryAttachItem_Implementation(AMyCharacter* Character
 {
 	Character->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
 	Character->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
-	Character->OnAttackEnded.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
 }
 
 void AMyCollectable::Client_UnbindInterruption_Implementation()
@@ -245,7 +242,6 @@ void AMyCollectable::Client_UnbindInterruption_Implementation()
 	const auto& MyCharacter = GetItemOwner();
 	MyCharacter->OnInteractInterrupted.RemoveDynamic(this, &AMyCollectable::Server_InteractInterrupted);
 	MyCharacter->OnUseInterrupted.RemoveDynamic(this, &AMyCollectable::Server_UseInterrupted);
-	MyCharacter->OnAttackEnded.RemoveDynamic(MyCharacter, &AMyCharacter::ResetAttack);
 }
 
 bool AMyCollectable::PreUse(AMyCharacter* Character)
