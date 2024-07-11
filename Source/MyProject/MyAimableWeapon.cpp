@@ -239,6 +239,7 @@ bool AMyAimableWeapon::AttackImpl()
 			++ConsecutiveShots;
 		}
 
+		Client_PlayAttackSound();
 		Client_Attack();
 		Client_UpdateAmmoDisplay();
 
@@ -271,6 +272,7 @@ bool AMyAimableWeapon::ReloadImpl()
 				 false
 				);
 
+			Client_PlayReloadSound();
 			Client_Reload();
 		}
 

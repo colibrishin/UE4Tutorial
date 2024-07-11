@@ -129,6 +129,22 @@ void AMyWeapon::DropBeforeCharacter()
 	}
 }
 
+void AMyWeapon::Client_PlayAttackSound_Implementation()
+{
+	if (FireSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation(), GetActorRotation());
+	}
+}
+
+void AMyWeapon::Client_PlayReloadSound_Implementation()
+{
+	if (ReloadSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ReloadSound, GetActorLocation(), GetActorRotation());
+	}
+}
+
 bool AMyWeapon::Attack()
 {
 	if (CanAttack)

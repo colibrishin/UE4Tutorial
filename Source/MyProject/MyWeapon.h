@@ -72,9 +72,23 @@ protected:
 
 	virtual void DropBeforeCharacter() override;
 
+	UFUNCTION(Unreliable, Client)
+	void Client_PlayAttackSound();
+	virtual void Client_PlayAttackSound_Implementation();
+
+	UFUNCTION(Unreliable, Client)
+	void Client_PlayReloadSound();
+	virtual void Client_PlayReloadSound_Implementation();
+
 	UPROPERTY(VisibleAnywhere, Replicated)
 	uint32 ConsecutiveShots;
 
+
+	UPROPERTY(EditAnywhere, Category = "Weapon", meta=(AllowPrivateAccess = true))
+	class USoundBase* FireSound;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon", meta=(AllowPrivateAccess = true))
+	class USoundBase* ReloadSound;
 private:
 
 	UPROPERTY(VisibleAnywhere)

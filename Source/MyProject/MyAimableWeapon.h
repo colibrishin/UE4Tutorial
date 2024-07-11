@@ -32,6 +32,8 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void Client_TryAttachItem_Implementation(AMyCharacter* Character) override;
+
 	virtual void BeginPlay() override;
 
 	virtual bool AttackImpl() override;
