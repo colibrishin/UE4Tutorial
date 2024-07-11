@@ -94,10 +94,6 @@ protected:
 
 	virtual void DropBeforeCharacter();
 	virtual void DropLocation();
-	
-	FDelegateHandle OnInteractInterruptedHandle;
-
-	FDelegateHandle OnUseInterruptedHandle;
 
 public:	
 	// Called every frame

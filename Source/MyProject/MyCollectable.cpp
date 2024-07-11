@@ -65,10 +65,13 @@ void AMyCollectable::Server_Drop_Implementation()
 		return;
 	}
 
-	const auto& MyCharacter = GetItemOwner();
-	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
-	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
-	Client_UnbindInterruption();
+	if (const auto& MyCharacter = GetItemOwner())
+	{
+		MyCharacter->OnInteractInterrupted.RemoveDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+		MyCharacter->OnUseInterrupted.RemoveDynamic(this, &AMyCollectable::Server_UseInterrupted);
+		MyCharacter->OnAttackEnded.RemoveDynamic(MyCharacter, &AMyCharacter::AMyCharacter::ResetAttack);
+		Client_UnbindInterruption();
+	}
 
 	DropBeforeCharacter();
 
@@ -163,12 +166,13 @@ bool AMyCollectable::TryAttachItem(AMyCharacter* Character)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
 
-		const auto& MyCharacter = GetItemOwner();
-
-		OnInteractInterruptedHandle = MyCharacter->BindOnInteractInterrupted(this, &AMyCollectable::Server_InteractInterrupted);
-		OnUseInterruptedHandle = MyCharacter->BindOnUseInterrupted(this, &AMyCollectable::Server_UseInterrupted);
-
-		Client_TryAttachItem(Character);
+		if (const auto& MyCharacter = GetItemOwner())
+		{
+			Character->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+			Character->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
+			Character->OnAttackEnded.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
+			Client_TryAttachItem(Character);
+		}
 
 		return true;
 	}
@@ -231,15 +235,17 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 
 void AMyCollectable::Client_TryAttachItem_Implementation(AMyCharacter* Character)
 {
-	OnInteractInterruptedHandle = Character->BindOnInteractInterrupted(this, &AMyCollectable::Server_InteractInterrupted);
-	OnUseInterruptedHandle = Character->BindOnUseInterrupted(this, &AMyCollectable::Server_UseInterrupted);
+	Character->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+	Character->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
+	Character->OnAttackEnded.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
 }
 
 void AMyCollectable::Client_UnbindInterruption_Implementation()
 {
 	const auto& MyCharacter = GetItemOwner();
-	MyCharacter->UnbindOnInteractInterrupted(OnInteractInterruptedHandle);
-	MyCharacter->UnbindOnUseInterrupted(OnUseInterruptedHandle);
+	MyCharacter->OnInteractInterrupted.RemoveDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+	MyCharacter->OnUseInterrupted.RemoveDynamic(this, &AMyCollectable::Server_UseInterrupted);
+	MyCharacter->OnAttackEnded.RemoveDynamic(MyCharacter, &AMyCharacter::ResetAttack);
 }
 
 bool AMyCollectable::PreUse(AMyCharacter* Character)

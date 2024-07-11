@@ -12,8 +12,8 @@
 #include "GameFramework/Actor.h"
 #include "MyWeapon.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnFireReady)
-DECLARE_MULTICAST_DELEGATE(FOnReloadReady)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFireReady);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReloadReady);
 
 UCLASS()
 class MYPROJECT_API AMyWeapon : public AMyCollectable
@@ -23,9 +23,6 @@ class MYPROJECT_API AMyWeapon : public AMyCollectable
 public:	
 	// Sets default values for this actor's properties
 	AMyWeapon();
-
-	DECL_BINDON(OnFireReady)
-	DECL_BINDON(OnReloadReady)
 
 	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
 	UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
@@ -45,6 +42,20 @@ public:
 
 	uint32 GetConsecutiveShots() const { return ConsecutiveShots; }
 
+	virtual void OnFireRateTimed();
+	virtual void OnReloadDone();
+	virtual void OnCookingTimed();
+
+	FOnFireReady OnFireReady;
+
+	FOnReloadReady OnReloadReady;
+
+	FTimerHandle OnFireReadyTimerHandle;
+
+	FTimerHandle OnReloadDoneTimerHandle;
+
+	FTimerHandle OnCookingTimerHandle;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -59,20 +70,10 @@ protected:
 
 	virtual bool PostInteract(AMyCharacter* Character) override;
 
-	virtual void OnFireRateTimed();
-	virtual void OnReloadDone();
-	virtual void OnCookingTimed();
-
 	virtual void DropBeforeCharacter() override;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	uint32 ConsecutiveShots;
-
-	FTimerHandle FireRateTimerHandle;
-
-	FTimerHandle ReloadTimerHandle;
-
-	FTimerHandle CookingTimerHandle;
 
 private:
 
@@ -87,10 +88,6 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* WeaponImage;
-	
-	FOnFireReady OnFireReady;
-
-	FOnReloadReady OnReloadReady;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	class UMyWeaponStatComponent* WeaponStatComponent;

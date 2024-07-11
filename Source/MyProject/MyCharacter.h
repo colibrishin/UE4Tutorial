@@ -9,11 +9,11 @@
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnAttackStarted)
-DECLARE_MULTICAST_DELEGATE(FOnAttackEnded)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnAiming, bool)
-DECLARE_MULTICAST_DELEGATE(FOnUseInterrupted)
-DECLARE_MULTICAST_DELEGATE(FOnInteractInterrupted)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackStarted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackEnded);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAiming, bool, bAim);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnUseInterrupted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractInterrupted);
 
 class UMyStatComponent;
 class AMyWeapon;
@@ -35,24 +35,32 @@ public:
 	// Sets default values for this character's properties
 	AMyCharacter();
 
-	DECL_BINDON(OnAttackStarted)
-	DECL_BINDON(OnAttackEnded)
-	DECL_BINDON(OnAiming, bool)
-	DECL_BINDON(OnUseInterrupted)
-	DECL_BINDON(OnInteractInterrupted)
-
 	class AMyWeapon* TryGetWeapon() const;
 	class AMyItem* TryGetItem() const;
 	class AMyCollectable* GetCurrentHand() const;
 	class USkeletalMeshComponent* GetArmMeshComponent() const;
 	class UMyInventoryComponent* GetInventory() const;
 	class UMyStatComponent* GetStatComponent() const;
+	
+	FOnAttackStarted OnAttackStarted;
+
+	FOnAttackEnded OnAttackEnded;
+
+	FOnAiming OnAiming;
+
+	FOnUseInterrupted OnUseInterrupted;
+
+	FOnInteractInterrupted OnInteractInterrupted;
 
 	float GetPitchInput() const { return PitchInput; }
 
 	void OnHandChanged(class AMyCollectable* Previous, class AMyCollectable* New, class AMyPlayerState* ThisPlayerState);
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	void Attack(const float Value);
+
+	void ResetAttack();
 
 protected:
 	// Called when the game starts or when spawned
@@ -80,8 +88,6 @@ private:
 
 	// ============ Attacking ============
 
-	void Attack(const float Value);
-
 	UFUNCTION(Server, Reliable)
 	void Server_Attack(const float Value);
 	UFUNCTION(Client, Reliable)
@@ -89,8 +95,6 @@ private:
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_MeleeAttack();
-
-	void ResetAttack();
 
 	int32 GetDamage() const;
 	void OnAttackAnimNotify();
@@ -234,17 +238,5 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class USoundWave* FootstepSound;
-
-	FOnAttackStarted OnAttackStarted;
-
-	FOnAttackEnded OnAttackEnded;
-
-	FOnAiming OnAiming;
-
-	FOnUseInterrupted OnUseInterrupted;
-
-	FOnInteractInterrupted OnInteractInterrupted;
-
-	FDelegateHandle OnFireReadyHandle;
 	
 };

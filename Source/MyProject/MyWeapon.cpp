@@ -42,12 +42,12 @@ void AMyWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 
 bool AMyWeapon::AttackInterruptedImpl()
 {
-	if (!FireRateTimerHandle.IsValid())
+	if (!OnFireReadyTimerHandle.IsValid())
 	{
 		CanAttack = true;
 	}
 
-	if (!ReloadTimerHandle.IsValid())
+	if (!OnReloadDoneTimerHandle.IsValid())
 	{
 		CanReload = true;
 	}
@@ -68,8 +68,8 @@ bool AMyWeapon::TryAttachItem(AMyCharacter* Character)
 
 		const auto& MyCharacter = GetItemOwner();
 
-		OnInteractInterruptedHandle = MyCharacter->BindOnInteractInterrupted(this, &AMyCollectable::Server_InteractInterrupted);
-		OnUseInterruptedHandle = MyCharacter->BindOnUseInterrupted(this, &AMyCollectable::Server_UseInterrupted);
+		MyCharacter->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+		MyCharacter->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
 
 		Client_TryAttachItem(Character);
 
@@ -98,7 +98,7 @@ void AMyWeapon::OnFireRateTimed()
 {
 	CanAttack = true;
 	OnFireReady.Broadcast();
-	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
+	OnFireReadyTimerHandle.Invalidate();
 }
 
 void AMyWeapon::OnReloadDone()
@@ -106,14 +106,14 @@ void AMyWeapon::OnReloadDone()
 	CanAttack = true;
 	CanReload = true;
 	OnReloadReady.Broadcast();
-	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+	OnFireReadyTimerHandle.Invalidate();
 }
 
 void AMyWeapon::OnCookingTimed()
 {
 	CanAttack = false;
 	CanReload = false;
-	GetWorld()->GetTimerManager().ClearTimer(CookingTimerHandle);
+	OnCookingTimerHandle.Invalidate();
 }
 
 void AMyWeapon::DropBeforeCharacter()
@@ -127,42 +127,6 @@ void AMyWeapon::DropBeforeCharacter()
 			PlayerState->SetCurrentWeapon(nullptr);
 		}
 	}
-}
-
-void AMyWeapon::Client_CookThrowable_Implementation()
-{
-	GetWorld()->GetTimerManager().SetTimer
-				(
-				 CookingTimerHandle,
-				 this,
-				 &AMyWeapon::OnCookingTimed,
-				 GetWeaponStatComponent()->GetCookingTime(),
-				 false
-				);
-}
-
-void AMyWeapon::Client_AttackRange_Implementation()
-{
-	GetWorld()->GetTimerManager().SetTimer
-				(
-				 FireRateTimerHandle,
-				 this,
-				 &AMyWeapon::OnFireRateTimed,
-				 GetWeaponStatComponent()->GetFireRate(),
-				 false
-				);
-}
-
-void AMyWeapon::Client_ReloadRange_Implementation()
-{
-	GetWorld()->GetTimerManager().SetTimer
-			(
-			 ReloadTimerHandle ,
-			 this ,
-			 &AMyWeapon::OnReloadDone ,
-			 GetWeaponStatComponent()->GetReloadTime() ,
-			 false
-			);
 }
 
 bool AMyWeapon::Attack()

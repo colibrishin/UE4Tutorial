@@ -72,8 +72,9 @@ bool AMyAimableWeapon::TryAttachItem(AMyCharacter* Character)
 
 		const auto& MyCharacter = GetItemOwner();
 
-		OnInteractInterruptedHandle = MyCharacter->BindOnInteractInterrupted(this, &AMyCollectable::Server_InteractInterrupted);
-		OnUseInterruptedHandle = MyCharacter->BindOnUseInterrupted(this, &AMyCollectable::Server_UseInterrupted);
+		MyCharacter->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+		MyCharacter->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
+		MyCharacter->OnAttackEnded.AddUniqueDynamic(MyCharacter, &AMyCharacter::ResetAttack);
 
 		Client_TryAttachItem(Character);
 
@@ -213,9 +214,12 @@ bool AMyAimableWeapon::AttackImpl()
 			return false;
 		}
 
+		// todo: unbind the fire when player drops.
+		const auto& PlayerCharacter = Cast<AMyCharacter>(GetItemOwner());
+
 		GetWorld()->GetTimerManager().SetTimer
 				(
-				 FireRateTimerHandle,
+				 OnFireReadyTimerHandle,
 				 this,
 				 &AMyWeapon::OnFireRateTimed,
 				 GetWeaponStatComponent()->GetFireRate(),
@@ -248,11 +252,11 @@ bool AMyAimableWeapon::ReloadImpl()
 			return false;
 		}
 
-		if (!ReloadTimerHandle.IsValid())
+		if (!OnReloadDoneTimerHandle.IsValid())
 		{
 			GetWorld()->GetTimerManager().SetTimer
 				(
-				 ReloadTimerHandle ,
+				 OnReloadDoneTimerHandle ,
 				 this ,
 				 &AMyWeapon::OnReloadDone ,
 				 GetWeaponStatComponent()->GetReloadTime() ,
@@ -312,7 +316,7 @@ void AMyAimableWeapon::Client_Reload_Implementation()
 {
 	GetWorld()->GetTimerManager().SetTimer
 			(
-			 ReloadTimerHandle ,
+			 OnReloadDoneTimerHandle ,
 			 this ,
 			 &AMyWeapon::OnReloadDone ,
 			 GetWeaponStatComponent()->GetReloadTime() ,
@@ -322,9 +326,11 @@ void AMyAimableWeapon::Client_Reload_Implementation()
 
 void AMyAimableWeapon::Client_Attack_Implementation()
 {
+	LOG_FUNC(LogTemp, Log, "Client side attack triggered");
+
 	GetWorld()->GetTimerManager().SetTimer
 			(
-			 FireRateTimerHandle ,
+			 OnFireReadyTimerHandle ,
 			 this ,
 			 &AMyWeapon::OnFireRateTimed ,
 			 GetWeaponStatComponent()->GetFireRate() ,

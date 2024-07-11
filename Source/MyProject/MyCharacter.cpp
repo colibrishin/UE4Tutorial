@@ -300,8 +300,6 @@ void AMyCharacter::Server_Attack_Implementation(const float Value)
 			{
 			case EMyWeaponType::Range:
 				LOG_FUNC(LogTemp, Warning, "Range Attack");
-				// todo: unbind the fire when player drops.
-				OnFireReadyHandle = TryGetWeapon()->BindOnFireReady(this, &AMyCharacter::ResetAttack);
 				break;
 			case EMyWeaponType::Melee:
 				LOG_FUNC(LogTemp, Warning, "Melee Attack");
@@ -513,6 +511,8 @@ void AMyCharacter::Attack(const float Value)
 		return;
 	}
 
+	PreviousAttack = Value;
+
 	if (Value == 0.f)
 	{
 		return;
@@ -549,11 +549,6 @@ void AMyCharacter::ResetAttack()
 	UE_LOG(LogTemp, Warning, TEXT("Reset Attack"));
 	CanAttack = true;
 	OnAttackEnded.Broadcast();
-
-	if (IsValid(TryGetWeapon()))
-	{
-		TryGetWeapon()->UnbindOnFireReady(OnFireReadyHandle);
-	}
 	
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
 }
@@ -629,9 +624,9 @@ void AMyCharacter::OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, 
 		if (IsValid(Previous))
 		{
 			if (const auto& WeaponCast = Cast<AMyWeapon>(Previous);
-				IsValid(WeaponCast) && OnFireReadyHandle.IsValid())
+				IsValid(WeaponCast))
 			{
-				WeaponCast->UnbindOnFireReady(OnFireReadyHandle);
+				WeaponCast->OnFireReady.RemoveDynamic(WeaponCast, &AMyWeapon::OnFireRateTimed);
 			}
 		}
 		
