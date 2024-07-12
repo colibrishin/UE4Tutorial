@@ -10,6 +10,8 @@
 #include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 
+#include "Engine/OverlapResult.h"
+
 inline bool IsPlayerInBuyZone(AMyCharacter* Character)
 {
 	const FCollisionQueryParams Params {NAME_None, false, Character};

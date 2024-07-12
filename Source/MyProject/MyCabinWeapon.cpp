@@ -26,27 +26,3 @@ AMyCabinWeapon::AMyCabinWeapon()
 		GetSkeletalMeshComponent()->SetSkeletalMesh(SK_Model.Object);
 	}
 }
-
-bool AMyCabinWeapon::AttackImpl()
-{
-	const auto& Result = Super::AttackImpl();
-
-	if (Result)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation(), GetActorRotation());
-	}
-
-	return Result;
-}
-
-bool AMyCabinWeapon::ReloadImpl()
-{
-	const auto& Result = Super::ReloadImpl();
-
-	if (Result)
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, ReloadSound, GetActorLocation(), GetActorRotation());
-	}
-
-	return Result;
-}

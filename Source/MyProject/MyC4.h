@@ -48,9 +48,7 @@ public:
 		OnBombStateChanged.Broadcast(BombState);
 	}
 
-	virtual void InteractInterrupted() override;
 	void         PlantInterrupted();
-	virtual void UseInterrupted() override;
 
 	DECL_BINDON(OnBombStateChanged, EMyBombState)
 	DECL_BINDON(OnBombPicked, class AMyCharacter*)
@@ -61,21 +59,39 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void ClientInteractImpl(AMyCharacter* Character) override;
-	virtual void ClientUseImpl(AMyCharacter* Character) override;
+	virtual void Server_InteractInterrupted_Implementation() override;
+	virtual void Server_UseInterrupted_Implementation() override;
 
-	virtual void ClientInteractInterruptedImpl() override;
-	virtual void ClientUseInterruptedImpl() override;
+	virtual void Server_Interact_Implementation(AMyCharacter* Character) override;
+	virtual void Server_Use_Implementation(AMyCharacter* Character) override;
 
-	void         OnBombExplodedImpl();
-	void         OnBombPlantedImpl();
-	void         OnBombDefusedImpl();
+	UFUNCTION(Client, Reliable)
+	void Client_TryPlanting(AMyCharacter* Character);
+
+	UFUNCTION(Client, Reliable)
+	void Client_TryDefusing(AMyCharacter* Character);
+
+	void PresetPlant(AMyCharacter* Character);
+	void PresetDefuse(AMyCharacter* Character);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UnsetDefuse(AMyCharacter* Character);
+
+	UFUNCTION(Client, Reliable)
+	void Client_UnsetPlanting(AMyCharacter* Character);
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_StartBombTick();
+
+	void OnBombExplodedImpl();
+	void OnBombPlantedImpl();
+	void OnBombDefusedImpl();
 
 	virtual void Destroyed() override;
 
 	virtual bool PreInteract(AMyCharacter* Character) override;
 	virtual bool PostInteract(AMyCharacter* Character) override;
-	virtual bool TryAttachItem(const AMyCharacter* Character) override;
+	virtual bool TryAttachItem(AMyCharacter* Character) override;
 
 	virtual bool PreUse(AMyCharacter* Character) override;
 	virtual bool PostUse(AMyCharacter* Character) override;

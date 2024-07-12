@@ -16,6 +16,8 @@
 
 #include "Kismet/GameplayStatics.h"
 
+#include "NiagaraSystem.h"
+#include "Engine/DamageEvents.h"
 #include "Net/UnrealNetwork.h"
 
 AMyAimableWeapon::AMyAimableWeapon()
@@ -49,13 +51,13 @@ bool AMyAimableWeapon::PostInteract(AMyCharacter* Character)
 
 	if (Result)
 	{
-		UpdateAmmoDisplay();
+		Client_UpdateAmmoDisplay();
 	}
 	
 	return Result;
 }
 
-bool AMyAimableWeapon::TryAttachItem(const AMyCharacter* Character)
+bool AMyAimableWeapon::TryAttachItem(AMyCharacter* Character)
 {
 	LOG_FUNC(LogTemp, Warning, "TryAttachItem");
 
@@ -67,13 +69,20 @@ bool AMyAimableWeapon::TryAttachItem(const AMyCharacter* Character)
 		))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+
+		const auto& MyCharacter = GetItemOwner();
+
+		MyCharacter->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+		MyCharacter->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
+		OnFireReady.AddUniqueDynamic(MyCharacter, &AMyCharacter::ResetAttack);
+
+		Client_TryAttachItem(Character);
+
 		return true;
 	}
 	else
 	{
-		const FVector PreviousLocation = GetActorLocation();
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
-		SetActorLocation(PreviousLocation);
 		return false;
 	}
 }
@@ -162,6 +171,39 @@ void AMyAimableWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 	DOREPLIFETIME(AMyAimableWeapon, Normal);
 }
 
+void AMyAimableWeapon::Client_TryAttachItem_Implementation(AMyCharacter* Character)
+{
+	Super::Client_TryAttachItem_Implementation(Character);
+	OnFireReady.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
+
+	const auto& LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	if (const auto& HUD = LocalPlayer->GetHUD<AMyInGameHUD>())
+	{
+		GetWeaponStatComponent()->OnAmmoConsumed.AddUniqueDynamic(HUD, &AMyInGameHUD::UpdateAmmo);
+	}
+}
+
+void AMyAimableWeapon::DropBeforeCharacter()
+{
+	Super::DropBeforeCharacter();
+	Client_DropBeforeCharacter();
+}
+
+void AMyAimableWeapon::Client_DropBeforeCharacter_Implementation()
+{
+	const auto& Character = Cast<AMyCharacter>(GetItemOwner());
+
+	OnFireReady.RemoveDynamic(Character, &AMyCharacter::ResetAttack);
+
+	const auto& LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+
+	if (const auto& HUD = LocalPlayer->GetHUD<AMyInGameHUD>())
+	{
+		GetWeaponStatComponent()->OnAmmoConsumed.RemoveDynamic(HUD, &AMyInGameHUD::UpdateAmmo);
+	}
+}
+
 void AMyAimableWeapon::BeginPlay()
 {
 	Super::BeginPlay();
@@ -184,9 +226,10 @@ bool AMyAimableWeapon::AttackImpl()
 
 		FHitResult HitResult;
 
+		// Check hit in server side.
 		if (!IsDummyVisually() && HasAuthority() && Hitscan(CameraLocation, CameraForward, HitResult))
 		{
-			if (const auto& Character = Cast<AMyCharacter>(HitResult.Actor)) 
+			if (const auto& Character = Cast<AMyCharacter>(HitResult.GetActor())) 
 			{
 				Character->TakeDamage
 				(
@@ -198,36 +241,32 @@ bool AMyAimableWeapon::AttackImpl()
 			}
 		}
 
-		UpdateAmmoDisplay();
-
-		const auto& MuzzleLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle"));
-		const auto& WeaponRange = GetWeaponStatComponent()->GetRange();
-
-		FVector TrailNormal = Normal;
-
-		if (IsDummyVisually())
-		{
-			const auto& MainWeapon = GetItemOwner()->TryGetWeapon();
-			TrailNormal = Cast<AMyAimableWeapon>(MainWeapon)->Normal;
-		}
-
-		const auto& EndLocation = CameraLocation + (TrailNormal * WeaponRange);
-		const auto& Delta       = EndLocation - MuzzleLocation;
-		const auto& DeltaNormal = Delta.GetSafeNormal();
-
-		const auto& Yaw = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Y, DeltaNormal.X));
-		const auto& Pitch = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Z, DeltaNormal.X));
-		const auto& Roll = 0.f;
-
-		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Yaw"), Yaw);
-		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Pitch"), Pitch);
-		BulletTrail->SetNiagaraVariableFloat(TEXT("User.Roll"), Roll);
-		BulletTrail->Activate();
+		Multi_TriggerBulletTrail();
 
 		if (IsDummyVisually())
 		{
 			return false;
 		}
+
+		const auto& PlayerCharacter = Cast<AMyCharacter>(GetItemOwner());
+
+		if (!OnFireReadyTimerHandle.IsValid())
+		{
+			GetWorld()->GetTimerManager().SetTimer
+				(
+				 OnFireReadyTimerHandle,
+				 this,
+				 &AMyWeapon::OnFireRateTimed,
+				 GetWeaponStatComponent()->GetFireRate(),
+				 false
+				);
+		}
+
+		// Note that ConsecutiveShots is replicated.
+		++ConsecutiveShots;
+
+		Client_PlayAttackSound();
+		Client_Attack();
 
 		return true;
 	}
@@ -247,6 +286,21 @@ bool AMyAimableWeapon::ReloadImpl()
 			return false;
 		}
 
+		if (!OnReloadDoneTimerHandle.IsValid())
+		{
+			GetWorld()->GetTimerManager().SetTimer
+				(
+				 OnReloadDoneTimerHandle ,
+				 this ,
+				 &AMyWeapon::OnReloadDone ,
+				 GetWeaponStatComponent()->GetReloadTime() ,
+				 false
+				);
+
+			Client_PlayReloadSound();
+			Client_Reload();
+		}
+
 		return true;
 	}
 
@@ -256,12 +310,14 @@ bool AMyAimableWeapon::ReloadImpl()
 void AMyAimableWeapon::OnFireRateTimed()
 {
 	Super::OnFireRateTimed();
+	OnFireReadyTimerHandle.Invalidate();
 }
 
 void AMyAimableWeapon::OnReloadDone()
 {
 	Super::OnReloadDone();
-	UpdateAmmoDisplay();
+	OnReloadDoneTimerHandle.Invalidate();
+	Client_UpdateAmmoDisplay();
 }
 
 float AMyAimableWeapon::GetHSpreadDegree(const float Point, const float OscillationRate, const float Min, const float Max)
@@ -293,21 +349,72 @@ float AMyAimableWeapon::GetVSpreadDegree(const float Point, const float Oscillat
 	return FMath::RadiansToDegrees(ClampQDV);
 }
 
-void AMyAimableWeapon::UpdateAmmoDisplay() const
+void AMyAimableWeapon::Client_Reload_Implementation()
 {
+	GetWorld()->GetTimerManager().SetTimer
+			(
+			 OnReloadDoneTimerHandle ,
+			 this ,
+			 &AMyWeapon::OnReloadDone ,
+			 GetWeaponStatComponent()->GetReloadTime() ,
+			 false
+			);
+}
+
+void AMyAimableWeapon::Client_Attack_Implementation()
+{
+	LOG_FUNC(LogTemp, Log, "Client side attack triggered");
+
+	GetWorld()->GetTimerManager().SetTimer
+			(
+			 OnFireReadyTimerHandle ,
+			 this ,
+			 &AMyWeapon::OnFireRateTimed ,
+			 GetWeaponStatComponent()->GetFireRate() ,
+			 false
+			);
+}
+
+void AMyAimableWeapon::Multi_TriggerBulletTrail_Implementation()
+{
+	const auto& PawnCamera = GetItemOwner()->FindComponentByClass<UCameraComponent>();
+	const auto& CameraLocation = PawnCamera->GetComponentLocation();
+	const auto& MuzzleLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle"));
+	const auto& WeaponRange = GetWeaponStatComponent()->GetRange();
+
+	FVector TrailNormal = Normal;
+
+	if (IsDummyVisually())
+	{
+		const auto& MainWeapon = GetItemOwner()->TryGetWeapon();
+		TrailNormal = Cast<AMyAimableWeapon>(MainWeapon)->Normal;
+	}
+
+	const auto& EndLocation = CameraLocation + (TrailNormal * WeaponRange);
+	const auto& Delta       = EndLocation - MuzzleLocation;
+	const auto& DeltaNormal = Delta.GetSafeNormal();
+
+	const auto& Yaw = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Y, DeltaNormal.X));
+	const auto& Pitch = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Z, DeltaNormal.X));
+	const auto& Roll = 0.f;
+
+	BulletTrail->SetNiagaraVariableFloat(TEXT("User.Yaw"), Yaw);
+	BulletTrail->SetNiagaraVariableFloat(TEXT("User.Pitch"), Pitch);
+	BulletTrail->SetNiagaraVariableFloat(TEXT("User.Roll"), Roll);
+	BulletTrail->Activate();
+}
+
+void AMyAimableWeapon::Client_UpdateAmmoDisplay_Implementation() const
+{
+	// todo: no need to update the ammo display by server
+	// this should be bound with weapon component and hud 
 	if (!IsValid(GetItemOwner()))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Owner is not valid"));
 		return;
 	}
 
-	if (GetItemOwner() != GetWorld()->GetFirstPlayerController()->GetPawn())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Yellow, TEXT("Owner is not a player, Skip"));
-		return;
-	}
-
-	const auto& PlayerController = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+	const auto& PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
 
 	if (!IsValid(PlayerController))
 	{

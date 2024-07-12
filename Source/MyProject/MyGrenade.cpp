@@ -7,6 +7,20 @@
 
 bool AMyGrenade::AttackImpl()
 {
+	if (!OnCookingTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().SetTimer
+				(
+				 OnCookingTimerHandle ,
+				 this ,
+				 &AMyWeapon::OnCookingTimed ,
+				 GetWeaponStatComponent()->GetCookingTime() ,
+				 false
+				);
+
+		Client_CookThrowable();
+	}
+	
 	Charge();
 	return true;
 }
@@ -47,29 +61,34 @@ void AMyGrenade::OnExplosionTimerExpiredImpl()
 	
 }
 
+void AMyGrenade::Client_CookThrowable_Implementation()
+{
+	GetWorld()->GetTimerManager().SetTimer
+			(
+			 OnCookingTimerHandle ,
+			 this ,
+			 &AMyWeapon::OnCookingTimed ,
+			 GetWeaponStatComponent()->GetCookingTime() ,
+			 false
+			);
+}
+
 void AMyGrenade::Throw()
 {
-	ExecuteServer(this, 
-				   &AMyGrenade::Multi_Throw,
-				   &AMyGrenade::ThrowImpl);
+	if (IsExploded || IsThrown)
+	{
+		return;
+	}
+
+	IsThrown = true;
+
+	PreviousOwner = GetItemOwner();
+
+	GetSkeletalMeshComponent()->AddImpulse(FVector::ForwardVector * 1000.f, NAME_None, true);
+	Server_Drop();
 }
 
 void AMyGrenade::Charge()
-{
-	ExecuteServer
-		(
-		 this,
-		 &AMyGrenade::Multi_Charge,
-		 &AMyGrenade::ChargeImpl
-		);
-}
-
-void AMyGrenade::Multi_Charge_Implementation()
-{
-	ChargeImpl();
-}
-
-void AMyGrenade::ChargeImpl()
 {
 	GetWorldTimerManager().SetTimer
 	(
@@ -81,29 +100,9 @@ void AMyGrenade::ChargeImpl()
 	);
 }
 
-void AMyGrenade::Multi_Throw_Implementation()
-{
-	ThrowImpl();
-}
-
-void AMyGrenade::ThrowImpl()
-{
-	if (IsExploded || IsThrown)
-	{
-		return;
-	}
-
-	IsThrown = true;
-
-	PreviousOwner = GetItemOwner();
-
-	Drop();
-	GetSkeletalMeshComponent()->AddImpulse(FVector::ForwardVector * 1000.f, NAME_None, true);
-}
-
 void AMyGrenade::OnExplosionTimerExpired()
 {
-	LOG_FUNC_PRINTF(LogTemp, Warning, "Explosion Timer Expired");
+	UE_LOG(LogTemp, Warning, TEXT("%hs: %s"), __FUNCTION__, *FString::Printf(TEXT("Explosion Timer Expired")));
 	IsExploded = true;
 
 	// todo: explosion effect

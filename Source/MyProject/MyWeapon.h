@@ -12,8 +12,8 @@
 #include "GameFramework/Actor.h"
 #include "MyWeapon.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnFireReady)
-DECLARE_MULTICAST_DELEGATE(FOnReloadReady)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFireReady);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReloadReady);
 
 UCLASS()
 class MYPROJECT_API AMyWeapon : public AMyCollectable
@@ -23,9 +23,6 @@ class MYPROJECT_API AMyWeapon : public AMyCollectable
 public:	
 	// Sets default values for this actor's properties
 	AMyWeapon();
-
-	DECL_BINDON(OnFireReady)
-	DECL_BINDON(OnReloadReady)
 
 	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
 	UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
@@ -37,13 +34,27 @@ public:
 	bool AttackInterrupted();
 	bool Reload();
 
-	virtual bool TryAttachItem(const AMyCharacter* Character) override;
+	virtual bool TryAttachItem(AMyCharacter* Character) override;
 	UTexture2D*  GetWeaponImage() const { return WeaponImage; }
 
 	void SetVisualDummy(const bool NewDummy) { bIsDummyVisually = NewDummy; }
 	bool IsDummyVisually() const { return bIsDummyVisually; }
 
 	uint32 GetConsecutiveShots() const { return ConsecutiveShots; }
+
+	virtual void OnFireRateTimed();
+	virtual void OnReloadDone();
+	virtual void OnCookingTimed();
+
+	FOnFireReady OnFireReady;
+
+	FOnReloadReady OnReloadReady;
+
+	FTimerHandle OnFireReadyTimerHandle;
+
+	FTimerHandle OnReloadDoneTimerHandle;
+
+	FTimerHandle OnCookingTimerHandle;
 
 protected:
 	// Called when the game starts or when spawned
@@ -59,39 +70,40 @@ protected:
 
 	virtual bool PostInteract(AMyCharacter* Character) override;
 
-	virtual void OnFireRateTimed();
-	virtual void OnReloadDone();
-	virtual void OnCookingTimed();
+	virtual void DropBeforeCharacter() override;
 
-	virtual void DropImpl() override;
+	UFUNCTION(Unreliable, Client)
+	void Client_PlayAttackSound();
+	virtual void Client_PlayAttackSound_Implementation();
 
+	UFUNCTION(Unreliable, Client)
+	void Client_PlayReloadSound();
+	virtual void Client_PlayReloadSound_Implementation();
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	uint32 ConsecutiveShots;
+
+
+	UPROPERTY(EditAnywhere, Category = "Weapon", meta=(AllowPrivateAccess = true))
+	class USoundBase* FireSound;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon", meta=(AllowPrivateAccess = true))
+	class USoundBase* ReloadSound;
 private:
+
 	UPROPERTY(VisibleAnywhere)
 	bool CanReload;
 
 	UPROPERTY(VisibleAnywhere)
 	bool CanAttack;
 
-	UPROPERTY(VisibleAnywhere)
-	bool bIsDummyVisually;
-
 	UPROPERTY(VisibleAnywhere, Replicated)
-	uint32 ConsecutiveShots;
+	bool bIsDummyVisually;
 
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* WeaponImage;
 
-	FTimerHandle FireRateTimerHandle;
-
-	FTimerHandle ReloadTimerHandle;
-
-	FTimerHandle CookingTimerHandle;
-	
-	FOnFireReady OnFireReady;
-
-	FOnReloadReady OnReloadReady;
-
-	UPROPERTY(EditAnywhere, Category = "Weapon")
+	UPROPERTY(EditAnywhere, Category = "Weapon", Replicated)
 	class UMyWeaponStatComponent* WeaponStatComponent;
 
 };

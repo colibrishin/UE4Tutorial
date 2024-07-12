@@ -31,25 +31,3 @@ AMyCV47Weapon::AMyCV47Weapon()
 		GetSkeletalMeshComponent()->SetSkeletalMesh(SK_Model.Object);
 	}
 }
-
-bool AMyCV47Weapon::AttackImpl()
-{
-	if (Super::AttackImpl())
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation(), GetActorRotation());
-		return true;
-	}
-
-	return false;
-}
-
-bool AMyCV47Weapon::ReloadImpl()
-{
-	if (Super::ReloadImpl())
-	{
-		UGameplayStatics::PlaySoundAtLocation(this, ReloadSound, GetActorLocation(), GetActorRotation());
-		return true;
-	}
-
-	return false;
-}

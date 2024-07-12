@@ -3,13 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyInteractiveActor.h"
 
 #include "GameFramework/Actor.h"
 #include "MyCollectable.generated.h"
 
 UCLASS()
-class MYPROJECT_API AMyCollectable : public AMyInteractiveActor
+class MYPROJECT_API AMyCollectable : public AActor
 {
 	GENERATED_BODY()
 	
@@ -24,13 +23,31 @@ public:
 	class UBoxComponent* GetCollider() const { return Collider; }
 	class AMyCharacter* GetItemOwner() const;
 
-	bool Drop();
+	UFUNCTION(Reliable, Server)
+	void Server_Drop();
+
+	UFUNCTION(Reliable, NetMulticast)
+	void Multi_Drop();
+
+	UFUNCTION(Reliable, Server)
+	void Server_Interact(AMyCharacter* Character);
+
+	UFUNCTION(Reliable, Server)
+	void Server_Use(AMyCharacter* Character);
+
+	UFUNCTION(Reliable, Server)
+	void Server_InteractInterrupted();
+
+	UFUNCTION(Reliable, Server)
+	void Server_UseInterrupted();
 
 	void Hide() const;
 	void Show() const;
 
 	void SetSkeletalMesh();
 	void SetStaticMesh();
+
+	bool IsBelongToCharacter() const;
 
 protected:
 	// Called when the game starts or when spawned
@@ -43,23 +60,40 @@ protected:
 		int32 OtherBodyIndex, bool bFromSweep, class AMyCharacter* Character, const FHitResult& SweepResult
 	);
 
-	virtual void InteractImpl(class AMyCharacter* Character) override;
-	virtual void UseImpl(class AMyCharacter* Character) override;
+	virtual void Multi_Drop_Implementation();
 
-	virtual void InteractInterruptedImpl() override;
-	virtual void UseInterruptedImpl() override;
+	virtual void Server_Drop_Implementation();
+
+	virtual void Client_TryAttachItem_Implementation(AMyCharacter* Character);
+
+	virtual void Multi_Interact_Implementation(AMyCharacter* Character);
+
+	virtual void Server_Interact_Implementation(class AMyCharacter* Character);
+
+	virtual void Server_Use_Implementation(class AMyCharacter* Character);
+	
+	virtual void Server_InteractInterrupted_Implementation();
+
+	virtual void Server_UseInterrupted_Implementation();
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_Interact(AMyCharacter* Character);
 
 	virtual bool PreInteract(class AMyCharacter* Character);
-	virtual bool TryAttachItem(const AMyCharacter* Character);
+	virtual bool TryAttachItem(AMyCharacter* Character);
 	virtual bool PostInteract(class AMyCharacter* Character);
+
+	UFUNCTION(Reliable, Client)
+	void Client_TryAttachItem(AMyCharacter* Character);
+
+	UFUNCTION(Reliable, Client)
+	void Client_UnbindInterruption();
 
 	virtual bool PreUse(class AMyCharacter* Character);
 	virtual bool PostUse(class AMyCharacter* Character);
 
-	virtual void DropImpl();
+	virtual void DropBeforeCharacter();
 	virtual void DropLocation();
-
-	bool IsBelongToCharacter() const;
 
 public:	
 	// Called every frame
@@ -82,9 +116,5 @@ private:
 
     UPROPERTY(VisibleAnywhere)
     class UMyCollectableComponent* CollectableComponent;
-
-	FDelegateHandle OnInteractInterruptedHandle;
-
-	FDelegateHandle OnUseInterruptedHandle;
 
 };

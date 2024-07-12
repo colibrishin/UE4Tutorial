@@ -10,6 +10,8 @@
 
 #include "MyWeaponStatComponent.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoConsumed, int32, CurrentAmmoCount, int32 , RemainingCount);
+
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYPROJECT_API UMyWeaponStatComponent : public UActorComponent
 {
@@ -49,16 +51,23 @@ public:
 	bool ConsumeAmmo();
 	void Reload();
 
+	FOnAmmoConsumed OnAmmoConsumed;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 	virtual void InitializeComponent() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 private:
 	FORCEINLINE const struct FMyRangeWeaponStat*     GetRangeStat() const;
 	FORCEINLINE const struct FMyMeleeWeaponStat*     GetMeleeStat() const;
 	FORCEINLINE const struct FMyThrowableWeaponStat* GetThrowableStat() const;
+
+	UFUNCTION()
+	void OnRep_AmmoConsumed() const;
 
 	UPROPERTY(EditAnywhere, Category=Stats)
 	int32 ID;
@@ -69,16 +78,16 @@ private:
 	UPROPERTY(VisibleAnywhere, Category=Stats)
 	int32 Damage;
 
-	UPROPERTY(VisibleAnywhere, Category=Stats)
+	UPROPERTY(VisibleAnywhere, Category=Stats, ReplicatedUsing=OnRep_AmmoConsumed)
 	int32 AmmoSpent;
 
-	UPROPERTY(VisibleAnywhere, Category=Stats)
+	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
 	int32 LoadedAmmoCount;
 
-	UPROPERTY(VisibleAnywhere, Category=Stats)
+	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
 	int32 AmmoPerLoad;
 
-	UPROPERTY(VisibleAnywhere, Category=Stats)
+	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
 	int32 TotalAmmoCount;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)

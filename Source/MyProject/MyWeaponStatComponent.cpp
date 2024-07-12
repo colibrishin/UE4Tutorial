@@ -10,6 +10,8 @@
 #include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 
+#include "Net/UnrealNetwork.h"
+
 // Sets default values for this component's properties
 UMyWeaponStatComponent::UMyWeaponStatComponent()
 	: ID(0),
@@ -130,12 +132,12 @@ bool UMyWeaponStatComponent::ConsumeAmmo()
 		}
 	case EMyWeaponType::Melee:
 		{
-			LOG_FUNC_PRINTF(LogTemp , Warning , "Melee weapon does not need to consume ammo");
+			UE_LOG(LogTemp, Warning, TEXT("%hs: %s"), __FUNCTION__, *FString::Printf(TEXT("Melee weapon does not need to consume ammo")));
 			return true;
 		}
 	case EMyWeaponType::Throwable:
 		{
-			LOG_FUNC_PRINTF(LogTemp , Warning , "Throwable weapon does not need to consume ammo");
+			UE_LOG(LogTemp, Warning, TEXT("%hs: %s"), __FUNCTION__, *FString::Printf(TEXT("Throwable weapon does not need to consume ammo")));
 			return true;
 		}
 	case EMyWeaponType::Unknown:
@@ -265,6 +267,15 @@ void UMyWeaponStatComponent::InitializeComponent()
 	Damage = WeaponStatData.Damage;
 }
 
+void UMyWeaponStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UMyWeaponStatComponent, AmmoSpent);
+	DOREPLIFETIME(UMyWeaponStatComponent, LoadedAmmoCount);
+	DOREPLIFETIME(UMyWeaponStatComponent, AmmoPerLoad);
+	DOREPLIFETIME(UMyWeaponStatComponent, TotalAmmoCount);
+}
+
 const FMyRangeWeaponStat* UMyWeaponStatComponent::GetRangeStat() const
 {
 	const auto& RangeWeaponStat = static_cast<const FMyRangeWeaponStat*>(WeaponStat);
@@ -281,4 +292,15 @@ const FMyThrowableWeaponStat* UMyWeaponStatComponent::GetThrowableStat() const
 {
 	const auto& ThrowableWeaponStat = static_cast<const FMyThrowableWeaponStat*>(WeaponStat);
 	return ThrowableWeaponStat;
+}
+
+void UMyWeaponStatComponent::OnRep_AmmoConsumed() const
+{
+	if (OnAmmoConsumed.IsBound())
+	{
+		OnAmmoConsumed.Broadcast(
+			GetCurrentAmmoCount(),
+			GetRemainingAmmoCount()
+		);
+	}
 }

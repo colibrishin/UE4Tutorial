@@ -20,6 +20,9 @@ AMyWeapon::AMyWeapon() : CanReload(true), CanAttack(true)
 	PrimaryActorTick.bCanEverTick = true;
 
 	WeaponStatComponent = CreateDefaultSubobject<UMyWeaponStatComponent>(TEXT("WeaponStatComponent"));
+	WeaponStatComponent->SetNetAddressable();
+	WeaponStatComponent->SetIsReplicated(true);
+	AddOwnedComponent(WeaponStatComponent);
 }
 
 // Called when the game starts or when spawned
@@ -37,17 +40,19 @@ void AMyWeapon::PostInitializeComponents()
 void AMyWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyWeapon, WeaponStatComponent);
 	DOREPLIFETIME(AMyWeapon, ConsecutiveShots);
+	DOREPLIFETIME(AMyWeapon, bIsDummyVisually);
 }
 
 bool AMyWeapon::AttackInterruptedImpl()
 {
-	if (!FireRateTimerHandle.IsValid())
+	if (!OnFireReadyTimerHandle.IsValid())
 	{
 		CanAttack = true;
 	}
 
-	if (!ReloadTimerHandle.IsValid())
+	if (!OnReloadDoneTimerHandle.IsValid())
 	{
 		CanReload = true;
 	}
@@ -55,7 +60,7 @@ bool AMyWeapon::AttackInterruptedImpl()
 	return true;
 }
 
-bool AMyWeapon::TryAttachItem(const AMyCharacter* Character)
+bool AMyWeapon::TryAttachItem(AMyCharacter* Character)
 {
 	if (GetMesh()->AttachToComponent
 		(
@@ -65,13 +70,19 @@ bool AMyWeapon::TryAttachItem(const AMyCharacter* Character)
 		))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
+
+		const auto& MyCharacter = GetItemOwner();
+
+		MyCharacter->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+		MyCharacter->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
+
+		Client_TryAttachItem(Character);
+
 		return true;
 	}
 	else
 	{
-		const FVector PreviousLocation = GetActorLocation();
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Red, TEXT("AttachToComponent failed"));
-		SetActorLocation(PreviousLocation);
 		return false;
 	}
 }
@@ -92,7 +103,7 @@ void AMyWeapon::OnFireRateTimed()
 {
 	CanAttack = true;
 	OnFireReady.Broadcast();
-	GetWorld()->GetTimerManager().ClearTimer(FireRateTimerHandle);
+	OnFireReadyTimerHandle.Invalidate();
 }
 
 void AMyWeapon::OnReloadDone()
@@ -100,19 +111,19 @@ void AMyWeapon::OnReloadDone()
 	CanAttack = true;
 	CanReload = true;
 	OnReloadReady.Broadcast();
-	GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
+	OnFireReadyTimerHandle.Invalidate();
 }
 
 void AMyWeapon::OnCookingTimed()
 {
 	CanAttack = false;
 	CanReload = false;
-	GetWorld()->GetTimerManager().ClearTimer(CookingTimerHandle);
+	OnCookingTimerHandle.Invalidate();
 }
 
-void AMyWeapon::DropImpl()
+void AMyWeapon::DropBeforeCharacter()
 {
-	Super::DropImpl();
+	Super::DropBeforeCharacter();
 
 	if (HasAuthority())
 	{
@@ -123,6 +134,22 @@ void AMyWeapon::DropImpl()
 	}
 }
 
+void AMyWeapon::Client_PlayAttackSound_Implementation()
+{
+	if (FireSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation(), GetActorRotation());
+	}
+}
+
+void AMyWeapon::Client_PlayReloadSound_Implementation()
+{
+	if (ReloadSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, ReloadSound, GetActorLocation(), GetActorRotation());
+	}
+}
+
 bool AMyWeapon::Attack()
 {
 	if (CanAttack)
@@ -130,40 +157,15 @@ bool AMyWeapon::Attack()
 		switch (GetWeaponStatComponent()->GetWeaponType())
 		{
 		case EMyWeaponType::Range: 
-			GetWorld()->GetTimerManager().SetTimer
-				(
-				 FireRateTimerHandle,
-				 this,
-				 &AMyWeapon::OnFireRateTimed,
-				 GetWeaponStatComponent()->GetFireRate(),
-				 false
-				);
-
-			if (HasAuthority())
-			{
-				++ConsecutiveShots;
-			}
 			break;
 		case EMyWeaponType::Melee:
-			LOG_FUNC(LogTemp, Warning, "Melee attack, Not implemented");
-			return AttackImpl();
 		case EMyWeaponType::Throwable: 
-			GetWorld()->GetTimerManager().SetTimer
-				(
-				 CookingTimerHandle,
-				 this,
-				 &AMyWeapon::OnCookingTimed,
-				 GetWeaponStatComponent()->GetCookingTime(),
-				 false
-				);
-			return AttackImpl();
 		case EMyWeaponType::Unknown:
 		default:
 			return AttackImpl();
 		}
 
 		CanAttack = false;
-
 		return AttackImpl();
 	}
 
@@ -184,15 +186,7 @@ bool AMyWeapon::Reload()
 	{
 		switch (GetWeaponStatComponent()->GetWeaponType())
 		{
-		case EMyWeaponType::Range: 
-			GetWorld()->GetTimerManager().SetTimer
-				(
-				 ReloadTimerHandle,
-				 this,
-				 &AMyWeapon::OnReloadDone,
-				 GetWeaponStatComponent()->GetReloadTime(),
-				 false
-				);
+		case EMyWeaponType::Range:
 			break;
 		case EMyWeaponType::Unknown:
 		case EMyWeaponType::Melee:

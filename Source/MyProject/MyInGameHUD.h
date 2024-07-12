@@ -19,7 +19,8 @@ class MYPROJECT_API AMyInGameHUD : public AHUD
 public:
 	AMyInGameHUD();
 
-	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
+	UFUNCTION()
+	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount);
 
 	class UMyInGameWidget* GetInGameWidget() const;
 

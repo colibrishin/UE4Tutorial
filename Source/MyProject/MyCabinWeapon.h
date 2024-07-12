@@ -16,16 +16,6 @@ class MYPROJECT_API AMyCabinWeapon : public AMyAimableWeapon
 
 	AMyCabinWeapon();
 
-protected:
-	virtual bool AttackImpl() override;
-	virtual bool ReloadImpl() override;
-
 private:
 
-	UPROPERTY(EditAnywhere, Category = "Weapon")
-	class USoundBase* FireSound;
-
-	UPROPERTY(EditAnywhere, Category = "Weapon")
-	class USoundBase* ReloadSound;
-	
 };

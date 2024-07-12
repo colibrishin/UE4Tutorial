@@ -16,9 +16,9 @@ void AMyItem::PostInitializeComponents()
 	Super::PostInitializeComponents();
 }
 
-void AMyItem::DropImpl()
+void AMyItem::DropBeforeCharacter()
 {
-	Super::DropImpl();
+	Super::DropBeforeCharacter();
 
 	if (HasAuthority())
 	{

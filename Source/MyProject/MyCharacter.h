@@ -9,11 +9,11 @@
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnAttackStarted)
-DECLARE_MULTICAST_DELEGATE(FOnAttackEnded)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnAiming, bool)
-DECLARE_MULTICAST_DELEGATE(FOnUseInterrupted)
-DECLARE_MULTICAST_DELEGATE(FOnInteractInterrupted)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackStarted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackEnded);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAiming, bool, bAim);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnUseInterrupted);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInteractInterrupted);
 
 class UMyStatComponent;
 class AMyWeapon;
@@ -35,24 +35,34 @@ public:
 	// Sets default values for this character's properties
 	AMyCharacter();
 
-	DECL_BINDON(OnAttackStarted)
-	DECL_BINDON(OnAttackEnded)
-	DECL_BINDON(OnAiming, bool)
-	DECL_BINDON(OnUseInterrupted)
-	DECL_BINDON(OnInteractInterrupted)
-
 	class AMyWeapon* TryGetWeapon() const;
 	class AMyItem* TryGetItem() const;
 	class AMyCollectable* GetCurrentHand() const;
 	class USkeletalMeshComponent* GetArmMeshComponent() const;
 	class UMyInventoryComponent* GetInventory() const;
 	class UMyStatComponent* GetStatComponent() const;
+	
+	FOnAttackStarted OnAttackStarted;
+
+	FOnAttackEnded OnAttackEnded;
+
+	FOnAiming OnAiming;
+
+	FOnUseInterrupted OnUseInterrupted;
+
+	FOnInteractInterrupted OnInteractInterrupted;
 
 	float GetPitchInput() const { return PitchInput; }
 
 	void OnHandChanged(class AMyCollectable* Previous, class AMyCollectable* New, class AMyPlayerState* ThisPlayerState);
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+
+	void Attack(const float Value);
+
+
+	UFUNCTION()
+	void ResetAttack();
 
 protected:
 	// Called when the game starts or when spawned
@@ -74,22 +84,19 @@ public:
 	float GetForwardInput() const { return ForwardInput; }
 	float GetRightInput() const { return RightInput; }
 
-	void Attack(const float Value);
-
 private:
 
 	friend void CharacterSwapHand(AMyCharacter* Character, const int Index);
 
 	// ============ Attacking ============
+
 	UFUNCTION(Server, Reliable)
 	void Server_Attack(const float Value);
+	UFUNCTION(Client, Reliable)
+	void Client_Attack();
+
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Attack(const float Value);
-
-	void AttackStart(const float Value);
-
-	void MeleeAttack();
-	void ResetAttack();
+	void Multi_MeleeAttack();
 
 	int32 GetDamage() const;
 	void OnAttackAnimNotify();
@@ -99,21 +106,19 @@ private:
 
 	UFUNCTION(Server, Reliable)
 	void Server_AttackInterrupted(const float Value);
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_AttackInterrupted(const float Value);
 
 	// ============ End of Attacking ============
 
 
 	// ============ Reloading ============
+
 	void Reload();
 
 	UFUNCTION(Server, Reliable)
 	void Server_Reload();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Reload();
 
-	void ReloadStart() const;
+	UFUNCTION(Client, Reliable)
+	void Client_Reload();
 
 	// ============ End of Reloading ============
 
@@ -130,14 +135,13 @@ private:
 	UFUNCTION(Server, Reliable)
 	void Server_Interactive();
 
-	void InteractiveImpl();
-
 	void InteractInterrupted();
 
 	UFUNCTION(Server, Reliable)
 	void Server_InteractInterrupted();
 
-	void InteractInterruptedImpl() const;
+	UFUNCTION(Client, Reliable)
+	void Client_InteractInterrupted();
 
 	// ============ End of Interacting ============
 
@@ -145,17 +149,13 @@ private:
 
 	void Use();
 
-	UFUNCTION(Server, Reliable)
-	void Server_Use();
-
-	void UseImpl();
-
 	void UseInterrupt();
 
 	UFUNCTION(Server, Reliable)
 	void Server_UseInterrupt();
 
-	void UseInterruptImpl() const;
+	UFUNCTION(Client, Reliable)
+	void Client_UseInterrupted();
 
 	// ============ End of Using ============
 
@@ -166,27 +166,24 @@ private:
 	void SwapPrimary();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapPrimary();
-	void SwapPrimaryImpl() const;
 
 	void SwapSecondary();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapSecondary();
-	void SwapSecondaryImpl() const;
 
 	void SwapMelee();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapMelee();
-	void SwapMeleeImpl() const;
 
 	void SwapUtility();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapUtility();
-	void SwapUtilityImpl() const;
 
 	void SwapBomb();
 	UFUNCTION(Server, Reliable)
 	void Server_SwapBomb();
-	void SwapBombImpl() const;
+
+	void WeaponSwap(const int32 Index) const;
 
 	// ============ End of Swap ============
 
@@ -243,17 +240,5 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	class USoundWave* FootstepSound;
-
-	FOnAttackStarted OnAttackStarted;
-
-	FOnAttackEnded OnAttackEnded;
-
-	FOnAiming OnAiming;
-
-	FOnUseInterrupted OnUseInterrupted;
-
-	FOnInteractInterrupted OnInteractInterrupted;
-
-	FDelegateHandle OnFireReadyHandle;
 	
 };

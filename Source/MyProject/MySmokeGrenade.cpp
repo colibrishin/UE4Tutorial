@@ -5,6 +5,8 @@
 
 #include "NiagaraComponent.h"
 
+#include "NiagaraSystem.h"
+
 AMySmokeGrenade::AMySmokeGrenade()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -35,6 +37,23 @@ void AMySmokeGrenade::OnExplosionTimerExpiredImpl()
 {
 	Super::OnExplosionTimerExpiredImpl();
 
+	if (HasAuthority())
+	{
+		GetMesh()->SetSimulatePhysics(false);
+		Multi_TriggerSmoke();
+	}
+}
+
+void AMySmokeGrenade::OnSmokeEffectExpired()
+{
+	OnSmokeEffectExpiredHandle.Invalidate();
+	SmokeEffect->Deactivate();
+	Destroy(true);
+}
+
+void AMySmokeGrenade::Multi_TriggerSmoke_Implementation()
+{
+	GetMesh()->SetSimulatePhysics(false);
 	SmokeEffect->Activate();
 
 	GetWorldTimerManager().SetTimer
@@ -45,10 +64,4 @@ void AMySmokeGrenade::OnExplosionTimerExpiredImpl()
 		15.f,
 		false
 	);
-}
-
-void AMySmokeGrenade::OnSmokeEffectExpired()
-{
-	SmokeEffect->Deactivate();
-	Destroy(true);
 }

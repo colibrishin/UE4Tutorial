@@ -29,15 +29,12 @@ protected:
 	virtual void OnExplosionTimerExpiredImpl();
 
 private:
+	UFUNCTION(Client, Reliable)
+	void Client_CookThrowable();
+
 	void Throw();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Throw();
-	void ThrowImpl();
 
 	void Charge();
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_Charge();
-	void ChargeImpl();
 
 	void OnExplosionTimerExpired();
 

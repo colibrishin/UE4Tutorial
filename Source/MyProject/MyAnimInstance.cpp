@@ -39,10 +39,10 @@ void UMyAnimInstance::NativeBeginPlay()
 		return;
 	}
 
-	Pawn->BindOnAiming([this](const bool NewAiming)
-	{
-		bIsAiming = NewAiming;
-	});
+	//Pawn->BindOnAiming([this](const bool NewAiming)
+	//{
+	//	bIsAiming = NewAiming;
+	//});
 }
 
 void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
