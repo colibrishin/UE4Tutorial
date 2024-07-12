@@ -23,6 +23,10 @@ protected:
 	void OnSmokeEffectExpired();
 
 private:
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_TriggerSmoke();
+
 	FTimerHandle OnSmokeEffectExpiredHandle;
 	
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess))
