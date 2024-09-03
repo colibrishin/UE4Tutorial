@@ -59,10 +59,10 @@ public:
 	float Range;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float VSpread;
+	UCurveFloat* VSpread;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float HSpread;
+	UCurveFloat* HSpread;
 };
 
 USTRUCT()
