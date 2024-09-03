@@ -44,8 +44,7 @@ protected:
 	virtual void OnFireRateTimed() override;
 	virtual void OnReloadDone() override;
 
-	float GetHSpreadDegree(const float Point, const float OscillationRate, const float Min = 0, const float Max = PI / 8.f);
-	float GetVSpreadDegree(const float Point, const float OscillationRate, const float Min = 0, const float Max = PI / 8.f);
+	static float GetCurveValue(const UCurveFloat* InCurve, const float InValue, const float InValueMax, const float Min = -0.9999f, const float Max = 0.9999f);
 
 private:
 	UFUNCTION(Reliable, NetMulticast)

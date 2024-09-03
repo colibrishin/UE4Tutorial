@@ -118,17 +118,15 @@ bool AMyAimableWeapon::Hitscan(const FVector& Position, const FVector& Forward, 
 
 	Normal = Forward.RotateAngleAxis
 	(
-		GetHSpreadDegree(GetConsecutiveShots(), GetWeaponStatComponent()->GetHSpread()),
-		-GetActorForwardVector()
+		GetCurveValue(GetWeaponStatComponent()->GetHSpread(), GetConsecutiveShots(), GetWeaponStatComponent()->GetAmmoPerLoad()),
+		-GetActorUpVector()
 	);
 	
 	Normal = Normal.RotateAngleAxis
 	(
-		GetVSpreadDegree(GetConsecutiveShots(), GetWeaponStatComponent()->GetVSpread()),
-		GetActorUpVector()
+		GetCurveValue(GetWeaponStatComponent()->GetVSpread(), GetConsecutiveShots(), GetWeaponStatComponent()->GetAmmoPerLoad()),
+		GetActorForwardVector()
 	);
-
-	LOG_FUNC_PRINTF(LogTemp, Warning, "HSpread: %f", GetHSpreadDegree(GetConsecutiveShots(), GetWeaponStatComponent()->GetHSpread()));
 
 	LOG_FUNC_PRINTF(LogTemp, Warning, "Normal: %s", *Normal.ToString());
 
@@ -320,33 +318,11 @@ void AMyAimableWeapon::OnReloadDone()
 	Client_UpdateAmmoDisplay();
 }
 
-float AMyAimableWeapon::GetHSpreadDegree(const float Point, const float OscillationRate, const float Min, const float Max)
+float AMyAimableWeapon::GetCurveValue(
+	const UCurveFloat* InCurve, const float InValue, const float InValueMax, const float Min, const float Max
+)
 {
-	const float Radian = FMath::Sin(Point / (OscillationRate * PI));
-
-	const float ClampQDH = FMath::Lerp
-	(
-		Min, 
-		Max, 
-		Radian
-	);
-
-	return FMath::RadiansToDegrees(ClampQDH);
-}
-float AMyAimableWeapon::GetVSpreadDegree(const float Point, const float OscillationRate, const float Min, const float Max)
-{
-	// todo: Better formula to control
-	const float Radian = FMath::Cos(Point / FMath::Sqrt(Point)) *
-		FMath::Sin(Point / OscillationRate * FMath::LogX(10, Point) * (Point / 10));
-	
-	const float ClampQDV = FMath::Lerp
-	(
-		Min,
-		Max,
-		Radian
-	);
-
-	return FMath::RadiansToDegrees(ClampQDV);
+	return FMath::RadiansToDegrees(FMath::Sin(FMath::Wrap(InCurve->GetFloatValue(InValue / InValueMax), Min, Max)));
 }
 
 void AMyAimableWeapon::Client_Reload_Implementation()
