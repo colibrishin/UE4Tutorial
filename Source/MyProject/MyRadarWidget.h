@@ -22,22 +22,13 @@ protected:
 
 private:
 	UPROPERTY(EditAnywhere)
-	class UTexture2D* EnemyTexture;
-
-	UPROPERTY(VisibleAnywhere)
-	FSlateBrush EnemyBrush;
+	UMaterialInstance* EnemyMaterial;
+	
+	UPROPERTY(EditAnywhere)
+	UMaterialInstance* TeammateMaterial;
 
 	UPROPERTY(EditAnywhere)
-	class UTexture2D* TeammateTexture;
-
-	UPROPERTY(VisibleAnywhere)
-	FSlateBrush TeammateBrush;
-
-	UPROPERTY(EditAnywhere)
-	class UTexture2D* NullTexture;
-
-	UPROPERTY(VisibleAnywhere)
-	FSlateBrush NullBrush;
+	UMaterialInstance* NullMaterial;
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
 	class UCanvasPanel* RadarCanvas;
