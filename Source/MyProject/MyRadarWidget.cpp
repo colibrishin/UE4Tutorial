@@ -15,41 +15,25 @@ UMyRadarWidget::UMyRadarWidget(const FObjectInitializer& ObjectInitializer) : Su
 {
 	SetRenderOpacity(0.5f);
 
-	static ConstructorHelpers::FObjectFinder<UTexture2D> AllyDotTexture(TEXT("Texture2D'/Game/Models/Basic_green_dot.Basic_green_dot'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> AllyDotTexture(TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Models/M_RadarDot_Ally.M_RadarDot_Ally'"));
 
 	if (AllyDotTexture.Succeeded())
 	{
-		TeammateTexture = AllyDotTexture.Object;
-
-		TeammateBrush.SetResourceObject(TeammateTexture);
-		TeammateBrush.SetImageSize({16.f, 16.f});
-		TeammateBrush.DrawAs = ESlateBrushDrawType::Image;
-		TeammateBrush.Tiling = ESlateBrushTileType::NoTile;
-		TeammateBrush.Mirroring = ESlateBrushMirrorType::NoMirror;
+		TeammateMaterial = AllyDotTexture.Object;
 	}
 
-	static ConstructorHelpers::FObjectFinder<UTexture2D> EnemyDotTexture(TEXT("Texture2D'/Game/Models/Basic_red_dot.Basic_red_dot'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> EnemyDotTexture(TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Models/M_RadarDot_Enemy.M_RadarDot_Enemy'"));
 
 	if (EnemyDotTexture.Succeeded())
 	{
-		EnemyTexture = EnemyDotTexture.Object;
-		EnemyBrush.SetResourceObject(EnemyTexture);
-		EnemyBrush.SetImageSize({16.f, 16.f});
-		EnemyBrush.DrawAs = ESlateBrushDrawType::Image;
-		EnemyBrush.Tiling = ESlateBrushTileType::NoTile;
-		EnemyBrush.Mirroring = ESlateBrushMirrorType::NoMirror;
+		EnemyMaterial = EnemyDotTexture.Object;
 	}
 
-	static ConstructorHelpers::FObjectFinder<UTexture2D> NullTextureFinder(TEXT("Texture2D'/Game/Models/null-brush.null-brush'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> NullTextureFinder(TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Models/M_RadarDot_Enemy.M_RadarDot_Null'"));
 
 	if (NullTextureFinder.Succeeded())
 	{
-		NullTexture = NullTextureFinder.Object;
-		NullBrush.SetResourceObject(NullTexture);
-		NullBrush.SetImageSize({16.f, 16.f});
-		NullBrush.DrawAs = ESlateBrushDrawType::Image;
-		NullBrush.Tiling = ESlateBrushTileType::NoTile;
-		NullBrush.Mirroring = ESlateBrushMirrorType::NoMirror;
+		NullMaterial = NullTextureFinder.Object;
 	}
 }
 
@@ -104,7 +88,7 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				{
 					const auto& Image = RadarImages[i];
 
-					Image->SetBrush(TeammateBrush);
+					Image->SetBrushFromMaterial(TeammateMaterial);
 					Image->SetRenderTranslation(RadarCenter);
 					continue;
 				}
@@ -148,17 +132,17 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 				const auto& Distance = FVector2D(RadarPosition.X, RadarPosition.Y).Size();
 
-				const auto& Brush = LocalPlayerTeam == OtherPlayerState->GetTeam() ? TeammateBrush : EnemyBrush;
+				const auto& Brush = LocalPlayerTeam == OtherPlayerState->GetTeam() ? TeammateMaterial : EnemyMaterial;
 				const auto& Image = RadarImages[i];
 
 				if (Distance > RadarScale / 2.f)
 				{
-					Image->SetBrush(NullBrush);
+					Image->SetBrushFromMaterial(NullMaterial);
 					Image->SetRenderTranslation(RadarCenter);
 					continue;
 				}
 
-				Image->SetBrush(Brush);
+				Image->SetBrushFromMaterial(Brush);
 				Image->SetRenderTranslation(PositionFromCenter);
 			}
 		}
