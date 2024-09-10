@@ -6,6 +6,7 @@
 #include "MyAimableWeapon.h"
 #include "MyPlayerState.h"
 #include "MyWeapon.h"
+#include "MyWeaponStatComponent.h"
 
 #include "Components/TextBlock.h"
 

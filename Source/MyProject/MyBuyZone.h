@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enum.h"
+#include "Private/Enum.h"
 
 #include "GameFramework/Actor.h"
 #include "MyBuyZone.generated.h"

@@ -1,11 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
-#include <mutex>
-
 #include "CoreMinimal.h"
-#include "Utilities.hpp"
 
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"

@@ -4,12 +4,10 @@
 #include "MyProject/MyPlayerState.h"
 
 #include "MyAIController.h"
-#include "Utilities.hpp"
 
 #include "GameFramework/GameStateBase.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
-#include "MyInGameHUD.h"
 #include "MyInventoryComponent.h"
 #include "MyPlayerController.h"
 #include "MyStatComponent.h"

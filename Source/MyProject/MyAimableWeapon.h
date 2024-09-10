@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Utilities.hpp"
-
 #include "MyProject/MyWeapon.h"
 #include "MyAimableWeapon.generated.h"
 

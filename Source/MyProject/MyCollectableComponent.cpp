@@ -2,9 +2,7 @@
 
 
 #include "MyProject/MyCollectableComponent.h"
-
-#include "Data.h"
-#include "Utilities.hpp"
+#include "Private/Utilities.hpp"
 
 // Sets default values for this component's properties
 UMyCollectableComponent::UMyCollectableComponent()

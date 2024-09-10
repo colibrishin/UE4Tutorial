@@ -28,6 +28,7 @@ private:
 
 	float DeltaTime = 0.f;
 
+	UFUNCTION()
 	void HandleDamageTaken(class AMyPlayerState* DamageGiver);
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))

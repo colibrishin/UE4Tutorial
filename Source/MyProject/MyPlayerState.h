@@ -5,8 +5,8 @@
 #include <mutex>
 
 #include "CoreMinimal.h"
-#include "Enum.h"
-#include "Utilities.hpp"
+#include "Private/Enum.h"
+#include "Private/Utilities.hpp"
 
 #include "GameFramework/PlayerState.h"
 #include "MyPlayerState.generated.h"

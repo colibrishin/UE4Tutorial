@@ -2,8 +2,8 @@
 
 
 #include "MyInventoryComponent.h"
+#include "Private/Utilities.hpp"
 
-#include "MyCharacter.h"
 #include "MyCollectable.h"
 
 #include "Net/UnrealNetwork.h"

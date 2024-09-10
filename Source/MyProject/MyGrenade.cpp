@@ -4,6 +4,7 @@
 #include "MyProject/MyGrenade.h"
 
 #include "MyCharacter.h"
+#include "MyWeaponStatComponent.h"
 
 bool AMyGrenade::AttackImpl()
 {

@@ -3,8 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Data.h"
-#include "Enum.h"
+#include "Private/Data.h"
+#include "Private/Enum.h"
 
 #include "Components/ActorComponent.h"
 

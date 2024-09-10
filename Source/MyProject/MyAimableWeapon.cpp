@@ -5,7 +5,8 @@
 
 #include "DrawDebugHelpers.h"
 #include "MyCharacter.h"
-#include "MyInGameHUD.h"
+#include "MyWeaponStatComponent.h"
+#include "Private/Utilities.hpp"
 #include "NiagaraComponent.h"
 
 #include "Algo/Rotate.h"

@@ -21,6 +21,7 @@
 #include "MyInventoryComponent.h"
 #include "MyStatComponent.h"
 #include "MyWeapon.h"
+#include "MyWeaponStatComponent.h"
 
 #include "Components/WidgetComponent.h"
 

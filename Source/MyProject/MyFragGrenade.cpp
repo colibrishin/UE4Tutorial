@@ -7,6 +7,7 @@
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MyStatComponent.h"
+#include "MyWeaponStatComponent.h"
 
 #include "Engine/OverlapResult.h"
 #include "Engine/DamageEvents.h"

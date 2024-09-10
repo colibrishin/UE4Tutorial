@@ -3,11 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enum.h"
-
+#include "Private/Enum.h"
 #include "Blueprint/UserWidget.h"
 #include "MyInGameStatEntryWidget.generated.h"
 
+class AMyPlayerState;
+class UTextBlock;
 /**
  * 
  */
@@ -17,9 +18,9 @@ class MYPROJECT_API UMyInGameStatEntryWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void SetPlayer(class AMyPlayerState* PlayerState);
+	void SetPlayer(AMyPlayerState* PlayerState);
 
-	class AMyPlayerState*  GetPlayer() const { return DesignatedPlayerState.Get(); }
+	AMyPlayerState*  GetPlayer() const { return DesignatedPlayerState.Get(); }
 
 protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
@@ -32,20 +33,20 @@ private:
 	float DeltaTime = 0.f;
 
 	UPROPERTY(VisibleAnywhere)
-	TWeakObjectPtr<class AMyPlayerState> DesignatedPlayerState;
+	TWeakObjectPtr<AMyPlayerState> DesignatedPlayerState;
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
-	class UTextBlock* PlayerName;
+	UTextBlock* PlayerName;
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
-	class UTextBlock* KillCount;
+	UTextBlock* KillCount;
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
-	class UTextBlock* DeathCount;
+	UTextBlock* DeathCount;
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
-	class UTextBlock* AssistCount;
+	UTextBlock* AssistCount;
 
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))
-	class UTextBlock* PingValue;
+	UTextBlock* PingValue;
 };

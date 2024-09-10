@@ -3,24 +3,20 @@
 
 #include "MyProject/MyBuyMenuWidget.h"
 
-#include "CommonBuy.hpp"
-#include "Data.h"
+#include "Private/CommonBuy.hpp"
+#include "Private/Data.h"
 #include "MyBuyMenuWeaponWidget.h"
 #include "MyCharacter.h"
 #include "MyGameInstance.h"
 #include "MyGameState.h"
-#include "MyInGameHUD.h"
+
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
-#include "MyStatComponent.h"
-#include "MyWeapon.h"
 #include "MyWeaponDataAsset.h"
-#include "Utilities.hpp"
+#include "Private/Utilities.hpp"
 #include "GameFramework/PlayerController.h"
 #include "Runtime/Engine/Classes/Engine/Player.h"
-#include "Components/GridPanel.h"
 #include "Components/TextBlock.h"
-#include "Components/TileView.h"
 #include "Components/UniformGridPanel.h"
 
 #include "Kismet/GameplayStatics.h"

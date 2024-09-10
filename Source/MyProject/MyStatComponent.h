@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Utilities.hpp"
 
 #include "Components/ActorComponent.h"
 #include "MyStatComponent.generated.h"

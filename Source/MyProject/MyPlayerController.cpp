@@ -3,8 +3,7 @@
 
 #include "MyProject/MyPlayerController.h"
 
-#include "CommonBuy.hpp"
-#include "Data.h"
+#include "Private/CommonBuy.hpp"
 #include "MyCameraManager.h"
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
@@ -13,7 +12,6 @@
 #include "MySpectatorPawn.h"
 #include "MyWeapon.h"
 #include "MyWeaponDataAsset.h"
-#include "Utilities.hpp"
 
 #include "GameFramework/GameStateBase.h"
 #include "Interfaces/MyPlayerStateRequiredWidget.h"

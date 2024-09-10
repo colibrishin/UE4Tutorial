@@ -3,8 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enum.h"
-#include "MyC4.h"
+#include "Private/Enum.h"
 
 #include "Blueprint/UserWidget.h"
 #include "MyBombIndicatorWidget.generated.h"

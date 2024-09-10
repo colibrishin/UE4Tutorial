@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enum.h"
+#include "Private/Enum.h"
 
 #include "Blueprint/UserWidget.h"
 #include "MyRoundTimeWidget.generated.h"

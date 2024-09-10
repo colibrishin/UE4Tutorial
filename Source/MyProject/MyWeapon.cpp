@@ -25,6 +25,11 @@ AMyWeapon::AMyWeapon() : CanReload(true), CanAttack(true)
 	AddOwnedComponent(WeaponStatComponent);
 }
 
+int32 AMyWeapon::GetDamage() const
+{
+	return WeaponStatComponent->GetDamage();
+}
+
 // Called when the game starts or when spawned
 void AMyWeapon::BeginPlay()
 {

@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyPlayerController.h"
+#include "Private/Enum.h"
 
 #include "Blueprint/UserWidget.h"
 #include "MyRemainingTeamWidget.generated.h"

@@ -23,6 +23,7 @@ protected:
 	virtual void DispatchPlayerState(AMyPlayerState* InPlayerState) override;
 	
 private:
+	UFUNCTION()
 	void UpdateHpRatio(const float Value);
 
 	UPROPERTY(Meta=(BindWidget))

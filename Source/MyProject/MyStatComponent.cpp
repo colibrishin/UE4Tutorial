@@ -3,16 +3,12 @@
 
 #include "MyStatComponent.h"
 
-#include "Data.h"
 #include "MyGameInstance.h"
-#include "MyInGameHUD.h"
 #include "MyPlayerState.h"
 
 #include "Engine/World.h"
 
 #include "GameFramework/HUD.h"
-
-#include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
 UMyStatComponent::UMyStatComponent()

@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "MyItem.h"
-#include "Utilities.hpp"
+#include "Private/Utilities.hpp"
 
 #include "GameFramework/Actor.h"
 #include "MyC4.generated.h"

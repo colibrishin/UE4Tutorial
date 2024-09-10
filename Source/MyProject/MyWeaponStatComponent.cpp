@@ -3,13 +3,9 @@
 
 #include "MyWeaponStatComponent.h"
 
-#include "Data.h"
-#include "MyCharacter.h"
 #include "MyGameInstance.h"
 #include "MyPlayerState.h"
 #include "MyWeaponDataAsset.h"
-#include "Utilities.hpp"
-
 #include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties

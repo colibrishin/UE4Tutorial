@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Utilities.hpp"
+#include "Private/Utilities.hpp"
 
 #include "Blueprint/UserWidget.h"
 #include "MyBuyMenuWeaponWidget.generated.h"
