@@ -4,21 +4,15 @@
 #include "MyProject/MyAmmoWidget.h"
 
 #include "MyAimableWeapon.h"
-#include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MyWeapon.h"
 
 #include "Components/TextBlock.h"
 
-void UMyAmmoWidget::NativeOnInitialized()
-{
-	Super::NativeOnInitialized();
-}
-
 void UMyAmmoWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 {
 	check(InPlayerState);
-	InPlayerState->BindOnHandChanged(this, &UMyAmmoWidget::HandleWeaponChanged);
+	InPlayerState->OnHandChanged.AddUniqueDynamic(this, &UMyAmmoWidget::HandleWeaponChanged);
 }
 
 void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount)

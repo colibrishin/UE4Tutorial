@@ -10,7 +10,7 @@
 
 void UMyCharacterWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 {
-	InPlayerState->BindOnHPChanged(this, &UMyCharacterWidget::UpdateHpRatio);
+	InPlayerState->OnHPChanged.AddUniqueDynamic(this, &UMyCharacterWidget::UpdateHpRatio);
 }
 
 void UMyCharacterWidget::NativeConstruct()
@@ -18,7 +18,7 @@ void UMyCharacterWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
-void UMyCharacterWidget::UpdateHpRatio(const float Value) const
+void UMyCharacterWidget::UpdateHpRatio(const float Value)
 {
 	if (!IsValid(HPProgressBar)) return;
 

@@ -11,12 +11,12 @@
 #include "GameFramework/PlayerState.h"
 #include "MyPlayerState.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnStateChanged, class AMyPlayerState*, EMyCharacterState)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHPChanged, float)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged, AMyPlayerState*, InPlayerState, const EMyCharacterState, InCurrentState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHPChanged, const float, InHP);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, int32)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, class AMyPlayerState*)
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnHandChanged, class AMyCollectable*, class AMyCollectable*, class AMyPlayerState*)
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, AMyPlayerState*, InPlayerState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHandChanged, AMyCollectable*, InPrevious, AMyCollectable*, InCurrent, AMyPlayerState*, InPlayerState);
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, AMyPlayerState*, AMyPlayerState*, const class AMyWeapon*)
 
 /**
  * 
@@ -54,11 +54,16 @@ public:
 	}
 	FORCEINLINE float GetHPRatio() const;
 
-	DECL_BINDON(OnDamageTaken, class AMyPlayerState*)
-	DECL_BINDON(OnHPChanged, float)
+	
+	FOnDamageTaken OnDamageTaken;
+
+	FOnStateChanged OnStateChanged;
+
+	FOnHPChanged OnHPChanged;
+
+	FOnHandChanged OnHandChanged;
+	
 	DECL_BINDON(OnMoneyChanged, int32)
-	DECL_BINDON(OnStateChanged, class AMyPlayerState*, EMyCharacterState)
-	DECL_BINDON(OnHandChanged, class AMyCollectable*, class AMyCollectable*, class AMyPlayerState*)
 	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 
 	FORCEINLINE int32 GetMoney() const { return Money; }
@@ -132,14 +137,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_HandChanged)
 	class AMyCollectable* CurrentHand;
-
-	FOnDamageTaken OnDamageTaken;
-
-	FOnStateChanged OnStateChanged;
-
-	FOnHPChanged OnHPChanged;
-
-	FOnHandChanged OnHandChanged;
 
 	FOnKillOccurred OnKillOccurred;
 

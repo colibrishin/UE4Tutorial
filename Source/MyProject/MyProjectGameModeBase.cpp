@@ -48,17 +48,6 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 	SpectatorClass   = AMySpectatorPawn::StaticClass();
 }
 
-
-void AMyProjectGameModeBase::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void AMyProjectGameModeBase::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
-
 void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -82,7 +71,7 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	PlayerState->BindOnStateChanged(MyGameState, &AMyGameState::HandlePlayerStateChanged);
+	PlayerState->OnStateChanged.AddUniqueDynamic(MyGameState, &AMyGameState::HandlePlayerStateChanged);
 	PlayerState->SetState(EMyCharacterState::Alive);
 	PlayerState->BindOnKillOccurred(MyGameState, &AMyGameState::HandleKillOccurred);
 	MyGameState->HandleNewPlayer(PlayerState);
@@ -120,7 +109,7 @@ void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 
 		if (IsValid(PlayerState))
 		{
-			PlayerState->BindOnHandChanged(Character, &AMyCharacter::OnHandChanged);
+			PlayerState->OnHandChanged.AddUniqueDynamic(Character, &AMyCharacter::OnHandChanged);
 		}
 
 		if (const auto& Collectable = PlayerState->GetCurrentHand())

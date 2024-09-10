@@ -14,7 +14,7 @@ void UMyDamageIndicatorWidget::NativeConstruct()
 void UMyDamageIndicatorWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 {
 	check(InPlayerState);
-	InPlayerState->BindOnDamageTaken(this, &UMyDamageIndicatorWidget::HandleDamageTaken);
+	InPlayerState->OnDamageTaken.AddUniqueDynamic(this, &UMyDamageIndicatorWidget::HandleDamageTaken);
 }
 
 void UMyDamageIndicatorWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)

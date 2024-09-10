@@ -17,9 +17,6 @@ class MYPROJECT_API UMyAmmoWidget : public UUserWidget, public IMyPlayerStateReq
 {
 	GENERATED_BODY()
 
-public:
-	virtual void NativeOnInitialized() override;
-
 protected:
 	virtual void DispatchPlayerState(AMyPlayerState* InPlayerState) override;
 	

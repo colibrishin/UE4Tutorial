@@ -35,33 +35,20 @@ void AMyPlayerController::OnRep_PlayerState()
 	}
 
 	// Player state replication would be happened in client side and player controller exists in local player. 
-	if (const APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	if (const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD()))
 	{
-		if (AMyInGameHUD* HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD()))
+		// Iterate all widgets and pass the own player state to the widgets that require the player state. 
+		for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
+			Iterator;
+			++Iterator)
 		{
-			// Iterate all widgets and pass the own player state to the widgets that require the player state. 
-			for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
-				Iterator;
-				++Iterator)
+			UUserWidget* Widget = Cast<UUserWidget>(Iterator->GetObjectPropertyValue(Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget(), 0)));
+			if (IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>(Widget))
 			{
-				UUserWidget* Widget = Cast<UUserWidget>(Iterator->GetObjectPropertyValue(Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget(), 0)));
-				if (IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>(Widget))
-				{
-					Interface->DispatchPlayerState(MyPlayerState);
-				}
-			} 
-		}
+				Interface->DispatchPlayerState(MyPlayerState);
+			}
+		} 
 	}
-}
-
-void AMyPlayerController::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void AMyPlayerController::PostInitializeComponents()
-{
-	Super::PostInitializeComponents();
 }
 
 void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32 WeaponID) const

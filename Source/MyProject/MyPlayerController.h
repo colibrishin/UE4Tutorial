@@ -29,10 +29,6 @@ public:
 
 protected:
 	virtual void OnRep_PlayerState() override;
-	
-	virtual void BeginPlay() override;
-
-	virtual void PostInitializeComponents() override;
 
 private:
 	UFUNCTION(Server, Reliable)

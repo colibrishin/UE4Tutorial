@@ -31,10 +31,6 @@ public:
 protected:
 	virtual void InitStartSpot_Implementation(AActor* StartSpot, AController* NewPlayer) override;
 
-	virtual void BeginPlay() override;
-
-	virtual void Tick(float DeltaSeconds) override;
-
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 
 	virtual AActor* FindPlayerStart_Implementation(AController* Player, const FString& IncomingName) override;

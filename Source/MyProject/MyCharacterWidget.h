@@ -23,7 +23,7 @@ protected:
 	virtual void DispatchPlayerState(AMyPlayerState* InPlayerState) override;
 	
 private:
-	void UpdateHpRatio(const float Value) const;
+	void UpdateHpRatio(const float Value);
 
 	UPROPERTY(Meta=(BindWidget))
 	class UProgressBar* HPProgressBar;
