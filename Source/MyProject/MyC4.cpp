@@ -4,26 +4,14 @@
 #include "MyProject/MyC4.h"
 
 #include "DrawDebugHelpers.h"
-#include "MyBombIndicatorWidget.h"
-#include "MyBombProgressWidget.h"
 #include "MyCharacter.h"
-#include "MyInGameHUD.h"
-#include "MyInGameWidget.h"
-#include "MyInventoryComponent.h"
-#include "MyPlayerController.h"
 #include "MyPlayerState.h"
-
 #include "Components/BoxComponent.h"
-#include "Components/WidgetComponent.h"
-
 #include "Engine/OverlapResult.h"
-
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/HUD.h"
 #include "GameFramework/PawnMovementComponent.h"
-
 #include "Kismet/GameplayStatics.h"
-
 #include "Net/UnrealNetwork.h"
 
 // Sets default values

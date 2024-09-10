@@ -8,9 +8,9 @@
 #include "GameFramework/GameStateBase.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
-#include "MyInventoryComponent.h"
+#include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerController.h"
-#include "MyStatComponent.h"
+#include "MyProject/Components/MyStatComponent.h"
 #include "MyWeapon.h"
 
 #include "GameFramework/CharacterMovementComponent.h"

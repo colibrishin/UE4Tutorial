@@ -4,9 +4,9 @@
 #include "MyWeapon.h"
 
 #include "MyCharacter.h"
-#include "MyInventoryComponent.h"
+#include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerState.h"
-#include "MyWeaponStatComponent.h"
+#include "MyProject/Components/MyWeaponStatComponent.h"
 #include "TimerManager.h"
 
 #include "Components/BoxComponent.h"

@@ -2,12 +2,11 @@
 
 #include "CoreMinimal.h"
 #include "Data.h"
-#include "MyBuyZone.h"
-#include "MyCharacter.h"
-#include "MyGameState.h"
-#include "MyPlayerState.h"
-#include "MyStatComponent.h"
-#include "MyWeaponDataAsset.h"
+#include "MyProject/MyBuyZone.h"
+#include "MyProject/MyCharacter.h"
+#include "MyProject/MyGameState.h"
+#include "MyProject/MyPlayerState.h"
+#include "MyProject/MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 
 #include "Engine/OverlapResult.h"

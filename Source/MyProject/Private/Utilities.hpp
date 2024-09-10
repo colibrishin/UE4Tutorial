@@ -1,13 +1,8 @@
 #pragma once
 #include <functional>
-#include <string>
 
-#include "Data.h"
-#include "MyCollectableComponent.h"
-#include "MyGameInstance.h"
-
+#include "MyProject/MyGameInstance.h"
 #include "Kismet/GameplayStatics.h"
-
 #include "Containers/UnrealString.h"
 
 #define DECL_BINDON_NATIVE(Delegate, ...) \

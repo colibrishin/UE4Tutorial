@@ -5,7 +5,7 @@
 
 #include "DrawDebugHelpers.h"
 #include "MyCharacter.h"
-#include "MyWeaponStatComponent.h"
+#include "Components/MyWeaponStatComponent.h"
 #include "Private/Utilities.hpp"
 #include "NiagaraComponent.h"
 

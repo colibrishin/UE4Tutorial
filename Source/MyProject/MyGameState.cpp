@@ -3,23 +3,20 @@
 
 #include "MyProject/MyGameState.h"
 
-#include "MyBombIndicatorWidget.h"
 #include "MyC4.h"
 #include "MyCharacter.h"
 #include "MyCollectable.h"
 #include "MyInGameHUD.h"
-#include "MyInGameWidget.h"
-#include "MyInventoryComponent.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
 #include "MySpectatorPawn.h"
-#include "MyStatComponent.h"
 #include "MyWeapon.h"
-
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
-
+#include "MyProject/Components/MyInventoryComponent.h"
+#include "MyProject/Widgets/MyBombIndicatorWidget.h"
+#include "MyProject/Widgets/MyInGameWidget.h"
 #include "Net/UnrealNetwork.h"
 
 AMyGameState::AMyGameState()

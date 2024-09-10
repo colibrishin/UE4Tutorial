@@ -3,37 +3,24 @@
 
 #include "MyCharacter.h"
 
-#include "MyAnimInstance.h"
-
-#include "Camera/CameraComponent.h"
-
-#include "Components/CapsuleComponent.h"
-
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
-
 #include "DrawDebugHelpers.h"
 #include "MyAIController.h"
 #include "MyAimableWeapon.h"
+#include "MyAnimInstance.h"
 #include "MyC4.h"
-#include "MyCharacterWidget.h"
 #include "MyInGameHUD.h"
-#include "MyInventoryComponent.h"
-#include "MyStatComponent.h"
 #include "MyWeapon.h"
-#include "MyWeaponStatComponent.h"
-
-#include "Components/WidgetComponent.h"
-
-#include "NiagaraComponent.h"
-#include "Net/UnrealNetwork.h"
-
+#include "Camera/CameraComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/MyInventoryComponent.h"
+#include "Components/MyWeaponStatComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Engine/OverlapResult.h"
-
-#include "Kismet/KismetMathLibrary.h"
-
+#include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "UObject/ConstructorHelpers.h"
+#include "Widgets/MyCharacterWidget.h"
 
 const FName AMyCharacter::LeftHandSocketName(TEXT("hand_l_socket"));
 const FName AMyCharacter::RightHandSocketName(TEXT("hand_r_socket"));

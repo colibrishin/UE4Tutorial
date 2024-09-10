@@ -7,7 +7,7 @@
 #include "MyCameraManager.h"
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
-#include "MyInGameWidget.h"
+#include "MyProject/Widgets/MyInGameWidget.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
 #include "MyWeapon.h"

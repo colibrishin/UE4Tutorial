@@ -6,8 +6,8 @@
 #include "MyCharacter.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
-#include "MyStatComponent.h"
-#include "MyWeaponStatComponent.h"
+#include "MyProject/Components/MyStatComponent.h"
+#include "MyProject/Components/MyWeaponStatComponent.h"
 
 #include "Engine/OverlapResult.h"
 #include "Engine/DamageEvents.h"

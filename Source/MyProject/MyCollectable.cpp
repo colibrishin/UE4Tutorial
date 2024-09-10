@@ -4,8 +4,8 @@
 #include "MyCollectable.h"
 
 #include "MyCharacter.h"
-#include "MyCollectableComponent.h"
-#include "MyInventoryComponent.h"
+#include "MyProject/Components/MyCollectableComponent.h"
+#include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerState.h"
 
 #include "Components/BoxComponent.h"

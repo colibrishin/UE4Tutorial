@@ -3,7 +3,6 @@
 
 #include "MyProjectGameModeBase.h"
 
-#include "AIController.h"
 #include "MyCharacter.h"
 #include "MyCollectable.h"
 #include "MyGameState.h"
@@ -11,15 +10,11 @@
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
-#include "MyStatComponent.h"
 #include "MyWeapon.h"
-
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerStart.h"
-
 #include "Kismet/GameplayStatics.h"
-
-#include "Net/UnrealNetwork.h"
+#include "MyProject/Components/MyStatComponent.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
 	: TSpawnPoint(nullptr),

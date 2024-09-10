@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "MyItem.h"
-#include "Private/Utilities.hpp"
+#include "MyProject/Private/Utilities.hpp"
+#include "MyProject/Private/Enum.h"
 
 #include "GameFramework/Actor.h"
 #include "MyC4.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombStateChanged, EMyBombState)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombPicked, class AMyCharacter*)
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombPicked, AMyCharacter*)
 
 UCLASS()
 class MYPROJECT_API AMyC4 : public AMyItem

@@ -3,15 +3,13 @@
 
 #include "MyProject/MyInGameHUD.h"
 
-#include "MyBombProgressWidget.h"
-#include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
-#include "MyInGameStatWidget.h"
-#include "MyInGameWidget.h"
-#include "MyPlayerState.h"
-
 #include "Components/WidgetComponent.h"
+#include "MyProject/Widgets/MyBombProgressWidget.h"
+#include "MyProject/Widgets/MyBuyMenuWidget.h"
+#include "MyProject/Widgets/MyInGameStatWidget.h"
+#include "MyProject/Widgets/MyInGameWidget.h"
 
 AMyInGameHUD::AMyInGameHUD()
 {

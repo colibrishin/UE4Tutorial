@@ -4,7 +4,7 @@
 #include "MyProject/MyItem.h"
 
 #include "MyCharacter.h"
-#include "MyInventoryComponent.h"
+#include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerState.h"
 
 AMyItem::AMyItem()
