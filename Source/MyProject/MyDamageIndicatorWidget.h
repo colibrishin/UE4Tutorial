@@ -5,22 +5,22 @@
 #include "CoreMinimal.h"
 
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/MyPlayerStateRequiredWidget.h"
 #include "MyDamageIndicatorWidget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MYPROJECT_API UMyDamageIndicatorWidget : public UUserWidget
+class MYPROJECT_API UMyDamageIndicatorWidget : public UUserWidget, public IMyPlayerStateRequiredWidget
 {
 	GENERATED_BODY()
-
-public:
-	void BindPlayerState(class AMyPlayerState* MyPlayerState);
 
 protected:
 	virtual void NativeConstruct() override;
 
+	virtual void DispatchPlayerState(AMyPlayerState* InPlayerState) override;
+	
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:

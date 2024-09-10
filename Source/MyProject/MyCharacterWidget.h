@@ -6,21 +6,21 @@
 #include "MyPlayerState.h"
 
 #include "Blueprint/UserWidget.h"
+#include "Interfaces/MyPlayerStateRequiredWidget.h"
 #include "MyCharacterWidget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MYPROJECT_API UMyCharacterWidget : public UUserWidget
+class MYPROJECT_API UMyCharacterWidget : public UUserWidget, public IMyPlayerStateRequiredWidget
 {
 	GENERATED_BODY()
-
-public:
-	void         BindPlayerState(AMyPlayerState* MyPlayerState);
-
+	
 protected:
 	virtual void NativeConstruct() override;
+
+	virtual void DispatchPlayerState(AMyPlayerState* InPlayerState) override;
 	
 private:
 	void UpdateHpRatio(const float Value) const;

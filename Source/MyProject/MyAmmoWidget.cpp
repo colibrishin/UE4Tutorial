@@ -10,14 +10,15 @@
 
 #include "Components/TextBlock.h"
 
-void UMyAmmoWidget::NativeConstruct()
+void UMyAmmoWidget::NativeOnInitialized()
 {
-	Super::NativeConstruct();
+	Super::NativeOnInitialized();
+}
 
-	if (AMyPlayerState* const& PlayerState = Cast<AMyPlayerState>(GetPlayerContext().GetPlayerState()))
-	{
-		PlayerState->BindOnHandChanged(this, &UMyAmmoWidget::HandleWeaponChanged);
-	}
+void UMyAmmoWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
+{
+	check(InPlayerState);
+	InPlayerState->BindOnHandChanged(this, &UMyAmmoWidget::HandleWeaponChanged);
 }
 
 void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount)
@@ -41,7 +42,7 @@ void UMyAmmoWidget::HandleWeaponChanged(AMyCollectable* InPrevious, AMyCollectab
 	{
 		NewWeapon->GetWeaponStatComponent()->OnAmmoConsumed.AddDynamic(this, &UMyAmmoWidget::UpdateAmmo);
 		UpdateAmmo(NewWeapon->GetWeaponStatComponent()->GetCurrentAmmoCount(),
-			NewWeapon->GetWeaponStatComponent()->GetLoadedAmmoCount());
+			NewWeapon->GetWeaponStatComponent()->GetRemainingAmmoCount());
 	}
 }
 

@@ -8,14 +8,14 @@
 
 #include "Components/ProgressBar.h"
 
+void UMyCharacterWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
+{
+	InPlayerState->BindOnHPChanged(this, &UMyCharacterWidget::UpdateHpRatio);
+}
+
 void UMyCharacterWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-}
-
-void UMyCharacterWidget::BindPlayerState(AMyPlayerState* MyPlayerState)
-{
-	MyPlayerState->BindOnHPChanged(this, &UMyCharacterWidget::UpdateHpRatio);
 }
 
 void UMyCharacterWidget::UpdateHpRatio(const float Value) const

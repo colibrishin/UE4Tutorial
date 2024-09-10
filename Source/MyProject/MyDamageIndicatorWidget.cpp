@@ -2,22 +2,19 @@
 
 
 #include "MyProject/MyDamageIndicatorWidget.h"
-
 #include "MyPlayerState.h"
-
 #include "Components/Image.h"
-
-void UMyDamageIndicatorWidget::BindPlayerState(AMyPlayerState* MyPlayerState)
-{
-	// todo: replace with native any damage function
-	MyPlayerState->BindOnDamageTaken(this, &UMyDamageIndicatorWidget::HandleDamageTaken);
-}
 
 void UMyDamageIndicatorWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
-
 	SetRenderOpacity(0.f);
+}
+
+void UMyDamageIndicatorWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
+{
+	check(InPlayerState);
+	InPlayerState->BindOnDamageTaken(this, &UMyDamageIndicatorWidget::HandleDamageTaken);
 }
 
 void UMyDamageIndicatorWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
