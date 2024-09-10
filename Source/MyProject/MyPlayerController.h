@@ -28,6 +28,8 @@ public:
 	void Client_SetSpectator(class AMySpectatorPawn* Spectator);
 
 protected:
+	virtual void OnRep_PlayerState() override;
+	
 	virtual void BeginPlay() override;
 
 	virtual void PostInitializeComponents() override;

@@ -8,18 +8,50 @@
 #include "MyCameraManager.h"
 #include "MyCharacter.h"
 #include "MyInGameHUD.h"
+#include "MyInGameWidget.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
-#include "MyStatComponent.h"
 #include "MyWeapon.h"
 #include "MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 
 #include "GameFramework/GameStateBase.h"
+#include "Interfaces/MyPlayerStateRequiredWidget.h"
 
 AMyPlayerController::AMyPlayerController()
 {
 	PlayerCameraManagerClass = AMyCameraManager::StaticClass();
+}
+
+void AMyPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	AMyPlayerState* MyPlayerState = Cast<AMyPlayerState>(PlayerState);
+
+	if (!IsValid(MyPlayerState))
+	{
+		return;
+	}
+
+	// Player state replication would be happened in client side and player controller exists in local player. 
+	if (const APlayerController* PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		if (AMyInGameHUD* HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD()))
+		{
+			// Iterate all widgets and pass the own player state to the widgets that require the player state. 
+			for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
+				Iterator;
+				++Iterator)
+			{
+				UUserWidget* Widget = Cast<UUserWidget>(Iterator->GetObjectPropertyValue(Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget(), 0)));
+				if (IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>(Widget))
+				{
+					Interface->DispatchPlayerState(MyPlayerState);
+				}
+			} 
+		}
+	}
 }
 
 void AMyPlayerController::BeginPlay()
