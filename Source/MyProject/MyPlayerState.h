@@ -6,9 +6,7 @@
 
 #include "CoreMinimal.h"
 #include "Enum.h"
-#include "MyAmmoWidget.h"
-#include "MyDamageIndicatorWidget.h"
-#include "MyProjectGameModeBase.h"
+#include "Utilities.hpp"
 
 #include "GameFramework/PlayerState.h"
 #include "MyPlayerState.generated.h"
@@ -78,14 +76,11 @@ public:
 	int32 GetDeath() const { return Death; }
 	int32 GetAssist()const { return Assist; }
 
-	UFUNCTION(Client, Reliable)
-	void Client_NotifyHUDUpdate();
-
 protected:
 	virtual void BeginPlay() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
+	
 private:
 	
 	UFUNCTION()

@@ -3,11 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyPlayerState.h"
 
 #include "Blueprint/UserWidget.h"
 #include "MyInGameWidget.generated.h"
 
+class AMyPlayerState;
 /**
  * 
  */
@@ -17,10 +17,7 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	UMyInGameWidget(const FObjectInitializer& ObjectInitializer);
-	
 	class UMyBombIndicatorWidget* GetBombIndicatorWidget() const;
-	void                          BindPlayerState(AMyPlayerState* MyPlayerState) const;
 
 private:
 	UPROPERTY(VisibleAnywhere, Meta=(BindWidget))

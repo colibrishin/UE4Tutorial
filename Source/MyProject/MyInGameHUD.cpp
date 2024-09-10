@@ -3,7 +3,6 @@
 
 #include "MyProject/MyInGameHUD.h"
 
-#include "MyAmmoWidget.h"
 #include "MyBombProgressWidget.h"
 #include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
@@ -11,7 +10,6 @@
 #include "MyInGameStatWidget.h"
 #include "MyInGameWidget.h"
 #include "MyPlayerState.h"
-#include "MyStatComponent.h"
 
 #include "Components/WidgetComponent.h"
 
@@ -70,29 +68,13 @@ bool AMyInGameHUD::IsBuyMenuOpened() const
 	return false;
 }
 
-void AMyInGameHUD::SetState(AMyPlayerState* MyPlayerState) const
-{
-	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
-	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
-
-	if (Widget)
-	{
-		Widget->BindPlayerState(MyPlayerState);
-	}
-
-	if (BuyMenuWidget)
-	{
-		BuyMenuWidget->BindPlayerState(MyPlayerState);
-	}
-}
-
 void AMyInGameHUD::BeginPlay()
 {
+	// InitWidget are called inside of Super::BeginPlay by iterating through the component list.
 	Super::BeginPlay();
 
 	const auto& Controller = GetOwningPlayerController();
 	EnableInput(Controller);
-	const auto& Character = Cast<AMyCharacter>(GetOwningPawn());
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
@@ -132,8 +114,4 @@ void AMyInGameHUD::DrawHUD()
 void AMyInGameHUD::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
-	Widgets->InitWidget();
-	BuyMenu->InitWidget();
-	StatWidget->InitWidget();
 }
