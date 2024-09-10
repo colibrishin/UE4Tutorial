@@ -4,15 +4,13 @@
 #include "MyProject/MyPlayerState.h"
 
 #include "MyAIController.h"
-#include "Utilities.hpp"
 
 #include "GameFramework/GameStateBase.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
-#include "MyInGameHUD.h"
-#include "MyInventoryComponent.h"
+#include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerController.h"
-#include "MyStatComponent.h"
+#include "MyProject/Components/MyStatComponent.h"
 #include "MyWeapon.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
@@ -33,14 +31,6 @@ AMyPlayerState::AMyPlayerState()
 {
 	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
 	InventoryComponent = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("InventoryComponent"));
-}
-
-void AMyPlayerState::Client_NotifyHUDUpdate_Implementation()
-{
-	if (const auto& HUD = Cast<AMyInGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
-	{
-		HUD->SetState(this);
-	}
 }
 
 void AMyPlayerState::BeginPlay()

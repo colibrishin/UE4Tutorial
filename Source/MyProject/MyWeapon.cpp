@@ -4,9 +4,9 @@
 #include "MyWeapon.h"
 
 #include "MyCharacter.h"
-#include "MyInventoryComponent.h"
+#include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerState.h"
-#include "MyWeaponStatComponent.h"
+#include "MyProject/Components/MyWeaponStatComponent.h"
 #include "TimerManager.h"
 
 #include "Components/BoxComponent.h"
@@ -23,6 +23,11 @@ AMyWeapon::AMyWeapon() : CanReload(true), CanAttack(true)
 	WeaponStatComponent->SetNetAddressable();
 	WeaponStatComponent->SetIsReplicated(true);
 	AddOwnedComponent(WeaponStatComponent);
+}
+
+int32 AMyWeapon::GetDamage() const
+{
+	return WeaponStatComponent->GetDamage();
 }
 
 // Called when the game starts or when spawned

@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
-#include "Utilities.hpp"
+#include "Private/Utilities.hpp"
 
 #include "GameFramework/GameState.h"
 #include "MyGameState.generated.h"
@@ -17,7 +17,6 @@ DECLARE_MULTICAST_DELEGATE(FOnBombProgressChanging)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombProgressChanged, EMyBombState)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnPlayerStateChanged, class AMyPlayerState*, EMyCharacterState)
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAliveCountChanged, EMyTeam, int32)
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewPlayerJoined, class AMyPlayerState*);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombPicked, class AMyCharacter*)
 
@@ -65,6 +64,7 @@ public:
 
 	void HandleKillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
 
+	UFUNCTION()
 	void HandlePlayerStateChanged(class AMyPlayerState* PlayerState, const EMyCharacterState State);
 
 	void HandleNewPlayer(class AMyPlayerState* State) const;

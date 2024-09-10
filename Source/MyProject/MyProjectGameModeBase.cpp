@@ -3,7 +3,6 @@
 
 #include "MyProjectGameModeBase.h"
 
-#include "AIController.h"
 #include "MyCharacter.h"
 #include "MyCollectable.h"
 #include "MyGameState.h"
@@ -11,15 +10,11 @@
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
-#include "MyStatComponent.h"
 #include "MyWeapon.h"
-
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerStart.h"
-
 #include "Kismet/GameplayStatics.h"
-
-#include "Net/UnrealNetwork.h"
+#include "MyProject/Components/MyStatComponent.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
 	: TSpawnPoint(nullptr),
@@ -48,17 +43,6 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 	SpectatorClass   = AMySpectatorPawn::StaticClass();
 }
 
-
-void AMyProjectGameModeBase::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void AMyProjectGameModeBase::Tick(float DeltaSeconds)
-{
-	Super::Tick(DeltaSeconds);
-}
-
 void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
@@ -82,13 +66,10 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	PlayerState->BindOnStateChanged(MyGameState, &AMyGameState::HandlePlayerStateChanged);
+	PlayerState->OnStateChanged.AddUniqueDynamic(MyGameState, &AMyGameState::HandlePlayerStateChanged);
 	PlayerState->SetState(EMyCharacterState::Alive);
 	PlayerState->BindOnKillOccurred(MyGameState, &AMyGameState::HandleKillOccurred);
 	MyGameState->HandleNewPlayer(PlayerState);
-
-	// Workaround for not using arbitrary delay for player state binding in HUD
-	PlayerState->Client_NotifyHUDUpdate();
 
 	if (!IsValid(MyGameState))
 	{
@@ -123,7 +104,7 @@ void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 
 		if (IsValid(PlayerState))
 		{
-			PlayerState->BindOnHandChanged(Character, &AMyCharacter::OnHandChanged);
+			PlayerState->OnHandChanged.AddUniqueDynamic(Character, &AMyCharacter::OnHandChanged);
 		}
 
 		if (const auto& Collectable = PlayerState->GetCurrentHand())

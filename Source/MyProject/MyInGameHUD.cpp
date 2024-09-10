@@ -3,17 +3,13 @@
 
 #include "MyProject/MyInGameHUD.h"
 
-#include "MyAmmoWidget.h"
-#include "MyBombProgressWidget.h"
-#include "MyBuyMenuWidget.h"
 #include "MyCharacter.h"
 #include "MyGameState.h"
-#include "MyInGameStatWidget.h"
-#include "MyInGameWidget.h"
-#include "MyPlayerState.h"
-#include "MyStatComponent.h"
-
 #include "Components/WidgetComponent.h"
+#include "MyProject/Widgets/MyBombProgressWidget.h"
+#include "MyProject/Widgets/MyBuyMenuWidget.h"
+#include "MyProject/Widgets/MyInGameStatWidget.h"
+#include "MyProject/Widgets/MyInGameWidget.h"
 
 AMyInGameHUD::AMyInGameHUD()
 {
@@ -53,16 +49,6 @@ AMyInGameHUD::AMyInGameHUD()
 	StatWidget->SetWidgetSpace(EWidgetSpace::Screen);
 }
 
-void AMyInGameHUD::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount)
-{
-	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
-
-	if (Widget)
-	{
-		Widget->UpdateAmmo(CurrentAmmoCount, RemainingAmmoCount);
-	}
-}
-
 UMyInGameWidget* AMyInGameHUD::GetInGameWidget() const
 {
 	return Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
@@ -80,29 +66,13 @@ bool AMyInGameHUD::IsBuyMenuOpened() const
 	return false;
 }
 
-void AMyInGameHUD::SetState(AMyPlayerState* MyPlayerState) const
-{
-	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
-	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
-
-	if (Widget)
-	{
-		Widget->BindPlayerState(MyPlayerState);
-	}
-
-	if (BuyMenuWidget)
-	{
-		BuyMenuWidget->BindPlayerState(MyPlayerState);
-	}
-}
-
 void AMyInGameHUD::BeginPlay()
 {
+	// InitWidget are called inside of Super::BeginPlay by iterating through the component list.
 	Super::BeginPlay();
 
 	const auto& Controller = GetOwningPlayerController();
 	EnableInput(Controller);
-	const auto& Character = Cast<AMyCharacter>(GetOwningPawn());
 	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
 
 	const auto& BuyMenuWidget = Cast<UMyBuyMenuWidget>(BuyMenu->GetUserWidgetObject());
@@ -142,8 +112,4 @@ void AMyInGameHUD::DrawHUD()
 void AMyInGameHUD::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
-
-	Widgets->InitWidget();
-	BuyMenu->InitWidget();
-	StatWidget->InitWidget();
 }

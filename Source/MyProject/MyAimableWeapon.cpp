@@ -5,7 +5,8 @@
 
 #include "DrawDebugHelpers.h"
 #include "MyCharacter.h"
-#include "MyInGameHUD.h"
+#include "Components/MyWeaponStatComponent.h"
+#include "Private/Utilities.hpp"
 #include "NiagaraComponent.h"
 
 #include "Algo/Rotate.h"
@@ -48,12 +49,6 @@ bool AMyAimableWeapon::PreInteract(AMyCharacter* Character)
 bool AMyAimableWeapon::PostInteract(AMyCharacter* Character)
 {
 	const auto& Result = Super::PostInteract(Character);
-
-	if (Result)
-	{
-		Client_UpdateAmmoDisplay();
-	}
-	
 	return Result;
 }
 
@@ -173,13 +168,6 @@ void AMyAimableWeapon::Client_TryAttachItem_Implementation(AMyCharacter* Charact
 {
 	Super::Client_TryAttachItem_Implementation(Character);
 	OnFireReady.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
-
-	const auto& LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-
-	if (const auto& HUD = LocalPlayer->GetHUD<AMyInGameHUD>())
-	{
-		GetWeaponStatComponent()->OnAmmoConsumed.AddUniqueDynamic(HUD, &AMyInGameHUD::UpdateAmmo);
-	}
 }
 
 void AMyAimableWeapon::DropBeforeCharacter()
@@ -191,15 +179,7 @@ void AMyAimableWeapon::DropBeforeCharacter()
 void AMyAimableWeapon::Client_DropBeforeCharacter_Implementation()
 {
 	const auto& Character = Cast<AMyCharacter>(GetItemOwner());
-
 	OnFireReady.RemoveDynamic(Character, &AMyCharacter::ResetAttack);
-
-	const auto& LocalPlayer = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-
-	if (const auto& HUD = LocalPlayer->GetHUD<AMyInGameHUD>())
-	{
-		GetWeaponStatComponent()->OnAmmoConsumed.RemoveDynamic(HUD, &AMyInGameHUD::UpdateAmmo);
-	}
 }
 
 void AMyAimableWeapon::BeginPlay()
@@ -315,7 +295,6 @@ void AMyAimableWeapon::OnReloadDone()
 {
 	Super::OnReloadDone();
 	OnReloadDoneTimerHandle.Invalidate();
-	Client_UpdateAmmoDisplay();
 }
 
 float AMyAimableWeapon::GetCurveValue(
@@ -378,38 +357,5 @@ void AMyAimableWeapon::Multi_TriggerBulletTrail_Implementation()
 	BulletTrail->SetNiagaraVariableFloat(TEXT("User.Pitch"), Pitch);
 	BulletTrail->SetNiagaraVariableFloat(TEXT("User.Roll"), Roll);
 	BulletTrail->Activate();
-}
-
-void AMyAimableWeapon::Client_UpdateAmmoDisplay_Implementation() const
-{
-	// todo: no need to update the ammo display by server
-	// this should be bound with weapon component and hud 
-	if (!IsValid(GetItemOwner()))
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Red, TEXT("Owner is not valid"));
-		return;
-	}
-
-	const auto& PlayerController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-
-	if (!IsValid(PlayerController))
-	{
-		LOG_FUNC(LogTemp, Error, "PlayerController is not valid");
-		return;
-	}
-
-	const auto& HUD = Cast<AMyInGameHUD>(PlayerController->GetHUD());
-
-	if (!IsValid(HUD))
-	{
-		LOG_FUNC(LogTemp, Error, "HUD is not valid");
-		return;
-	}
-
-	HUD->UpdateAmmo(
-				GetWeaponStatComponent()->GetCurrentAmmoCount(),
-				GetWeaponStatComponent()->GetRemainingAmmoCount());
-
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Ammo updated"));
 }
 

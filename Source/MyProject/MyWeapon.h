@@ -4,14 +4,11 @@
 
 #include "CoreMinimal.h"
 #include "MyCollectable.h"
-#include "MyWeaponStatComponent.h"
-#include "Utilities.hpp"
-
-#include "Engine/DataTable.h"
 
 #include "GameFramework/Actor.h"
 #include "MyWeapon.generated.h"
 
+class UMyWeaponStatComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFireReady);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReloadReady);
 
@@ -24,9 +21,13 @@ public:
 	// Sets default values for this actor's properties
 	AMyWeapon();
 
-	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
+	int32 GetDamage() const;
 	UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
+	
+	FOnFireReady OnFireReady;
 
+	FOnReloadReady OnReloadReady;
+	
 	bool CanBeReloaded() const { return CanReload; }
 	bool CanDoAttack() const { return CanAttack; }
 
@@ -45,10 +46,6 @@ public:
 	virtual void OnFireRateTimed();
 	virtual void OnReloadDone();
 	virtual void OnCookingTimed();
-
-	FOnFireReady OnFireReady;
-
-	FOnReloadReady OnReloadReady;
 
 	FTimerHandle OnFireReadyTimerHandle;
 

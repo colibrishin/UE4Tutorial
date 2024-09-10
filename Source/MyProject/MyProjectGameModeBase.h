@@ -3,7 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Utilities.hpp"
 
 #include "GameFramework/GameMode.h"
 #include "MyProjectGameModeBase.generated.h"
@@ -30,10 +29,6 @@ public:
 
 protected:
 	virtual void InitStartSpot_Implementation(AActor* StartSpot, AController* NewPlayer) override;
-
-	virtual void BeginPlay() override;
-
-	virtual void Tick(float DeltaSeconds) override;
 
 	virtual void PostLogin(APlayerController* NewPlayer) override;
 

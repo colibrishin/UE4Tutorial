@@ -3,13 +3,6 @@
 
 #include "MyGameInstance.h"
 
-#include "Data.h"
-#include "MyCharacter.h"
-#include "MyStatComponent.h"
-#include "MyWeapon.h"
-#include "MyWeaponDataAsset.h"
-#include "Utilities.hpp"
-
 #include "UObject/ConstructorHelpers.h"
 
 UMyGameInstance::UMyGameInstance()

@@ -3,9 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Enum.h"
-
-#include "Containers/Union.h"
 
 #include "Engine/DataTable.h"
 #include "Engine/GameInstance.h"

@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Utilities.hpp"
-
 #include "MyProject/MyWeapon.h"
 #include "MyAimableWeapon.generated.h"
 
@@ -49,10 +47,7 @@ protected:
 private:
 	UFUNCTION(Reliable, NetMulticast)
 	void Multi_TriggerBulletTrail();
-
-	UFUNCTION(Reliable, Client)
-	void Client_UpdateAmmoDisplay() const;
-
+	
 	UFUNCTION(Reliable, Client)
 	void Client_Attack();
 

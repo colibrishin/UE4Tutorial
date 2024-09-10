@@ -3,9 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Utilities.hpp"
-#include "Enum.h"
-
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
@@ -54,7 +51,8 @@ public:
 
 	float GetPitchInput() const { return PitchInput; }
 
-	void OnHandChanged(class AMyCollectable* Previous, class AMyCollectable* New, class AMyPlayerState* ThisPlayerState);
+	UFUNCTION()
+	void OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, class AMyPlayerState* ThisPlayerState);
 
 	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 

@@ -3,8 +3,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyPlayerState.h"
-
 #include "GameFramework/HUD.h"
 #include "MyInGameHUD.generated.h"
 
@@ -19,13 +17,9 @@ class MYPROJECT_API AMyInGameHUD : public AHUD
 public:
 	AMyInGameHUD();
 
-	UFUNCTION()
-	void UpdateAmmo(int32 CurrentAmmoCount, const int32 RemainingAmmoCount);
-
 	class UMyInGameWidget* GetInGameWidget() const;
 
 	bool IsBuyMenuOpened() const;
-	void SetState(class AMyPlayerState* MyPlayerState) const;
 
 protected:
 	virtual void BeginPlay() override;
@@ -40,9 +34,9 @@ private:
 	class UWidgetComponent* Widgets;
 
 	UPROPERTY(VisibleAnywhere)
-	class UWidgetComponent* BuyMenu;
+	UWidgetComponent* BuyMenu;
 
 	UPROPERTY(VisibleAnywhere)
-	class UWidgetComponent* StatWidget;
+	UWidgetComponent* StatWidget;
 
 };
