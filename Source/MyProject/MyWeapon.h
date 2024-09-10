@@ -26,7 +26,11 @@ public:
 
 	int32 GetDamage() const { return WeaponStatComponent->GetDamage(); }
 	UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
+	
+	FOnFireReady OnFireReady;
 
+	FOnReloadReady OnReloadReady;
+	
 	bool CanBeReloaded() const { return CanReload; }
 	bool CanDoAttack() const { return CanAttack; }
 
@@ -45,10 +49,6 @@ public:
 	virtual void OnFireRateTimed();
 	virtual void OnReloadDone();
 	virtual void OnCookingTimed();
-
-	FOnFireReady OnFireReady;
-
-	FOnReloadReady OnReloadReady;
 
 	FTimerHandle OnFireReadyTimerHandle;
 

@@ -18,9 +18,7 @@ class MYPROJECT_API UMyInGameWidget : public UUserWidget
 
 public:
 	UMyInGameWidget(const FObjectInitializer& ObjectInitializer);
-
-	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
-
+	
 	class UMyBombIndicatorWidget* GetBombIndicatorWidget() const;
 	void                          BindPlayerState(AMyPlayerState* MyPlayerState) const;
 

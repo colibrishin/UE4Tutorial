@@ -4,10 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Enum.h"
+#include "MyCollectable.h"
 
 #include "Blueprint/UserWidget.h"
 #include "MyAmmoWidget.generated.h"
 
+class AMyPlayerState;
+class AMyCollectable;
 /**
  * 
  */
@@ -17,13 +20,17 @@ class MYPROJECT_API UMyAmmoWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const;
-	void BindPlayerState(class AMyPlayerState* PlayerState) const;
-
+	virtual void NativeConstruct() override;
+	
 private:
-	void HandleStateChanged(class AMyPlayerState* PlayerState, const EMyCharacterState State) const;
-	void HandleWeaponChanged(class AMyCollectable* Previous, class AMyCollectable* New, class AMyPlayerState* PlayerState) const;
+	
+	UFUNCTION()
+	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount);
 
+	UFUNCTION()
+	void HandleWeaponChanged(AMyCollectable* InPrevious, AMyCollectable* InNew, AMyPlayerState* InPlayerState);
+	
+	
 	UPROPERTY(Meta = (BindWidget))
 	class UTextBlock* AmmoText;
 };

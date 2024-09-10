@@ -53,16 +53,6 @@ AMyInGameHUD::AMyInGameHUD()
 	StatWidget->SetWidgetSpace(EWidgetSpace::Screen);
 }
 
-void AMyInGameHUD::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount)
-{
-	const auto& Widget = Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());
-
-	if (Widget)
-	{
-		Widget->UpdateAmmo(CurrentAmmoCount, RemainingAmmoCount);
-	}
-}
-
 UMyInGameWidget* AMyInGameHUD::GetInGameWidget() const
 {
 	return Cast<UMyInGameWidget>(Widgets->GetUserWidgetObject());

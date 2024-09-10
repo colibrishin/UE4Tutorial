@@ -6,11 +6,8 @@
 #include "MyAmmoWidget.h"
 #include "MyBombIndicatorWidget.h"
 #include "MyBombProgressWidget.h"
-#include "MyC4.h"
-#include "MyCharacter.h"
 #include "MyCharacterWidget.h"
 #include "MyCrosshairWidget.h"
-#include "MyGameState.h"
 #include "MyKillFeedWidget.h"
 #include "MyRadarWidget.h"
 #include "MyRemainingTeamWidget.h"
@@ -32,14 +29,6 @@ UMyInGameWidget::UMyInGameWidget(const FObjectInitializer& ObjectInitializer) : 
 	DamageIndicatorWidget = CreateDefaultSubobject<UMyDamageIndicatorWidget>(TEXT("DamageIndicatorWidget"));
 }
 
-void UMyInGameWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount) const
-{
-	if (IsValid(AmmoWidget))
-	{
-		AmmoWidget->UpdateAmmo(CurrentAmmoCount, RemainingAmmoCount);
-	}
-}
-
 UMyBombIndicatorWidget* UMyInGameWidget::GetBombIndicatorWidget() const
 {
 	return BombIndicatorWidget;
@@ -51,12 +40,7 @@ void UMyInGameWidget::BindPlayerState(AMyPlayerState* MyPlayerState) const
 	{
 		CharacterWidget->BindPlayerState(MyPlayerState);
 	}
-
-	if (IsValid(AmmoWidget))
-	{
-		AmmoWidget->BindPlayerState(MyPlayerState);
-	}
-
+	
 	if (IsValid(DamageIndicatorWidget))
 	{
 		DamageIndicatorWidget->BindPlayerState(MyPlayerState);
