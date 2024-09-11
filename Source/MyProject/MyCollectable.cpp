@@ -25,6 +25,8 @@ AMyCollectable::AMyCollectable()
 	Collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
 
 	GetCollider()->SetCollisionProfileName(TEXT("MyCollectable"));
+	GetStaticMeshComponent()->SetCollisionProfileName(TEXT("MyCollectable"));
+	GetSkeletalMeshComponent()->SetCollisionProfileName(TEXT("MyCollectable"));
 
 	GetCollider()->SetBoxExtent(FVector{10.f, 30.f, 10.f});
 
