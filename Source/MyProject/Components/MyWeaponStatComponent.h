@@ -70,9 +70,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	FORCEINLINE const struct FMyRangeWeaponStat*     GetRangeStat() const;
-	FORCEINLINE const struct FMyMeleeWeaponStat*     GetMeleeStat() const;
-	FORCEINLINE const struct FMyThrowableWeaponStat* GetThrowableStat() const;
+	FORCEINLINE const FMyRangeWeaponStat*     GetRangeStat() const;
+	FORCEINLINE const FMyMeleeWeaponStat*     GetMeleeStat() const;
+	FORCEINLINE const FMyThrowableWeaponStat* GetThrowableStat() const;
 
 	UFUNCTION()
 	void OnRep_AmmoConsumed() const;

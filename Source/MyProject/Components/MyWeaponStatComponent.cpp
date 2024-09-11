@@ -219,11 +219,6 @@ float UMyWeaponStatComponent::GetReloadTime() const
 void  UMyWeaponStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (ID == 0)
-	{
-		UE_LOG(LogTemp, Error, TEXT("Weapon ID is not set in %s"), *GetOwner()->GetName());
-	}
 }
 
 void UMyWeaponStatComponent::OnRep_ID()
@@ -233,7 +228,7 @@ void UMyWeaponStatComponent::OnRep_ID()
 
 void UMyWeaponStatComponent::UpdateWeaponData()
 {
-	const auto& WeaponData = GetRowData<FMyWeaponData>(this, ID);
+	const auto& WeaponData = GetRowData<FMyCollectableData>(this, ID);
 
 	if (WeaponData == nullptr)
 	{
@@ -241,7 +236,14 @@ void UMyWeaponStatComponent::UpdateWeaponData()
 		return;
 	}
 
-	const auto& WeaponStatData = WeaponData->WeaponDataAsset->GetWeaponStat();
+	const UMyWeaponDataAsset* WeaponAsset = Cast<UMyWeaponDataAsset>(WeaponData->CollectableDataAsset);
+	if (!WeaponAsset)
+	{
+		LOG_FUNC(LogTemp, Error, "Invalid collectable information, possibly not a weapon");
+		return;
+	}
+	
+	const FMyWeaponStat& WeaponStatData = WeaponAsset->GetWeaponStat();
 
 	WeaponType = WeaponStatData.WeaponType;
 
@@ -277,24 +279,13 @@ void UMyWeaponStatComponent::UpdateWeaponData()
 	Damage = WeaponStatData.Damage;
 	AMyWeapon* Weapon = Cast<AMyWeapon>(GetOwner());
 
-	if (WeaponData->WeaponDataAsset->IsSkeletal())
+	if (WeaponAsset->HasFireSound())
 	{
-		Weapon->SetSkeletalMesh();
-		Weapon->GetSkeletalMeshComponent()->SetSkeletalMesh(WeaponData->WeaponDataAsset->GetSkeletalMesh());
+		Weapon->SetFireSound(WeaponAsset->GetFireSound());
 	}
-	else
+	if (WeaponAsset->HasReloadSound())
 	{
-		Weapon->SetStaticMesh();
-		Weapon->GetStaticMeshComponent()->SetStaticMesh(WeaponData->WeaponDataAsset->GetStaticMesh());
-	}
-
-	if (WeaponData->WeaponDataAsset->HasFireSound())
-	{
-		Weapon->SetFireSound(WeaponData->WeaponDataAsset->GetFireSound());
-	}
-	if (WeaponData->WeaponDataAsset->HasReloadSound())
-	{
-		Weapon->SetReloadSound(WeaponData->WeaponDataAsset->GetReloadSound());
+		Weapon->SetReloadSound(WeaponAsset->GetReloadSound());
 	}
 }
 

@@ -27,16 +27,23 @@ void UMyBuyMenuWidget::Populate()
 
 	if (IsValid(Instance))
 	{
-		for (int i = 1; i < Instance->GetWeaponCount(); ++i)
+		for (int i = 1; i < Instance->GetCollectableCount(); ++i)
 		{
-			const auto& WeaponData = GetRowData<FMyWeaponData>(this, i);
-
+			const auto& WeaponData = GetRowData<FMyCollectableData>(this, i);
+			
 			if (WeaponData == nullptr)
 			{
 				continue;
 			}
 
-			const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
+			const UMyWeaponDataAsset* WeaponAsset = Cast<UMyWeaponDataAsset>(WeaponData->CollectableDataAsset);
+
+			if (!WeaponAsset)
+			{
+				continue;
+			}
+
+			const auto& WeaponStat = WeaponAsset->GetWeaponStat();
 
 			const auto  Name      = FName(*FString::Printf(TEXT("WeaponMenu%d"), i));
 			const auto  RawWidget = CreateWidget(GetRootWidget(), ItemWidgetClass);

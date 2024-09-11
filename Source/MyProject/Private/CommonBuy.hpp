@@ -59,9 +59,16 @@ inline bool IsPlayerInBuyZone(AMyCharacter* Character)
 
 inline bool ValidateBuyRequest(const int32 ID, AMyCharacter* const& Character)
 {
-	const auto& Instance   = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(Character));
-	const auto& WeaponData = GetRowData<FMyWeaponData>(Character, ID);
-	const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
+	const auto& WeaponData = GetRowData<FMyCollectableData>(Character, ID);
+
+	const UMyWeaponDataAsset* Downcast = Cast<UMyWeaponDataAsset>(WeaponData->CollectableDataAsset);
+
+	if (!Downcast)
+	{
+		LOG_FUNC(LogTemp, Error, "Invalid collectable information, possibly not a weapon");
+	}
+	
+	const FMyWeaponStat& WeaponStat = Downcast->GetWeaponStat();
 
 	if (WeaponData == nullptr)
 	{

@@ -56,13 +56,19 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 {
 	if (HasAuthority())
 	{
-		const auto& WeaponData        = GetRowData<FMyWeaponData>(this, WeaponID);
-		const auto& WeaponAsset       = WeaponData->WeaponDataAsset;
+		const auto& WeaponData        = GetRowData<FMyCollectableData>(this, WeaponID);
+		const auto& WeaponAsset       = Cast<UMyWeaponDataAsset>(WeaponData->CollectableDataAsset);
 		const auto& CharacterLocation = RequestCharacter->GetActorLocation();
 
+		if (!WeaponAsset)
+		{
+			LOG_FUNC(LogTemp, Error, "Invalid collectable information, possibly not a weapon");
+			return;
+		}
+		
 		GetPlayerState<AMyPlayerState>()->AddMoney
 			(
-			 -WeaponData->WeaponDataAsset->GetWeaponStat().Price
+			 -WeaponAsset->GetWeaponStat().Price
 			);
 
 		static const TMap<EMyWeaponType, TSubclassOf<AMyWeapon>> TypeMapping
