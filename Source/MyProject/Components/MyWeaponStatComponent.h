@@ -21,6 +21,8 @@ public:
 	// Sets default values for this component's properties
 	UMyWeaponStatComponent();
 
+	void SetID(const int32 InID);
+	
 	int32         GetID() const { return ID; }
 	int32         GetDamage() const;
 	float         GetRange() const;
@@ -58,6 +60,11 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
+	void OnRep_ID();
+	
+	void UpdateWeaponData();
+
 	virtual void InitializeComponent() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -70,7 +77,7 @@ private:
 	UFUNCTION()
 	void OnRep_AmmoConsumed() const;
 
-	UPROPERTY(EditAnywhere, Category=Stats)
+	UPROPERTY(VisibleAnywhere, Category=Stats, ReplicatedUsing=OnRep_ID)
 	int32 ID;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)

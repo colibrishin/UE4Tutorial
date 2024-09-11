@@ -5,6 +5,7 @@
 
 #include "MyProject/MyGameInstance.h"
 #include "MyProject/MyPlayerState.h"
+#include "MyProject/MyWeapon.h"
 #include "MyProject/MyWeaponDataAsset.h"
 #include "Net/UnrealNetwork.h"
 
@@ -26,6 +27,12 @@ UMyWeaponStatComponent::UMyWeaponStatComponent()
 	// ...
 
 	bWantsInitializeComponent = true;
+}
+
+void UMyWeaponStatComponent::SetID(const int32 InID)
+{
+	ID = InID;
+	UpdateWeaponData();
 }
 
 int32 UMyWeaponStatComponent::GetDamage() const
@@ -219,16 +226,13 @@ void  UMyWeaponStatComponent::BeginPlay()
 	}
 }
 
-void UMyWeaponStatComponent::InitializeComponent()
+void UMyWeaponStatComponent::OnRep_ID()
 {
-	Super::InitializeComponent();
+	UpdateWeaponData();
+}
 
-	if (ID == 0)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Weapon ID is not set in %s"), *GetOwner()->GetName());
-		return;
-	}
-
+void UMyWeaponStatComponent::UpdateWeaponData()
+{
 	const auto& WeaponData = GetRowData<FMyWeaponData>(this, ID);
 
 	if (WeaponData == nullptr)
@@ -271,11 +275,38 @@ void UMyWeaponStatComponent::InitializeComponent()
 
 	Name = WeaponStatData.Name;
 	Damage = WeaponStatData.Damage;
+	AMyWeapon* Weapon = Cast<AMyWeapon>(GetOwner());
+
+	if (WeaponData->WeaponDataAsset->IsSkeletal())
+	{
+		Weapon->SetSkeletalMesh();
+		Weapon->GetSkeletalMeshComponent()->SetSkeletalMesh(WeaponData->WeaponDataAsset->GetSkeletalMesh());
+	}
+	else
+	{
+		Weapon->SetStaticMesh();
+		Weapon->GetStaticMeshComponent()->SetStaticMesh(WeaponData->WeaponDataAsset->GetStaticMesh());
+	}
+
+	if (WeaponData->WeaponDataAsset->HasFireSound())
+	{
+		Weapon->SetFireSound(WeaponData->WeaponDataAsset->GetFireSound());
+	}
+	if (WeaponData->WeaponDataAsset->HasReloadSound())
+	{
+		Weapon->SetReloadSound(WeaponData->WeaponDataAsset->GetReloadSound());
+	}
+}
+
+void UMyWeaponStatComponent::InitializeComponent()
+{
+	Super::InitializeComponent();
 }
 
 void UMyWeaponStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UMyWeaponStatComponent, ID);
 	DOREPLIFETIME(UMyWeaponStatComponent, AmmoSpent);
 	DOREPLIFETIME(UMyWeaponStatComponent, LoadedAmmoCount);
 	DOREPLIFETIME(UMyWeaponStatComponent, AmmoPerLoad);
