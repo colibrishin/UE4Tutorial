@@ -33,12 +33,6 @@ AMyAimableWeapon::AMyAimableWeapon()
 	{
 		BulletTrail->SetAsset(NS_BulletTrail.Object);
 	}
-
-	SetSkeletalMesh();
-
-	BulletTrail->SetupAttachment(GetMesh(), TEXT("Muzzle"));
-	BulletTrail->SetAutoActivate(false);
-	BulletTrail->SetAutoDestroy(false);
 }
 
 bool AMyAimableWeapon::PreInteract(AMyCharacter* Character)
@@ -153,6 +147,20 @@ bool AMyAimableWeapon::Hitscan(const FVector& Position, const FVector& Forward, 
 	return Result;
 }
 
+void AMyAimableWeapon::UpdateAsset(UMyCollectableDataAsset* InAsset)
+{
+	Super::UpdateAsset(InAsset);
+	
+	BulletTrail->SetupAttachment(GetMesh(), TEXT("Muzzle"));
+	BulletTrail->SetAutoActivate(false);
+	BulletTrail->SetAutoDestroy(false);
+	
+	if (const auto& StatComponent = GetWeaponStatComponent())
+	{
+		BulletTrail->SetNiagaraVariableFloat(TEXT("User.FireRate"), StatComponent->GetFireRate());
+	}
+}
+
 void AMyAimableWeapon::PostInitializeComponents()
 {
 	Super::PostInitializeComponents();
@@ -185,11 +193,6 @@ void AMyAimableWeapon::Client_DropBeforeCharacter_Implementation()
 void AMyAimableWeapon::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (const auto& StatComponent = GetWeaponStatComponent())
-	{
-		BulletTrail->SetNiagaraVariableFloat(TEXT("User.FireRate"), StatComponent->GetFireRate());
-	}
 }
 
 bool AMyAimableWeapon::AttackImpl()

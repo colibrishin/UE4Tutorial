@@ -48,7 +48,7 @@ public:
 	void SetFireSound(USoundBase* InFireSound) { FireSound = InFireSound; }
 	void SetReloadSound(USoundBase* InReloadSound) { ReloadSound = InReloadSound; }
 
-	virtual void ApplyAssets(UMyWeaponDataAsset* InAssetData);
+	virtual void UpdateAsset(UMyCollectableDataAsset* InAsset) override;
 	
 	virtual void OnFireRateTimed();
 	virtual void OnReloadDone();

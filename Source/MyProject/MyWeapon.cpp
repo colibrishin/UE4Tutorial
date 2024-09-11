@@ -105,9 +105,10 @@ bool AMyWeapon::PostInteract(AMyCharacter* Character)
 	return Result;
 }
 
-void AMyWeapon::ApplyAssets(UMyWeaponDataAsset* InAssetData)
+void AMyWeapon::UpdateAsset(UMyCollectableDataAsset* InAsset)
 {
-	GetWeaponStatComponent()->SetID(InAssetData->GetID());
+	Super::UpdateAsset(InAsset);
+	GetWeaponStatComponent()->SetID(InAsset->GetID());
 }
 
 void AMyWeapon::OnFireRateTimed()
