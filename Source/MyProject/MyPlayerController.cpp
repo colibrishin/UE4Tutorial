@@ -80,6 +80,7 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 
 		static FActorSpawnParameters ActorSpawnParameters;
 		ActorSpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		ActorSpawnParameters.Owner = RequestCharacter;
 		
 		AMyWeapon* GeneratedWeapon = GetWorld()->SpawnActor<AMyWeapon>(
 			TypeMapping[WeaponAsset->GetWeaponStat().WeaponType],
@@ -87,15 +88,15 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 			FRotator::ZeroRotator,
 			ActorSpawnParameters);
 
-		LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponData->WeaponDataAsset->GetWeaponStat().Name);
+		LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponAsset->GetWeaponStat().Name);
 		
-		GeneratedWeapon->ApplyAssets(WeaponAsset);
+		GeneratedWeapon->UpdateAsset(WeaponAsset);
 		
 		if (IsValid(GeneratedWeapon))
 		{
+			GeneratedWeapon->SetOwner(RequestCharacter);
 			GeneratedWeapon->SetReplicateMovement(true);
 			GeneratedWeapon->SetReplicates(true);
-			GeneratedWeapon->SetOwner(RequestCharacter);
 			GeneratedWeapon->Server_Interact(RequestCharacter);
 		}
 	}
