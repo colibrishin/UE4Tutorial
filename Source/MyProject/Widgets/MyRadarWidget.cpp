@@ -29,7 +29,7 @@ UMyRadarWidget::UMyRadarWidget(const FObjectInitializer& ObjectInitializer) : Su
 		EnemyMaterial = EnemyDotTexture.Object;
 	}
 
-	static ConstructorHelpers::FObjectFinder<UMaterialInstance> NullTextureFinder(TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Models/M_RadarDot_Enemy.M_RadarDot_Null'"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInstance> NullTextureFinder(TEXT("/Script/Engine.MaterialInstanceConstant'/Game/Models/M_RadarDot_Null.M_RadarDot_Null'"));
 
 	if (NullTextureFinder.Succeeded())
 	{
