@@ -7,10 +7,10 @@ public class MyProject: ModuleRules
 {
 	public MyProject(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-		PrivatePCHHeaderFile = "ProjectPrecompiled.h";
-		MinFilesUsingPrecompiledHeaderOverride = 1;
-		bUseUnity = false;
+		//PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+		//PrivatePCHHeaderFile = "ProjectPrecompiled.h";
+		//MinFilesUsingPrecompiledHeaderOverride = 1;
+		bUseUnity = true;
 		CppStandard = CppStandardVersion.Default;
 
 		PublicDependencyModuleNames.AddRange(new string[] 
