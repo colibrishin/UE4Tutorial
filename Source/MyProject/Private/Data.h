@@ -23,6 +23,19 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	int32 MaxHealth;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMesh* SkeletalMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	USkeletalMesh* ArmMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UAnimInstance> AnimInstance;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UAnimInstance> ArmAnimInstance;
+	
 };
 
 USTRUCT()

@@ -9,10 +9,12 @@
 #include "MyAnimInstance.h"
 #include "MyC4.h"
 #include "MyInGameHUD.h"
+#include "MyPlayerController.h"
 #include "MyWeapon.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/MyInventoryComponent.h"
+#include "Components/MyStatComponent.h"
 #include "Components/MyWeaponStatComponent.h"
 #include "Engine/DamageEvents.h"
 #include "Engine/OverlapResult.h"
@@ -38,20 +40,6 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	ArmMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmMeshComponent"));
 
 	// 리소스를 불러오는 방법
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Mesh(TEXT("SkeletalMesh'/Game/ParagonBoris/Characters/Heroes/Boris/Meshes/Boris.Boris'"));
-
-	if (SK_Mesh.Succeeded())
-	{
-		GetMesh()->SetSkeletalMesh(SK_Mesh.Object);
-	}
-
-	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_ArmMesh(TEXT("SkeletalMesh'/Game/Models/Boris_Arms/Boris_arms.Boris_arms'"));
-
-	if (SK_ArmMesh.Succeeded())
-	{
-		ArmMeshComponent->SetSkeletalMesh(SK_ArmMesh.Object);
-	}
-
 	static ConstructorHelpers::FObjectFinder<USoundWave> SW_Footstep(TEXT("SoundWave'/Game/Models/sounds/footstep1.footstep1'"));
 
 	if (SW_Footstep.Succeeded())
@@ -89,8 +77,6 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	GetMesh()->SetCastShadow(true);
 	ArmMeshComponent->SetOnlyOwnerSee(true);
 	ArmMeshComponent->SetCastShadow(false);
-
-	
 }
 
 AMyWeapon* AMyCharacter::TryGetWeapon() const
@@ -139,8 +125,12 @@ UMyInventoryComponent* AMyCharacter::GetInventory() const
 
 UMyStatComponent*      AMyCharacter::GetStatComponent() const
 {
-	const auto& State = GetPlayerState<AMyPlayerState>();
-	return State->GetStatComponent();
+	if (const AMyPlayerState* State = GetPlayerState<AMyPlayerState>())
+	{
+		return State->GetStatComponent();	
+	}
+
+	return nullptr;
 }
 
 // Called when the game starts or when spawned
@@ -149,25 +139,30 @@ void AMyCharacter::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AMyCharacter::PostInitializeComponents()
+void AMyCharacter::OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState)
 {
-	Super::PostInitializeComponents();
-
-	const auto& Anim = GetMesh()->GetAnimInstance();
-
-	if (IsValid(Anim))
+	Super::OnPlayerStateChanged(NewPlayerState , OldPlayerState);
+	
+	if (const AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>())
 	{
-		AnimInstance = Cast<UMyAnimInstance>(Anim);
-		AnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnMontageEnded);
-		AnimInstance->BindOnAttackHit(this, &AMyCharacter::OnAttackAnimNotify);
+		if (const UMyStatComponent* StatComponent = MyPlayerState->GetStatComponent())
+		{
+			LOG_FUNC_PRINTF(LogTemp, Log, "Player data asset updated: %s, Client? : %d", *GetName(), GetNetMode() == NM_Client);
+			GetMesh()->SetSkeletalMesh(StatComponent->GetSkeletalMesh());
+			GetMesh()->SetAnimInstanceClass(StatComponent->GetAnimInstance());
+			GetArmMeshComponent()->SetSkeletalMesh(StatComponent->GetArmSkeletalMesh());
+			GetArmMeshComponent()->SetAnimInstanceClass(StatComponent->GetArmAnimInstance());
+			UpdateMeshAnimInstance();
+			UpdateArmMeshAnimInstance();
+		}
+		else
+		{
+			LOG_FUNC_PRINTF(LogTemp, Error, "Unable to get the stat componenet : %s", *MyPlayerState->GetName());
+		}
 	}
-
-	const auto& ArmAnim = ArmMeshComponent->GetAnimInstance();
-
-	if (IsValid(ArmAnim))
+	else
 	{
-		ArmAnimInstance = Cast<UMyAnimInstance>(ArmAnim);
-		ArmAnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnMontageEnded);
+		LOG_FUNC_PRINTF(LogTemp, Error, "Unable to get player state : %s", *GetName());
 	}
 }
 
@@ -541,6 +536,19 @@ void AMyCharacter::ResetAttack()
 	OnAttackEnded.Broadcast();
 	
 	GetCharacterMovement()->MaxWalkSpeed = 600.f;
+}
+
+void AMyCharacter::UpdateMeshAnimInstance()
+{
+	AnimInstance = Cast<UMyAnimInstance>(GetMesh()->GetAnimInstance());
+	AnimInstance->OnMontageEnded.AddUniqueDynamic(this, &AMyCharacter::OnMontageEnded);
+	AnimInstance->OnAttackHit.AddUniqueDynamic(this, &AMyCharacter::OnAttackAnimNotify);
+}
+
+void AMyCharacter::UpdateArmMeshAnimInstance()
+{
+	ArmAnimInstance = Cast<UMyAnimInstance>(GetArmMeshComponent()->GetAnimInstance());
+	ArmAnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnMontageEnded);
 }
 
 void AMyCharacter::InteractInterrupted()

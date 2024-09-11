@@ -10,6 +10,7 @@
 #include "Engine/World.h"
 
 #include "GameFramework/HUD.h"
+#include "MyProject/MyCharacter.h"
 
 // Sets default values for this component's properties
 UMyStatComponent::UMyStatComponent()
@@ -47,6 +48,10 @@ void UMyStatComponent::InitializeComponent()
 		Level     = Data->Level;
 		Damage    = Data->Damage;
 		MaxHealth = Data->MaxHealth;
+		SkeletalMesh = Data->SkeletalMesh;
+		ArmSkeletalMesh = Data->ArmMesh;
+		AnimInstance = Data->AnimInstance;
+		ArmAnimInstance = Data->ArmAnimInstance;
 	}
 
 }

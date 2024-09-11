@@ -8,7 +8,7 @@
 #include "Animation/AnimInstance.h"
 #include "MyAnimInstance.generated.h"
 
-DECLARE_MULTICAST_DELEGATE(FOnAttackHit)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackHit);
 
 /**
  * 
@@ -22,8 +22,8 @@ public:
 	UMyAnimInstance();
 
 	void PlayAttackMontage(uint32 Index);
-
-	DECL_BINDON(OnAttackHit)
+	
+	FOnAttackHit OnAttackHit;	
 
 	const UAnimMontage* GetAttackMontage() const { return AttackMontage; }
 
@@ -69,5 +69,4 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category=Pawn, Meta=(AllowPrivateAccess))
 	UAnimMontage* AttackMontage;
 
-	FOnAttackHit OnAttackHit;
 };
