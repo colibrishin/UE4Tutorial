@@ -18,25 +18,30 @@ public:
 	// Sets default values for this component's properties
 	UMyCollectableComponent();
 
+	void SetID(const int32 InID);
+	
 	EMySlotType GetSlotType() const { return SlotType; }
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	virtual void InitializeComponent() override;
+	void UpdateAsset();
+	
+	UFUNCTION()
+	void OnRep_ID();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_ID, Meta=(AllowPrivateAccess))
 	int32 ID;
 
 	UPROPERTY(VisibleAnywhere)
 	EMySlotType SlotType;
-
-	const struct FMyCollectableData* Stat;
 		
 };
