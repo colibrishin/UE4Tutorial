@@ -4,7 +4,7 @@
 #include "Utilities.hpp"
 #include "MyProject/MyWeaponDataAsset.h"
 
-void FMyWeaponData::OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName)
+void FMyCollectableData::OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName)
 {
 #if WITH_EDITOR
 
@@ -16,7 +16,7 @@ void FMyWeaponData::OnDataTableChanged(const UDataTable* InDataTable, const FNam
 		return;
 	}
 
-	if (!WeaponDataAsset)
+	if (!CollectableDataAsset)
 	{
 		return;
 	}
@@ -24,20 +24,20 @@ void FMyWeaponData::OnDataTableChanged(const UDataTable* InDataTable, const FNam
 	const int32 NewID = FCString::Atoi(*StringName);
 	
 	// Check whether ID is unique;
-	TArray<FMyWeaponData*> Rows;
+	TArray<FMyCollectableData*> Rows;
 	InDataTable->GetAllRows(TEXT(""), Rows);
 	
 	for (int i = 0; i < Rows.Num(); ++i)
 	{
 		if (Rows[i] &&
-			Rows[i]->WeaponDataAsset &&
-			Rows[i]->WeaponDataAsset != WeaponDataAsset &&
-			Rows[i]->WeaponDataAsset->GetID() == NewID)
+			Rows[i]->CollectableDataAsset &&
+			Rows[i]->CollectableDataAsset != CollectableDataAsset &&
+			Rows[i]->CollectableDataAsset->GetID() == NewID)
 		{
-			Rows[i]->WeaponDataAsset->SetID(i);
+			Rows[i]->CollectableDataAsset->SetID(i);
 		}
 
-		if (Rows[i]->WeaponDataAsset == WeaponDataAsset)
+		if (Rows[i]->CollectableDataAsset == CollectableDataAsset)
 		{
 			ensureAlwaysMsgf(
 				InRowName == FString::FromInt(i),
@@ -45,6 +45,6 @@ void FMyWeaponData::OnDataTableChanged(const UDataTable* InDataTable, const FNam
 		}
 	}
 
-	WeaponDataAsset->SetID(NewID);
+	CollectableDataAsset->SetID(NewID);
 #endif
 }

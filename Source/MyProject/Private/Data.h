@@ -9,6 +9,8 @@
 
 #include "Data.generated.h"
 
+class UMyCollectableDataAsset;
+
 USTRUCT()
 struct FMyStat : public FTableRowBase
 {
@@ -111,17 +113,6 @@ public:
 };
 
 USTRUCT()
-struct FMyCollectableData : public FTableRowBase
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EMySlotType SlotType;
-
-};
-
-USTRUCT()
 struct FMyWeaponStat : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -169,12 +160,12 @@ public:
 };
 
 USTRUCT()
-struct FMyWeaponData : public FTableRowBase
+struct FMyCollectableData : public FTableRowBase
 {
 	GENERATED_BODY()
 
 	virtual void OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName) override;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	class UMyWeaponDataAsset* WeaponDataAsset;
+	UMyCollectableDataAsset* CollectableDataAsset;
 };
