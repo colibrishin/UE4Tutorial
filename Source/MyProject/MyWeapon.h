@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "MyCollectable.h"
+#include "NiagaraValidationRule.h"
 
 #include "GameFramework/Actor.h"
 #include "MyWeapon.generated.h"
 
+class UMyWeaponDataAsset;
 class UMyWeaponStatComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnFireReady);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReloadReady);
@@ -43,6 +45,11 @@ public:
 
 	uint32 GetConsecutiveShots() const { return ConsecutiveShots; }
 
+	void SetFireSound(USoundBase* InFireSound) { FireSound = InFireSound; }
+	void SetReloadSound(USoundBase* InReloadSound) { ReloadSound = InReloadSound; }
+
+	virtual void ApplyAssets(UMyWeaponDataAsset* InAssetData);
+	
 	virtual void OnFireRateTimed();
 	virtual void OnReloadDone();
 	virtual void OnCookingTimed();

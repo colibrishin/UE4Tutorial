@@ -6,6 +6,7 @@
 #include "MyCharacter.h"
 #include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerState.h"
+#include "MyWeaponDataAsset.h"
 #include "MyProject/Components/MyWeaponStatComponent.h"
 #include "TimerManager.h"
 
@@ -102,6 +103,11 @@ bool AMyWeapon::PostInteract(AMyCharacter* Character)
 	}
 
 	return Result;
+}
+
+void AMyWeapon::ApplyAssets(UMyWeaponDataAsset* InAssetData)
+{
+	GetWeaponStatComponent()->SetID(InAssetData->GetID());
 }
 
 void AMyWeapon::OnFireRateTimed()

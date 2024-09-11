@@ -3,10 +3,13 @@
 
 #include "MyProject/MyPlayerController.h"
 
+#include "MyAimableWeapon.h"
 #include "Private/CommonBuy.hpp"
 #include "MyCameraManager.h"
 #include "MyCharacter.h"
+#include "MyGrenade.h"
 #include "MyInGameHUD.h"
+#include "MyMeleeWeapon.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
@@ -54,7 +57,7 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 	if (HasAuthority())
 	{
 		const auto& WeaponData        = GetRowData<FMyWeaponData>(this, WeaponID);
-		const auto& WeaponClass       = WeaponData->WeaponDataAsset->GetWeaponClass();
+		const auto& WeaponAsset       = WeaponData->WeaponDataAsset;
 		const auto& CharacterLocation = RequestCharacter->GetActorLocation();
 
 		GetPlayerState<AMyPlayerState>()->AddMoney
@@ -62,21 +65,32 @@ void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32
 			 -WeaponData->WeaponDataAsset->GetWeaponStat().Price
 			);
 
-		const auto& GeneratedWeapon = GetWorld()->SpawnActor
-			(
-				WeaponClass,
-				&CharacterLocation,
-			 nullptr
-			);
+		static const TMap<EMyWeaponType, TSubclassOf<AMyWeapon>> TypeMapping
+		{
+			{EMyWeaponType::Range, AMyAimableWeapon::StaticClass()},
+			{EMyWeaponType::Melee, AMyMeleeWeapon::StaticClass()},
+			{EMyWeaponType::Throwable, AMyGrenade::StaticClass()}
+		};
+
+		static FActorSpawnParameters ActorSpawnParameters;
+		ActorSpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		
+		AMyWeapon* GeneratedWeapon = GetWorld()->SpawnActor<AMyWeapon>(
+			TypeMapping[WeaponAsset->GetWeaponStat().WeaponType],
+			CharacterLocation,
+			FRotator::ZeroRotator,
+			ActorSpawnParameters);
 
 		LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponData->WeaponDataAsset->GetWeaponStat().Name);
-
+		
+		GeneratedWeapon->ApplyAssets(WeaponAsset);
+		
 		if (IsValid(GeneratedWeapon))
 		{
 			GeneratedWeapon->SetReplicateMovement(true);
 			GeneratedWeapon->SetReplicates(true);
 			GeneratedWeapon->SetOwner(RequestCharacter);
-			Cast<AMyWeapon>(GeneratedWeapon)->Server_Interact(RequestCharacter);
+			GeneratedWeapon->Server_Interact(RequestCharacter);
 		}
 	}
 }
