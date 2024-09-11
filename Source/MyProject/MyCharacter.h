@@ -6,6 +6,10 @@
 #include "GameFramework/Character.h"
 #include "MyCharacter.generated.h"
 
+class UMyAnimInstance;
+class UMyInventoryComponent;
+class AMyCollectable;
+class AMyItem;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackStarted);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttackEnded);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAiming, bool, bAim);
@@ -32,12 +36,12 @@ public:
 	// Sets default values for this character's properties
 	AMyCharacter();
 
-	class AMyWeapon* TryGetWeapon() const;
-	class AMyItem* TryGetItem() const;
-	class AMyCollectable* GetCurrentHand() const;
-	class USkeletalMeshComponent* GetArmMeshComponent() const;
-	class UMyInventoryComponent* GetInventory() const;
-	class UMyStatComponent* GetStatComponent() const;
+	AMyWeapon* TryGetWeapon() const;
+	AMyItem* TryGetItem() const;
+	AMyCollectable* GetCurrentHand() const;
+	USkeletalMeshComponent* GetArmMeshComponent() const;
+	UMyInventoryComponent* GetInventory() const;
+	UMyStatComponent* GetStatComponent() const;
 	
 	FOnAttackStarted OnAttackStarted;
 
@@ -54,20 +58,23 @@ public:
 	UFUNCTION()
 	void OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, class AMyPlayerState* ThisPlayerState);
 
-	virtual float TakeDamage(float Damage, struct FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
+	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	void Attack(const float Value);
 
-
 	UFUNCTION()
 	void ResetAttack();
+
+	void UpdateMeshAnimInstance();
+	
+	void UpdateArmMeshAnimInstance();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	virtual void PostInitializeComponents() override;
-
+	virtual void OnPlayerStateChanged(APlayerState* NewPlayerState, APlayerState* OldPlayerState) override;
+	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void Landed(const FHitResult& Hit) override;
@@ -97,6 +104,8 @@ private:
 	void Multi_MeleeAttack();
 
 	int32 GetDamage() const;
+
+	UFUNCTION()
 	void OnAttackAnimNotify();
 
 	UFUNCTION()
