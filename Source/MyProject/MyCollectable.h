@@ -7,6 +7,9 @@
 #include "GameFramework/Actor.h"
 #include "MyCollectable.generated.h"
 
+class UMyCollectableDataAsset;
+class UMyCollectableComponent;
+
 UCLASS()
 class MYPROJECT_API AMyCollectable : public AActor
 {
@@ -19,6 +22,7 @@ public:
 	UMeshComponent* GetMesh() const { return MeshComponent.Get(); }
 	UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
+	UMyCollectableComponent* GetCollectableComponent() const { return CollectableComponent; }
 
 	class UBoxComponent* GetCollider() const { return Collider; }
 	class AMyCharacter* GetItemOwner() const;
@@ -46,6 +50,8 @@ public:
 
 	void SetSkeletalMesh();
 	void SetStaticMesh();
+	
+	virtual void UpdateAsset(UMyCollectableDataAsset* InAsset);
 
 	bool IsBelongToCharacter() const;
 
@@ -95,6 +101,8 @@ protected:
 	virtual void DropBeforeCharacter();
 	virtual void DropLocation();
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -104,17 +112,17 @@ private:
 	virtual void OnCharacterOverlapImpl(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UPROPERTY(VisibleAnywhere)
-	class UBoxComponent* Collider;
+	UBoxComponent* Collider;
 
 	TWeakObjectPtr<UMeshComponent> MeshComponent;
 
 	UPROPERTY(VisibleAnywhere)
-	class UStaticMeshComponent* StaticMeshComponent;
+	UStaticMeshComponent* StaticMeshComponent;
 
 	UPROPERTY(VisibleAnywhere)
 	class USkeletalMeshComponent* SkeletalMeshComponent;
 
-    UPROPERTY(VisibleAnywhere)
-    class UMyCollectableComponent* CollectableComponent;
+    UPROPERTY(VisibleAnywhere, Replicated)
+    UMyCollectableComponent* CollectableComponent;
 
 };

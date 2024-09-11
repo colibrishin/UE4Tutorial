@@ -4,6 +4,8 @@
 #include "MyCollectable.h"
 
 #include "MyCharacter.h"
+#include "MyCollectableDataAsset.h"
+
 #include "MyProject/Components/MyCollectableComponent.h"
 #include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerState.h"
@@ -297,6 +299,12 @@ void AMyCollectable::DropLocation()
 	}
 }
 
+void AMyCollectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AMyCollectable, CollectableComponent);
+}
+
 AMyCharacter* AMyCollectable::GetItemOwner() const
 {
 	const auto& CollectableOwner = GetAttachParentActor();
@@ -323,7 +331,7 @@ void AMyCollectable::SetSkeletalMesh()
 	MeshComponent = SkeletalMeshComponent;
 
 	SetRootComponent(MeshComponent.Get());
-	GetCollider()->SetupAttachment(MeshComponent.Get());
+	GetCollider()->AttachToComponent(MeshComponent.Get(), FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 void AMyCollectable::SetStaticMesh()
@@ -336,7 +344,12 @@ void AMyCollectable::SetStaticMesh()
 	MeshComponent = StaticMeshComponent;
 
 	SetRootComponent(MeshComponent.Get());
-	GetCollider()->SetupAttachment(MeshComponent.Get());
+	GetCollider()->AttachToComponent(MeshComponent.Get(), FAttachmentTransformRules::KeepRelativeTransform);
+}
+
+void AMyCollectable::UpdateAsset(UMyCollectableDataAsset* InAsset)
+{
+	GetCollectableComponent()->SetID(InAsset->GetID());
 }
 
 bool AMyCollectable::IsBelongToCharacter() const
