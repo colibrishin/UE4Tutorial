@@ -32,10 +32,6 @@ public:
 		{
 			Row = StatTable->FindRow<T>(*FString::FromInt(ID), TEXT(""));
 		}
-		if constexpr (std::is_same_v<struct FMyWeaponData, T>)
-		{
-			Row = WeaponStatTable->FindRow<T>(*FString::FromInt(ID), TEXT(""));
-		}
 		if constexpr (std::is_same_v<struct FMyCollectableData, T>)
 		{
 			Row = CollectableDataTable->FindRow<T>(*FString::FromInt(ID), TEXT(""));
@@ -44,17 +40,14 @@ public:
 		*OutData = Row;
 	}
 
-	FORCEINLINE int32 GetWeaponCount() const
+	FORCEINLINE int32 GetCollectableCount() const
 	{
-		return WeaponStatTable->GetRowMap().Num();
+		return CollectableDataTable->GetRowMap().Num();
 	}
 
 private:
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(AllowPrivateAccess))
 	UDataTable* StatTable;
-
-	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(AllowPrivateAccess))
-	UDataTable* WeaponStatTable;
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, meta=(AllowPrivateAccess))
 	UDataTable* CollectableDataTable;
