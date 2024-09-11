@@ -18,13 +18,35 @@ class MYPROJECT_API UMyWeaponDataAsset : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
-	TSubclassOf<AMyWeapon> GetWeaponClass() const { return WeaponBlueprint; }
+	void SetID(const int32 InID) { ID = InID; }
+	
+	int32 GetID() const { return ID; }
+	USkeletalMesh* GetSkeletalMesh() const { return WeaponSkeletalMesh; }
+	UStaticMesh* GetStaticMesh() const { return WeaponStaticMesh; }
+	USoundBase* GetFireSound() const { return WeaponFireSound; }
+	USoundBase* GetReloadSound() const { return WeaponReloadSound; }
 	const FMyWeaponStat& GetWeaponStat() const { return WeaponStat; }
 
-private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
-	TSubclassOf<AMyWeapon> WeaponBlueprint;
+	bool IsSkeletal() const { return WeaponSkeletalMesh != nullptr; }
+	bool HasFireSound() const { return WeaponFireSound != nullptr; }
+	bool HasReloadSound() const { return WeaponReloadSound != nullptr; }
 
+private:
+	UPROPERTY(VisibleAnywhere)
+	int32 ID;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	USkeletalMesh* WeaponSkeletalMesh; 
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	UStaticMesh* WeaponStaticMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	USoundBase* WeaponFireSound;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	USoundBase* WeaponReloadSound;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
 	FMyWeaponStat WeaponStat;
 };
