@@ -6,8 +6,11 @@
 #include "MyProject/Private/Enum.h"
 
 #include "Components/ActorComponent.h"
+#include "MyProject/Widgets/MyAmmoWidget.h"
 #include "MyCollectableComponent.generated.h"
 
+
+class UMyCollectableDataAsset;
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MYPROJECT_API UMyCollectableComponent : public UActorComponent
@@ -19,19 +22,24 @@ public:
 	UMyCollectableComponent();
 
 	void SetID(const int32 InID);
+	int32 GetID() const { return ID; }
 	
-	EMySlotType GetSlotType() const { return SlotType; }
+	EMySlotType GetSlotType() const;
+
+	virtual void ApplyAsset() const;
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
-	void UpdateAsset();
 	
 	UFUNCTION()
 	void OnRep_ID();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual void UpdateAsset();
+	
+	UMyCollectableDataAsset* GetAsset() const { return DataAsset; }
 	
 public:	
 	// Called every frame
@@ -42,6 +50,6 @@ private:
 	int32 ID;
 
 	UPROPERTY(VisibleAnywhere)
-	EMySlotType SlotType;
+	UMyCollectableDataAsset* DataAsset;
 		
 };

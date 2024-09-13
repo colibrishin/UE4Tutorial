@@ -11,8 +11,7 @@
 
 // Sets default values for this component's properties
 UMyWeaponStatComponent::UMyWeaponStatComponent()
-	: ID(0),
-	  Damage(0),
+	: Damage(0),
 	  AmmoSpent(0),
 	  LoadedAmmoCount(0),
 	  AmmoPerLoad(0),
@@ -27,12 +26,6 @@ UMyWeaponStatComponent::UMyWeaponStatComponent()
 	// ...
 
 	bWantsInitializeComponent = true;
-}
-
-void UMyWeaponStatComponent::SetID(const int32 InID)
-{
-	ID = InID;
-	UpdateWeaponData();
 }
 
 int32 UMyWeaponStatComponent::GetDamage() const
@@ -215,33 +208,60 @@ float UMyWeaponStatComponent::GetReloadTime() const
 	return PrintErrorAndReturnDefault<float>("Trying to get reload time from non-range weapon", GetOwner());
 }
 
+void UMyWeaponStatComponent::ApplyAsset() const
+{
+	Super::ApplyAsset();
+
+	AMyWeapon* WeaponDowncast = Cast<AMyWeapon>(GetOwner());
+
+	if (!WeaponDowncast)
+	{
+		LOG_FUNC_PRINTF(LogTemp, Error, "Collectable is not a weapon, %s", *GetOwner()->GetName())
+		return;
+	}
+	
+	if (!GetAsset())
+	{
+		LOG_FUNC(LogTemp, Error, "Asset is not initialized");
+		return;
+	}
+	
+	const UMyWeaponDataAsset* WeaponDataAsset = Cast<UMyWeaponDataAsset>(GetAsset());
+
+	if (!WeaponDataAsset)
+	{
+		LOG_FUNC_PRINTF(LogTemp, Error, "Invalid collectable data %d, possibly not a weapon data", GetAsset()->GetID());
+	}
+
+	if (USoundBase* AssetFireSound = WeaponDataAsset->GetFireSound())
+	{
+		WeaponDowncast->FireSound = AssetFireSound;
+	}
+
+	if (USoundBase* AssetReloadSound = WeaponDataAsset->GetReloadSound())
+	{
+		WeaponDowncast->ReloadSound = AssetReloadSound;
+	}
+}
+
 // Called when the game starts
 void  UMyWeaponStatComponent::BeginPlay()
 {
 	Super::BeginPlay();
 }
 
-void UMyWeaponStatComponent::OnRep_ID()
+void UMyWeaponStatComponent::UpdateAsset()
 {
-	UpdateWeaponData();
-}
+	Super::UpdateAsset();
 
-void UMyWeaponStatComponent::UpdateWeaponData()
-{
-	const auto& WeaponData = GetRowData<FMyCollectableData>(this, ID);
-
-	if (WeaponData == nullptr)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Weapon data is not valid in %s"), *GetOwner()->GetName());
-		return;
-	}
-
-	const UMyWeaponDataAsset* WeaponAsset = Cast<UMyWeaponDataAsset>(WeaponData->CollectableDataAsset);
+	const UMyWeaponDataAsset* WeaponAsset = Cast<UMyWeaponDataAsset>(GetAsset());
 	if (!WeaponAsset)
 	{
 		LOG_FUNC(LogTemp, Error, "Invalid collectable information, possibly not a weapon");
 		return;
 	}
+	
+	LOG_FUNC_PRINTF(LogTemp, Log, "Retrieve the weapon data %d...", GetID());
 	
 	const FMyWeaponStat& WeaponStatData = WeaponAsset->GetWeaponStat();
 
@@ -277,16 +297,6 @@ void UMyWeaponStatComponent::UpdateWeaponData()
 
 	Name = WeaponStatData.Name;
 	Damage = WeaponStatData.Damage;
-	AMyWeapon* Weapon = Cast<AMyWeapon>(GetOwner());
-
-	if (WeaponAsset->HasFireSound())
-	{
-		Weapon->SetFireSound(WeaponAsset->GetFireSound());
-	}
-	if (WeaponAsset->HasReloadSound())
-	{
-		Weapon->SetReloadSound(WeaponAsset->GetReloadSound());
-	}
 }
 
 void UMyWeaponStatComponent::InitializeComponent()
@@ -297,7 +307,6 @@ void UMyWeaponStatComponent::InitializeComponent()
 void UMyWeaponStatComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UMyWeaponStatComponent, ID);
 	DOREPLIFETIME(UMyWeaponStatComponent, AmmoSpent);
 	DOREPLIFETIME(UMyWeaponStatComponent, LoadedAmmoCount);
 	DOREPLIFETIME(UMyWeaponStatComponent, AmmoPerLoad);

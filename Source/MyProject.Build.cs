@@ -24,12 +24,13 @@ public class MyProject: ModuleRules
 			"NavigationSystem",
 			"AIModule",
 			"GameplayTasks",
-			"Niagara"
-		});
+			"Niagara",
+			"EnhancedInput"
+        });
 
 		PrivateDependencyModuleNames.AddRange(new string[]
         {
-			"InputCore"
+			"InputCore", "EnhancedInput"
         });
 	}
 }

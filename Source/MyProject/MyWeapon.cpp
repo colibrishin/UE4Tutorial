@@ -20,15 +20,20 @@ AMyWeapon::AMyWeapon() : CanReload(true), CanAttack(true)
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	WeaponStatComponent = CreateDefaultSubobject<UMyWeaponStatComponent>(TEXT("WeaponStatComponent"));
-	WeaponStatComponent->SetNetAddressable();
-	WeaponStatComponent->SetIsReplicated(true);
-	AddOwnedComponent(WeaponStatComponent);
+	CollectableComponent = CreateDefaultSubobject<UMyWeaponStatComponent>(TEXT("WeaponStatComponent"));
+	CollectableComponent->SetNetAddressable();
+	CollectableComponent->SetIsReplicated(true);
+	AddOwnedComponent(CollectableComponent);
 }
 
 int32 AMyWeapon::GetDamage() const
 {
-	return WeaponStatComponent->GetDamage();
+	return GetWeaponStatComponent()->GetDamage();
+}
+
+UMyWeaponStatComponent* AMyWeapon::GetWeaponStatComponent() const
+{
+	return Cast<UMyWeaponStatComponent>(CollectableComponent);
 }
 
 // Called when the game starts or when spawned
@@ -46,7 +51,7 @@ void AMyWeapon::PostInitializeComponents()
 void AMyWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AMyWeapon, WeaponStatComponent);
+	DOREPLIFETIME(AMyWeapon, CollectableComponent);
 	DOREPLIFETIME(AMyWeapon, ConsecutiveShots);
 	DOREPLIFETIME(AMyWeapon, bIsDummyVisually);
 }
@@ -68,7 +73,7 @@ bool AMyWeapon::AttackInterruptedImpl()
 
 bool AMyWeapon::TryAttachItem(AMyCharacter* Character)
 {
-	if (GetMesh()->AttachToComponent
+	if (GetSkeletalMeshComponent()->AttachToComponent
 		(
 		 Character->GetMesh(),
 		 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
@@ -103,12 +108,6 @@ bool AMyWeapon::PostInteract(AMyCharacter* Character)
 	}
 
 	return Result;
-}
-
-void AMyWeapon::UpdateAsset(UMyCollectableDataAsset* InAsset)
-{
-	Super::UpdateAsset(InAsset);
-	GetWeaponStatComponent()->SetID(InAsset->GetID());
 }
 
 void AMyWeapon::OnFireRateTimed()

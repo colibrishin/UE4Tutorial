@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyCollectableComponent.h"
 #include "../Private/Data.h"
 #include "../Private/Enum.h"
 
@@ -10,20 +11,18 @@
 
 #include "MyWeaponStatComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoConsumed, int32, CurrentAmmoCount, int32 , RemainingCount);
+class UMyWeaponDataAsset;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoConsumed , int32 , CurrentAmmoCount , int32 , RemainingCount);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
-class MYPROJECT_API UMyWeaponStatComponent : public UActorComponent
+class MYPROJECT_API UMyWeaponStatComponent : public UMyCollectableComponent
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this component's properties
 	UMyWeaponStatComponent();
-
-	void SetID(const int32 InID);
 	
-	int32         GetID() const { return ID; }
 	int32         GetDamage() const;
 	float         GetRange() const;
 	bool          IsHitscan() const;
@@ -56,15 +55,14 @@ public:
 
 	FOnAmmoConsumed OnAmmoConsumed;
 
+	virtual void ApplyAsset() const override;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	UFUNCTION()
-	void OnRep_ID();
+	virtual void UpdateAsset() override;
 	
-	void UpdateWeaponData();
-
 	virtual void InitializeComponent() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -76,27 +74,12 @@ private:
 
 	UFUNCTION()
 	void OnRep_AmmoConsumed() const;
-
-	UPROPERTY(VisibleAnywhere, Category=Stats, ReplicatedUsing=OnRep_ID)
-	int32 ID;
-
+	
 	UPROPERTY(VisibleAnywhere, Category=Stats)
 	FString Name;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)
 	int32 Damage;
-
-	UPROPERTY(VisibleAnywhere, Category=Stats, ReplicatedUsing=OnRep_AmmoConsumed)
-	int32 AmmoSpent;
-
-	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
-	int32 LoadedAmmoCount;
-
-	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
-	int32 AmmoPerLoad;
-
-	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
-	int32 TotalAmmoCount;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats)
 	EMyWeaponType WeaponType;

@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "MyCollectable.h"
-#include "NiagaraValidationRule.h"
 
 #include "GameFramework/Actor.h"
 #include "MyWeapon.generated.h"
@@ -18,14 +17,15 @@ UCLASS()
 class MYPROJECT_API AMyWeapon : public AMyCollectable
 {
 	GENERATED_BODY()
-	
+
+	friend class UMyWeaponStatComponent;
 public:	
 	// Sets default values for this actor's properties
 	AMyWeapon();
 
 	int32 GetDamage() const;
-	UMyWeaponStatComponent* GetWeaponStatComponent() const { return WeaponStatComponent; }
-	
+	UMyWeaponStatComponent* GetWeaponStatComponent() const;
+
 	FOnFireReady OnFireReady;
 
 	FOnReloadReady OnReloadReady;
@@ -47,8 +47,6 @@ public:
 
 	void SetFireSound(USoundBase* InFireSound) { FireSound = InFireSound; }
 	void SetReloadSound(USoundBase* InReloadSound) { ReloadSound = InReloadSound; }
-
-	virtual void UpdateAsset(UMyCollectableDataAsset* InAsset) override;
 	
 	virtual void OnFireRateTimed();
 	virtual void OnReloadDone();
@@ -106,8 +104,5 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	class UTexture2D* WeaponImage;
-
-	UPROPERTY(EditAnywhere, Category = "Weapon", Replicated)
-	class UMyWeaponStatComponent* WeaponStatComponent;
 
 };

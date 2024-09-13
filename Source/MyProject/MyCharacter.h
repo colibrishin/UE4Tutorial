@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Interfaces/PickableObject.h"
 #include "MyCharacter.generated.h"
 
 class UMyAnimInstance;
@@ -20,7 +21,7 @@ class UMyStatComponent;
 class AMyWeapon;
 
 UCLASS()
-class MYPROJECT_API AMyCharacter : public ACharacter
+class MYPROJECT_API AMyCharacter : public ACharacter, public IPickableObject
 {
 	// Pawn을 상속받는 확장된 클래스
 	// 스켈레탈 메쉬, 애니메이션 등까지 포함됨
@@ -36,9 +37,6 @@ public:
 	// Sets default values for this character's properties
 	AMyCharacter();
 
-	AMyWeapon* TryGetWeapon() const;
-	AMyItem* TryGetItem() const;
-	AMyCollectable* GetCurrentHand() const;
 	USkeletalMeshComponent* GetArmMeshComponent() const;
 	UMyInventoryComponent* GetInventory() const;
 	UMyStatComponent* GetStatComponent() const;
@@ -55,9 +53,6 @@ public:
 
 	float GetPitchInput() const { return PitchInput; }
 
-	UFUNCTION()
-	void OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, class AMyPlayerState* ThisPlayerState);
-
 	virtual float TakeDamage(float Damage, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 
 	void Attack(const float Value);
@@ -68,7 +63,7 @@ public:
 	void UpdateMeshAnimInstance();
 	
 	void UpdateArmMeshAnimInstance();
-
+	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -103,96 +98,16 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_MeleeAttack();
 
-	int32 GetDamage() const;
-
 	UFUNCTION()
 	void OnAttackAnimNotify();
 
 	UFUNCTION()
 	void OnMontageEnded(UAnimMontage* Montage, bool bInterrupted);
 
-	UFUNCTION(Server, Reliable)
-	void Server_AttackInterrupted(const float Value);
-
 	// ============ End of Attacking ============
-
-
-	// ============ Reloading ============
-
-	void Reload();
-
-	UFUNCTION(Server, Reliable)
-	void Server_Reload();
-
-	UFUNCTION(Client, Reliable)
-	void Client_Reload();
-
-	// ============ End of Reloading ============
 
 	void UpDown(const float Value);
 	void LeftRight(const float Value);
-
-	void Aim();
-	void UnAim();
-
-	// ============ Interacting ============
-
-	void Interactive();
-
-	UFUNCTION(Server, Reliable)
-	void Server_Interactive();
-
-	void InteractInterrupted();
-
-	UFUNCTION(Server, Reliable)
-	void Server_InteractInterrupted();
-
-	UFUNCTION(Client, Reliable)
-	void Client_InteractInterrupted();
-
-	// ============ End of Interacting ============
-
-	// ============ Using ============
-
-	void Use();
-
-	void UseInterrupt();
-
-	UFUNCTION(Server, Reliable)
-	void Server_UseInterrupt();
-
-	UFUNCTION(Client, Reliable)
-	void Client_UseInterrupted();
-
-	// ============ End of Using ============
-
-	void AttachArmCollectable(class AMyCollectable* Previous, class AMyCollectable* New);
-
-	// ============ Swap ============
-
-	void SwapPrimary();
-	UFUNCTION(Server, Reliable)
-	void Server_SwapPrimary();
-
-	void SwapSecondary();
-	UFUNCTION(Server, Reliable)
-	void Server_SwapSecondary();
-
-	void SwapMelee();
-	UFUNCTION(Server, Reliable)
-	void Server_SwapMelee();
-
-	void SwapUtility();
-	UFUNCTION(Server, Reliable)
-	void Server_SwapUtility();
-
-	void SwapBomb();
-	UFUNCTION(Server, Reliable)
-	void Server_SwapBomb();
-
-	void WeaponSwap(const int32 Index) const;
-
-	// ============ End of Swap ============
 
 	void Yaw(const float Value);
 	void Pitch(const float Value);
@@ -201,6 +116,12 @@ private:
 	UFUNCTION(Server, Unreliable)
 	void Server_SyncPitch(const float NewPitch);
 
+public:
+	virtual void PickUp(UC_PickUp* InPickUp) override;
+	
+	virtual void Drop(UC_PickUp* InPickUp) override;
+
+private:
 	UPROPERTY(VisibleAnywhere)
 	float PreviousAttack;
 
@@ -213,7 +134,7 @@ private:
 	// todo: overhead?
 	UPROPERTY(VisibleAnywhere, Replicated)
 	float PitchInput;
-
+	
 	UPROPERTY(VisibleAnywhere)
 	bool IsAttacking;
 
@@ -223,29 +144,29 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	bool CanAttack;
 
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool bHandBusy;
+
 	UPROPERTY(VisibleAnywhere)
 	int32 AttackIndex;
 
 	// Pawn에서 직접 추가했던 무브먼트 컴포넌트는 필요없음
 	UPROPERTY(VisibleAnywhere)
-	class USpringArmComponent* SpringArm;
+	USpringArmComponent* SpringArm;
 
 	UPROPERTY(VisibleAnywhere)
-	class UCameraComponent* Camera;
+	UCameraComponent* Camera;
 
 	UPROPERTY(VisibleAnywhere)
-	class UMyAnimInstance* AnimInstance;
+	UMyAnimInstance* AnimInstance;
 
 	UPROPERTY(VisibleAnywhere)
-	class USkeletalMeshComponent* ArmMeshComponent;
+	USkeletalMeshComponent* ArmMeshComponent;
 
 	UPROPERTY(VisibleAnywhere)
-	class UMyAnimInstance* ArmAnimInstance;
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	class AMyCollectable* HandCollectable;
+	UMyAnimInstance* ArmAnimInstance;
 
 	UPROPERTY(VisibleAnywhere)
-	class USoundWave* FootstepSound;
+	USoundWave* FootstepSound;
 	
 };

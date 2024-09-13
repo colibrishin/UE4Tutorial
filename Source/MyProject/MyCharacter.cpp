@@ -13,6 +13,7 @@
 #include "MyWeapon.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/C_PickUp.h"
 #include "Components/MyInventoryComponent.h"
 #include "Components/MyStatComponent.h"
 #include "Components/MyWeaponStatComponent.h"
@@ -79,39 +80,6 @@ AMyCharacter::AMyCharacter() : CanAttack(true)
 	ArmMeshComponent->SetCastShadow(false);
 }
 
-AMyWeapon* AMyCharacter::TryGetWeapon() const
-{
-	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
-
-	if (IsValid(MyPlayerState))
-	{
-		return Cast<AMyWeapon>(MyPlayerState->GetCurrentHand());
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-AMyItem* AMyCharacter::TryGetItem() const
-{
-	const auto& MyPlayerState = GetPlayerState<AMyPlayerState>();
-
-	if (IsValid(MyPlayerState))
-	{
-		return Cast<AMyItem>(MyPlayerState->GetCurrentHand());
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-AMyCollectable*         AMyCharacter::GetCurrentHand() const
-{
-	return HandCollectable;
-}
-
 USkeletalMeshComponent* AMyCharacter::GetArmMeshComponent() const
 {
 	return ArmMeshComponent;
@@ -170,7 +138,7 @@ void AMyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AMyCharacter, PitchInput);
-	DOREPLIFETIME(AMyCharacter, HandCollectable);
+	DOREPLIFETIME(AMyCharacter, bHandBusy);
 }
 
 float AMyCharacter::TakeDamage(
@@ -214,23 +182,6 @@ void AMyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &AMyCharacter::Jump);
 
-	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Pressed, this, &AMyCharacter::Interactive);
-	PlayerInputComponent->BindAction(TEXT("Interactive"), IE_Released, this, &AMyCharacter::InteractInterrupted);
-
-	PlayerInputComponent->BindAction(TEXT("Use"), IE_Pressed, this, &AMyCharacter::Use);
-	PlayerInputComponent->BindAction(TEXT("Use"), IE_Released, this, &AMyCharacter::UseInterrupt);
-
-	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Repeat, this, &AMyCharacter::Aim);
-	PlayerInputComponent->BindAction(TEXT("Aim"), IE_Released, this, &AMyCharacter::UnAim);
-
-	PlayerInputComponent->BindAction(TEXT("Reload"), IE_Pressed, this, &AMyCharacter::Reload);
-
-	PlayerInputComponent->BindAction(TEXT("Primary"), IE_Pressed, this, &AMyCharacter::SwapPrimary);
-	PlayerInputComponent->BindAction(TEXT("Secondary"), IE_Pressed, this, &AMyCharacter::SwapSecondary);
-	PlayerInputComponent->BindAction(TEXT("Melee"), IE_Pressed, this, &AMyCharacter::SwapMelee);
-	PlayerInputComponent->BindAction(TEXT("Grenade"), IE_Pressed, this, &AMyCharacter::SwapUtility);
-	PlayerInputComponent->BindAction(TEXT("Bomb"), IE_Pressed, this, &AMyCharacter::SwapBomb);
-
 	// Somehow BindAction with IE_Repeat doesn't work, move Attack to axis.
 	PlayerInputComponent->BindAxis(TEXT("Attack"), this, &AMyCharacter::Attack);
 	PlayerInputComponent->BindAxis(TEXT("UpDown"), this, &AMyCharacter::UpDown);
@@ -247,60 +198,12 @@ void AMyCharacter::Server_Attack_Implementation(const float Value)
 		return;
 	}
 
-	if (IsValid(TryGetWeapon()) && !TryGetWeapon()->CanDoAttack())
-	{
-		return;
-	}
-
 	if (Value == 0.f)
 	{
 		return;
 	}
 
-	if (IsValid(TryGetWeapon()))
-	{
-		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack with weapon, Is Client? : %d"), !HasAuthority()));
-
-		if (TryGetWeapon()->Attack())
-		{
-			if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
-			{
-				HandWeapon->Attack();
-				//HandWeapon->BindOnFireReady(this, &AMyCharacter::ResetAttack);
-			}
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Error, "Failed to attack");
-			return;
-		}
-
-		// todo: process client before sending rpc to server.
-
-		if (IsValid(TryGetWeapon()))
-		{
-			switch (TryGetWeapon()->GetWeaponStatComponent()->GetWeaponType())
-			{
-			case EMyWeaponType::Range:
-				LOG_FUNC(LogTemp, Warning, "Range Attack");
-				break;
-			case EMyWeaponType::Melee:
-				LOG_FUNC(LogTemp, Warning, "Melee Attack");
-				Multi_MeleeAttack();
-				break;
-			default:
-			case EMyWeaponType::Unknown:
-				LOG_FUNC(LogTemp, Error, "Unknown Weapon Type");
-				Multi_MeleeAttack();
-				break;
-			}
-		}
-	}
-	else
-	{
-		LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Attack without weapon, Is Client? : %d"), HasAuthority()));
-		Multi_MeleeAttack();
-	}
+	Multi_MeleeAttack();
 
 	OnAttackStarted.Broadcast();
 
@@ -320,70 +223,6 @@ void AMyCharacter::OnMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 	}
 }
 
-void AMyCharacter::Reload()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	if (!IsValid(TryGetWeapon()))
-	{
-		return;
-	}
-
-	if (!TryGetWeapon()->CanBeReloaded())
-	{
-		return;
-	}
-
-	Server_Reload();
-}
-
-void AMyCharacter::Server_AttackInterrupted_Implementation(const float Value)
-{
-	PreviousAttack = Value;
-
-	// Will not reset attack here. There could be a case where player is doing the short burst shooting.
-	if (IsValid(TryGetWeapon()))
-	{
-		TryGetWeapon()->AttackInterrupted();
-	}
-}
-
-void AMyCharacter::Server_Reload_Implementation()
-{
-	if (!IsValid(TryGetWeapon()))
-	{
-		return;
-	}
-
-	if (!TryGetWeapon()->CanBeReloaded())
-	{
-		return;
-	}
-
-	if (!IsValid(TryGetWeapon()))
-	{
-		return;
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Reload"));
-	TryGetWeapon()->Reload();
-	Client_Reload();
-}
-
-void AMyCharacter::Client_Reload_Implementation()
-{
-	if (IsValid(HandCollectable))
-	{
-		if (const auto& HandWeapon = Cast<AMyWeapon>(HandCollectable))
-		{
-			HandWeapon->Reload();
-		}
-	}
-}
-
 void AMyCharacter::UpDown(const float Value)
 {
 	// == Vector3{1, 0, 0} * acceleration
@@ -395,120 +234,6 @@ void AMyCharacter::LeftRight(const float Value)
 	// == Vector3{1, 0, 0} * acceleration
 	GetCharacterMovement()->AddInputVector(GetActorRightVector() * Value);
 	RightInput = Value;
-}
-
-void AMyCharacter::Aim()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	if (!IsValid(TryGetWeapon()))
-	{
-		return;
-	}
-
-	if (!TryGetWeapon()->IsA<AMyAimableWeapon>())
-	{
-		return;
-	}
-
-	if (IsAiming)
-	{
-		return;
-	}
-
-	UE_LOG(LogTemp, Warning, TEXT("Aim"));
-
-	IsAiming = true;
-	OnAiming.Broadcast(IsAiming);
-}
-
-void AMyCharacter::UnAim()
-{
-	if (!IsAiming)
-	{
-		return;
-	}
-
-	IsAiming = false;
-	OnAiming.Broadcast(IsAiming);
-}
-
-void AMyCharacter::Interactive()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	Server_Interactive();
-}
-
-void AMyCharacter::Server_Interactive_Implementation()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Interactive"));
-	const FCollisionQueryParams Params(NAME_None, false, this);
-	TArray<FOverlapResult> HitResults;
-
-	const bool Result = GetWorld()->OverlapMultiByChannel
-	(
-		OUT HitResults,
-		GetActorLocation(),
-		FQuat::Identity,
-		ECC_GameTraceChannel9,
-		FCollisionShape::MakeSphere(100.f),
-		Params
-	);
-
-	if (Result)
-	{
-		for (const auto& Hit : HitResults)
-		{
-			const auto& Interactive = Cast<AMyCollectable>(Hit.GetActor());
-
-			if (IsValid(Interactive))
-			{
-				if (Interactive->GetItemOwner() != this)
-				{
-					Interactive->Server_Interact(this);
-					break;
-				}
-			}
-		}
-	}
-}
-
-void AMyCharacter::Attack(const float Value)
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	// todo: analogue input support?
-	if (PreviousAttack == 1.f && Value == 0.f)
-	{
-		PreviousAttack = Value;
-		Server_AttackInterrupted(Value);
-		return;
-	}
-
-	PreviousAttack = Value;
-
-	if (Value == 0.f)
-	{
-		return;
-	}
-
-	if (!CanAttack)
-	{
-		LOG_FUNC(LogTemp, Log, "Unable to attack.");
-		return;
-	}
-
-	Server_Attack(Value);
 }
 
 void AMyCharacter::Multi_MeleeAttack_Implementation()
@@ -549,137 +274,6 @@ void AMyCharacter::UpdateArmMeshAnimInstance()
 {
 	ArmAnimInstance = Cast<UMyAnimInstance>(GetArmMeshComponent()->GetAnimInstance());
 	ArmAnimInstance->OnMontageEnded.AddDynamic(this, &AMyCharacter::OnMontageEnded);
-}
-
-void AMyCharacter::InteractInterrupted()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	Server_InteractInterrupted();
-}
-
-void AMyCharacter::Server_InteractInterrupted_Implementation()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Server Interact Interrupted"));
-	OnInteractInterrupted.Broadcast();
-
-	Client_InteractInterrupted();
-}
-
-void AMyCharacter::Client_InteractInterrupted_Implementation()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Client Interact Interrupted"));
-	OnInteractInterrupted.Broadcast();
-}
-
-void AMyCharacter::Use()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	if (!IsValid(TryGetItem()))
-	{
-		return;
-	}
-
-	TryGetItem()->Server_Use(this);
-}
-
-void AMyCharacter::UseInterrupt()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	if (!IsValid(TryGetItem()))
-	{
-		return;
-	}
-
-	Server_UseInterrupt();
-}
-
-void AMyCharacter::Server_UseInterrupt_Implementation()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Server Use Interrupted"));
-	OnUseInterrupted.Broadcast();
-
-	Client_UseInterrupted();
-}
-
-void AMyCharacter::OnHandChanged(AMyCollectable* Previous, AMyCollectable* New, AMyPlayerState* ThisPlayerState)
-{
-	LOG_FUNC(LogTemp, Warning, "Weapon change caught");
-
-	if (IsValid(New))
-	{
-		if (IsValid(Previous))
-		{
-			if (const auto& WeaponCast = Cast<AMyWeapon>(Previous);
-				IsValid(WeaponCast))
-			{
-				WeaponCast->OnFireReady.RemoveDynamic(WeaponCast, &AMyWeapon::OnFireRateTimed);
-			}
-		}
-		
-		New->AttachToComponent
-		(
-			GetMesh(), 
-			FAttachmentTransformRules::SnapToTargetNotIncludingScale, 
-			AMyCharacter::RightHandSocketName
-		);
-
-		if (HasAuthority())
-		{
-			AttachArmCollectable(Previous, New);
-		}
-	}
-	else
-	{
-	    // Defensive condition for dropping weapon.
-		if (Previous->GetItemOwner() == this)
-		{
-			Previous->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
-			Previous->AttachToComponent
-			(
-			  GetMesh(),
-			  FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-			  AMyCharacter::ChestSocketName
-			);
-
-			Previous->Hide();
-		}
-
-		if (IsValid(HandCollectable))
-		{
-			HandCollectable->Destroy(true);
-			HandCollectable = nullptr;
-		}
-	}
-}
-
-int32 AMyCharacter::GetDamage() const
-{
-	const auto& State = GetPlayerState<AMyPlayerState>();
-
-	if (!IsValid(State))
-	{
-		return 0;
-	}
-
-	if (IsValid(TryGetWeapon()))
-	{
-		return State->GetDamage() + TryGetWeapon()->GetDamage();
-	}
-
-	return State->GetDamage();
 }
 
 void AMyCharacter::OnAttackAnimNotify()
@@ -750,152 +344,6 @@ void AMyCharacter::OnAttackAnimNotify()
 	);
 }
 
-void AMyCharacter::Client_UseInterrupted_Implementation()
-{
-	UE_LOG(LogTemp, Warning, TEXT("Use Interrupted"));
-	OnUseInterrupted.Broadcast();
-}
-
-void AMyCharacter::AttachArmCollectable(class AMyCollectable* Previous, class AMyCollectable* New)
-{
-	LOG_FUNC(LogTemp, Warning, "AttachArmCollectable");
-
-	if (IsValid(HandCollectable))
-	{
-		HandCollectable->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-		HandCollectable->Destroy();
-		HandCollectable = nullptr;
-	}
-
-	if (IsValid(New))
-	{
-		HandCollectable = GetWorld()->SpawnActor<AMyCollectable>(New->GetClass());
-		HandCollectable->GetMesh()->SetSimulatePhysics(false);
-
-		if (HandCollectable->GetMesh()->AttachToComponent
-		(
-			ArmMeshComponent,
-			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-			AMyCharacter::RightHandSocketName
-		))
-		{
-			HandCollectable->SetOwner(this);
-			HandCollectable->SetReplicates(true);
-			HandCollectable->GetMesh()->SetVisibility(true);
-			HandCollectable->GetMesh()->SetOnlyOwnerSee(true);
-			HandCollectable->GetMesh()->SetCastShadow(false);
-
-			if (const auto& Weapon = Cast<AMyWeapon>(HandCollectable))
-			{
-				Weapon->SetVisualDummy(true);
-			}
-
-			LOG_FUNC(LogTemp, Warning, "Weapon attached to arm");
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Error, "Failed to attach weapon to arm");
-		}
-	}
-}
-
-// todo: Meta-programming?
-
-void AMyCharacter::SwapPrimary()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	Server_SwapPrimary();
-}
-
-void AMyCharacter::Server_SwapPrimary_Implementation()
-{
-	WeaponSwap(1);
-}
-
-void AMyCharacter::SwapSecondary()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	Server_SwapSecondary();
-}
-
-void AMyCharacter::Server_SwapSecondary_Implementation()
-{
-	WeaponSwap(2);
-}
-
-void AMyCharacter::SwapMelee()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	Server_SwapMelee();
-}
-
-void AMyCharacter::Server_SwapMelee_Implementation()
-{
-	WeaponSwap(3);
-}
-
-void AMyCharacter::SwapUtility()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	Server_SwapUtility();
-}
-
-void AMyCharacter::Server_SwapUtility_Implementation()
-{
-	WeaponSwap(4);
-}
-
-void AMyCharacter::SwapBomb()
-{
-	if (IsBuyMenuOpened())
-	{
-		return;
-	}
-
-	Server_SwapBomb();
-}
-
-void AMyCharacter::Server_SwapBomb_Implementation()
-{
-	WeaponSwap(5);
-}
-
-void AMyCharacter::WeaponSwap(const int32 Index) const
-{
-	const auto& Inventory = GetInventory();
-
-	if (const auto& Collectable = Inventory->Get(Index))
-	{
-		const auto& ThisPlayerState = GetPlayerState<AMyPlayerState>();
-
-		if (Collectable == ThisPlayerState->GetCurrentHand())
-		{
-			return;
-		}
-
-		if (IsValid(Collectable))
-		{
-			ThisPlayerState->SetCurrentItem(Collectable);
-		}
-	}
-}
-
 void AMyCharacter::Yaw(const float Value)
 {
 	if (IsBuyMenuOpened())
@@ -932,14 +380,27 @@ void AMyCharacter::Pitch(const float Value)
 	}
 }
 
-bool AMyCharacter::IsBuyMenuOpened() const
+void AMyCharacter::PickUp(UC_PickUp* InPickUp)
 {
-	if (const auto& HUD = Cast<AMyInGameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
-	{
-		return HUD->IsBuyMenuOpened();
-	}
+	IPickableObject::PickUp(InPickUp);
 
-	return false;
+	if (bHandBusy)
+	{
+		// todo: move to inventory;
+		return; 
+	}
+	
+	GetPlayerState<AMyPlayerState>()->SetHand(InPickUp);
+
+	if (USkeletalMeshComponent* ObjectMesh = InPickUp->GetOwner()->GetComponentByClass<USkeletalMeshComponent>())
+	{
+		ObjectMesh->AttachToComponent(
+			GetMesh(),
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+			RightHandSocketName);
+
+		bHandBusy = true;
+	}
 }
 
 void AMyCharacter::Server_SyncPitch_Implementation(const float NewPitch)

@@ -12,6 +12,7 @@
 #include "MyProjectGameModeBase.h"
 #include "MySpectatorPawn.h"
 #include "MyWeapon.h"
+#include "Components/C_Buy.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
 #include "MyProject/Components/MyInventoryComponent.h"

@@ -18,8 +18,6 @@ AMyFragGrenade::AMyFragGrenade()
 
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Grenade(TEXT("SkeletalMesh'/Game/FPS_Weapon_Bundle/Weapons/Meshes/G67_Grenade/SK_G67_X.SK_G67_X'"));
 
-	SetSkeletalMesh();
-
 	if (SK_Grenade.Succeeded())
 	{
 		GetSkeletalMeshComponent()->SetSkeletalMesh(SK_Grenade.Object);

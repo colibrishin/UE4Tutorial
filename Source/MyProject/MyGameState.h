@@ -10,7 +10,8 @@
 #include "GameFramework/GameState.h"
 #include "MyGameState.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged, EMyRoundProgress)
+class UC_Buy;
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged , EMyRoundProgress)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnWinnerSet, EMyTeam)
 DECLARE_MULTICAST_DELEGATE(FOnBombProgressChanging)

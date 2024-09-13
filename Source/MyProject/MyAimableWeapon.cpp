@@ -10,12 +10,7 @@
 #include "NiagaraComponent.h"
 
 #include "Algo/Rotate.h"
-
 #include "Camera/CameraComponent.h"
-
-#include "Components/BoxComponent.h"
-
-#include "Kismet/GameplayStatics.h"
 
 #include "NiagaraSystem.h"
 #include "Engine/DamageEvents.h"
@@ -50,7 +45,7 @@ bool AMyAimableWeapon::TryAttachItem(AMyCharacter* Character)
 {
 	LOG_FUNC(LogTemp, Warning, "TryAttachItem");
 
-	if (GetMesh()->AttachToComponent
+	if (GetSkeletalMeshComponent()->AttachToComponent
 		(
 		 Character->GetMesh(),
 		 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
@@ -58,12 +53,10 @@ bool AMyAimableWeapon::TryAttachItem(AMyCharacter* Character)
 		))
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 15.f, FColor::Green, TEXT("AttachToComponent success"));
-
-		const auto& MyCharacter = GetItemOwner();
-
-		MyCharacter->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
-		MyCharacter->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
-		OnFireReady.AddUniqueDynamic(MyCharacter, &AMyCharacter::ResetAttack);
+		
+		Character->OnInteractInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_InteractInterrupted);
+		Character->OnUseInterrupted.AddUniqueDynamic(this, &AMyCollectable::Server_UseInterrupted);
+		OnFireReady.AddUniqueDynamic(Character, &AMyCharacter::ResetAttack);
 
 		Client_TryAttachItem(Character);
 
@@ -147,11 +140,11 @@ bool AMyAimableWeapon::Hitscan(const FVector& Position, const FVector& Forward, 
 	return Result;
 }
 
-void AMyAimableWeapon::UpdateAsset(UMyCollectableDataAsset* InAsset)
+void AMyAimableWeapon::UpdateAsset()
 {
-	Super::UpdateAsset(InAsset);
+	Super::UpdateAsset();
 	
-	BulletTrail->SetupAttachment(GetMesh(), TEXT("Muzzle"));
+	BulletTrail->AttachToComponent(GetSkeletalMeshComponent(), FAttachmentTransformRules::KeepRelativeTransform, TEXT("Muzzle"));
 	BulletTrail->SetAutoActivate(false);
 	BulletTrail->SetAutoDestroy(false);
 	
@@ -337,7 +330,7 @@ void AMyAimableWeapon::Multi_TriggerBulletTrail_Implementation()
 {
 	const auto& PawnCamera = GetItemOwner()->FindComponentByClass<UCameraComponent>();
 	const auto& CameraLocation = PawnCamera->GetComponentLocation();
-	const auto& MuzzleLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle"));
+	const auto& MuzzleLocation = GetSkeletalMeshComponent()->GetSocketLocation(TEXT("Muzzle"));
 	const auto& WeaponRange = GetWeaponStatComponent()->GetRange();
 
 	FVector TrailNormal = Normal;

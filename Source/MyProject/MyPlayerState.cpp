@@ -12,10 +12,14 @@
 #include "MyPlayerController.h"
 #include "MyProject/Components/MyStatComponent.h"
 #include "MyWeapon.h"
+#include "Components/C_PickUp.h"
+#include "Components/C_Buy.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
 
 #include "Net/UnrealNetwork.h"
+
+DEFINE_LOG_CATEGORY(LogPlayerState);
 
 std::mutex AMyPlayerState::TeamAssignMutex;
 
@@ -27,10 +31,11 @@ AMyPlayerState::AMyPlayerState()
 	  Assist(0),
 	  Health(0),
 	  Money(0),
-      CurrentHand(nullptr)
+      PickUpOfHandObject(nullptr)
 {
 	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
 	InventoryComponent = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("InventoryComponent"));
+	BuyComponent = CreateDefaultSubobject<UC_Buy>(TEXT("BuyComponent"));
 }
 
 void AMyPlayerState::BeginPlay()
@@ -82,22 +87,21 @@ void AMyPlayerState::Reset()
 {
 	Super::Reset();
 
-	LOG_FUNC(LogTemp, Warning, "Reset PlayerState");
-
-	if (State != EMyCharacterState::Alive)
+	if (HasAuthority())
 	{
-		if (CurrentHand && !CurrentHand->GetItemOwner())
+		LOG_FUNC(LogPlayerState, Log, "Reset PlayerState");
+
+		if (State != EMyCharacterState::Alive)
 		{
-			CurrentHand->Destroy();
-			CurrentHand = nullptr;
+			PickUpOfHandObject->OnObjectDrop.Broadcast(Cast<IPickableObject>(GetPawn()));
+			PickUpOfHandObject = nullptr;
+			InventoryComponent->Clear();
 		}
 
-		InventoryComponent->Clear();
+		SetState(EMyCharacterState::Alive);
+		SetHP(StatComponent->GetMaxHealth());
+		// todo: Add money by winning or losing
 	}
-
-	SetState(EMyCharacterState::Alive);
-	SetHP(StatComponent->GetMaxHealth());
-	// todo: Add money by winning or losing
 }
 
 void AMyPlayerState::IncrementKills()
@@ -128,7 +132,8 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, Money);
 	DOREPLIFETIME(AMyPlayerState, InventoryComponent);
 	DOREPLIFETIME(AMyPlayerState, StatComponent);
-	DOREPLIFETIME(AMyPlayerState, CurrentHand);
+	DOREPLIFETIME(AMyPlayerState, BuyComponent);
+	DOREPLIFETIME(AMyPlayerState, PickUpOfHandObject);
 }
 
 void AMyPlayerState::OnRep_HealthChanged() const
@@ -136,9 +141,9 @@ void AMyPlayerState::OnRep_HealthChanged() const
 	OnHPChanged.Broadcast(GetHPRatio());
 }
 
-void AMyPlayerState::OnRep_HandChanged(class AMyCollectable* PreviousHand)
+void AMyPlayerState::OnRep_HandChanged(UC_PickUp* PreviousHand)
 {
-	OnHandChanged.Broadcast(PreviousHand, CurrentHand, this);
+	OnHandChanged.Broadcast(PreviousHand, PickUpOfHandObject, this);
 }
 
 void AMyPlayerState::Client_OnDamageTaken_Implementation(AMyPlayerState* DamageGiver)
@@ -202,9 +207,10 @@ void AMyPlayerState::AssignTeam()
 	SetTeam(NewTeam);
 }
 
-void AMyPlayerState::Use(const int32 Index)
+void AMyPlayerState::SetHand(UC_PickUp* InPickUp)
 {
-	SetCurrentItem(InventoryComponent->Get(Index));
+	OnHandChanged.Broadcast(PickUpOfHandObject, InPickUp, this);
+	PickUpOfHandObject = InPickUp;
 }
 
 void AMyPlayerState::SetState(const EMyCharacterState NewState)
@@ -220,6 +226,11 @@ void AMyPlayerState::SetState(const EMyCharacterState NewState)
 float AMyPlayerState::GetHPRatio() const
 {
 	return FMath::Clamp((float)Health / (float)StatComponent->GetMaxHealth(), 0.f, 1.f);
+}
+
+UC_Buy* AMyPlayerState::GetBuyComponent() const
+{
+	return BuyComponent;
 }
 
 void AMyPlayerState::SetHP(const int32 NewHP)
@@ -248,40 +259,3 @@ void AMyPlayerState::AddMoney(const int32 Amount)
 		OnMoneyChanged.Broadcast(Money);
 	}
 }
-
-void AMyPlayerState::SetCurrentWeapon(AMyWeapon* NewWeapon)
-{
-	if (HasAuthority())
-	{
-		if (NewWeapon)
-		{
-			LOG_FUNC_PRINTF(LogTemp, Warning, "SetCurrentWeapon: %s", *NewWeapon->GetName());
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Warning, "SetCurrentWeapon: nullptr");
-		}
-
-		OnHandChanged.Broadcast(CurrentHand, NewWeapon, this);
-		CurrentHand = NewWeapon;
-	}
-}
-
-void AMyPlayerState::SetCurrentItem(AMyCollectable* NewItem)
-{
-	if (HasAuthority())
-	{
-		if (NewItem)
-		{
-			LOG_FUNC_PRINTF(LogTemp, Warning, "SetCurrentItem: %s", *NewItem->GetName());
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Warning, "SetCurrentItem: nullptr");
-		}
-
-		OnHandChanged.Broadcast(CurrentHand, NewItem, this);
-		CurrentHand = NewItem;
-	}
-}
-	

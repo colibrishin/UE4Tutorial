@@ -19,8 +19,6 @@ public:
 	// Sets default values for this actor's properties
 	AMyCollectable();
 
-	UMeshComponent* GetMesh() const { return MeshComponent.Get(); }
-	UStaticMeshComponent* GetStaticMeshComponent() const { return StaticMeshComponent; }
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
 	UMyCollectableComponent* GetCollectableComponent() const { return CollectableComponent; }
 
@@ -48,10 +46,7 @@ public:
 	void Hide() const;
 	void Show() const;
 
-	void SetSkeletalMesh();
-	void SetStaticMesh();
-	
-	virtual void UpdateAsset(UMyCollectableDataAsset* InAsset);
+	virtual void UpdateAsset();
 
 	bool IsBelongToCharacter() const;
 
@@ -95,13 +90,16 @@ protected:
 	UFUNCTION(Reliable, Client)
 	void Client_UnbindInterruption();
 
-	virtual bool PreUse(class AMyCharacter* Character);
-	virtual bool PostUse(class AMyCharacter* Character);
+	virtual bool PreUse(AMyCharacter* Character);
+	virtual bool PostUse(AMyCharacter* Character);
 
 	virtual void DropBeforeCharacter();
 	virtual void DropLocation();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	UPROPERTY(VisibleAnywhere, Replicated)
+	UMyCollectableComponent* CollectableComponent;
 	
 public:	
 	// Called every frame
@@ -114,15 +112,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	UBoxComponent* Collider;
 
-	TWeakObjectPtr<UMeshComponent> MeshComponent;
-
 	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* StaticMeshComponent;
-
-	UPROPERTY(VisibleAnywhere)
-	class USkeletalMeshComponent* SkeletalMeshComponent;
-
-    UPROPERTY(VisibleAnywhere, Replicated)
-    UMyCollectableComponent* CollectableComponent;
+	USkeletalMeshComponent* SkeletalMeshComponent;
 
 };

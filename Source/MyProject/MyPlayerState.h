@@ -11,13 +11,18 @@
 #include "GameFramework/PlayerState.h"
 #include "MyPlayerState.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged, AMyPlayerState*, InPlayerState, const EMyCharacterState, InCurrentState);
+class UC_PickUp;
+class AMyCollectable;
+class UC_Buy;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged , AMyPlayerState* , InPlayerState ,
+                                             const EMyCharacterState , InCurrentState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHPChanged, const float, InHP);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, int32)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, AMyPlayerState*, InPlayerState);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHandChanged, AMyCollectable*, InPrevious, AMyCollectable*, InCurrent, AMyPlayerState*, InPlayerState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHandChanged, UC_PickUp*, InPrevious, UC_PickUp*, InCurrent, AMyPlayerState*, InPlayerState);
 DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, AMyPlayerState*, AMyPlayerState*, const class AMyWeapon*)
 
+DECLARE_LOG_CATEGORY_EXTERN(LogPlayerState, Log, All);
 /**
  * 
  */
@@ -38,23 +43,21 @@ public:
 
 	class UMyStatComponent* GetStatComponent() const { return StatComponent; }
 	class UMyInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
-	class AMyCollectable* GetCurrentHand() const { return CurrentHand; }
+	UC_PickUp* GetHand() const { return PickUpOfHandObject; }
 
-	void Use(const int32 Index);
-
+	void SetHand(UC_PickUp* InPickUp);
 	void SetState(const EMyCharacterState NewState);
 	void SetHP(const int32 NewHP);
 	void AddMoney(const int32 Amount);
-	void SetCurrentWeapon(class AMyWeapon* NewWeapon);
-	void SetCurrentItem(class AMyCollectable* NewItem);
 
 	FORCEINLINE float GetHP() const
 	{
 		return Health;
 	}
 	FORCEINLINE float GetHPRatio() const;
+	UC_Buy* GetBuyComponent() const;
 
-	
+
 	FOnDamageTaken OnDamageTaken;
 
 	FOnStateChanged OnStateChanged;
@@ -92,7 +95,7 @@ private:
 	void OnRep_HealthChanged() const;
 
 	UFUNCTION()
-	void OnRep_HandChanged(class AMyCollectable* PreviousHand);
+	void OnRep_HandChanged(UC_PickUp* PreviousHand);
 
 	void SetTeam(const EMyTeam NewTeam)
 	{
@@ -130,13 +133,16 @@ private:
 	int32 Money;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
-	class UMyStatComponent* StatComponent;
+	UMyStatComponent* StatComponent;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
-	class UMyInventoryComponent* InventoryComponent;
+	UMyInventoryComponent* InventoryComponent;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	UC_Buy* BuyComponent;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_HandChanged)
-	class AMyCollectable* CurrentHand;
+	UC_PickUp* PickUpOfHandObject;
 
 	FOnKillOccurred OnKillOccurred;
 

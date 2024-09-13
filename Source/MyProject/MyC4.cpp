@@ -24,11 +24,11 @@ AMyC4::AMyC4()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> SM_C4(TEXT("StaticMesh'/Game/Models/C4-1.C4-1'"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SM_C4(TEXT("StaticMesh'/Game/Models/C4-1.C4-1'"));
 
 	if (SM_C4.Succeeded())
 	{
-		Cast<UStaticMeshComponent>(GetMesh())->SetStaticMesh(SM_C4.Object);
+		GetSkeletalMeshComponent()->SetSkeletalMesh(SM_C4.Object);
 	}
 }
 
@@ -314,7 +314,7 @@ void AMyC4::Multi_StartBombTick_Implementation()
 			);
 
 	// Freeze the bomb position!
-	GetMesh()->SetSimulatePhysics(false);
+	GetSkeletalMeshComponent()->SetSimulatePhysics(false);
 }
 
 void AMyC4::OnBombExplodedImpl()
@@ -378,7 +378,7 @@ void AMyC4::OnBombPlantedImpl()
 		Server_Drop();
 
 		// Freeze the bomb position!
-		GetMesh()->SetSimulatePhysics(false);
+		GetSkeletalMeshComponent()->SetSimulatePhysics(false);
 
 		// Execute bomb tick timer for every clients.
 		Multi_StartBombTick();

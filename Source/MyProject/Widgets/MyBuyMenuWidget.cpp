@@ -20,6 +20,7 @@
 #include "Components/UniformGridPanel.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "MyProject/Components/C_Buy.h"
 
 void UMyBuyMenuWidget::Populate()
 {
@@ -184,7 +185,13 @@ void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 			return;
 		}
 
-		Controller->BuyWeapon(ID);
+		if (const AMyPlayerState* MyPlayerState = GetPlayerContext().GetPlayerState<AMyPlayerState>())
+		{
+			if (const UC_Buy* BuyComponent = MyPlayerState->GetBuyComponent())
+			{
+				BuyComponent->BuyWeapon(Character, ID);
+			}
+		}
 	}
 
 }

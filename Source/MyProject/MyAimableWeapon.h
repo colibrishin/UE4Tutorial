@@ -25,7 +25,7 @@ public:
 
 	bool Hitscan(IN const FVector& Position, IN const FVector& Forward, OUT FHitResult& OutHitResult);
 
-	virtual void UpdateAsset(UMyCollectableDataAsset* InAsset) override;
+	virtual void UpdateAsset() override;
 
 protected:
 	virtual void PostInitializeComponents() override;

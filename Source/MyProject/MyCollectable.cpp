@@ -20,31 +20,23 @@ AMyCollectable::AMyCollectable()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMeshComponent"));
+	Collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
 	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
     CollectableComponent = CreateDefaultSubobject<UMyCollectableComponent>(TEXT("CollectableComponent"));
 
-	Collider = CreateDefaultSubobject<UBoxComponent>(TEXT("Collider"));
-
+	SetRootComponent(Collider);
 	GetCollider()->SetCollisionProfileName(TEXT("MyCollectable"));
-	GetStaticMeshComponent()->SetCollisionProfileName(TEXT("MyCollectable"));
 	GetSkeletalMeshComponent()->SetCollisionProfileName(TEXT("MyCollectable"));
 
 	GetCollider()->SetBoxExtent(FVector{10.f, 30.f, 10.f});
 
-	StaticMeshComponent->SetSimulatePhysics(true);
 	SkeletalMeshComponent->SetSimulatePhysics(true);
-
-	SetStaticMesh();
 }
 
 // Called when the game starts or when spawned
 void AMyCollectable::BeginPlay()
 {
 	Super::BeginPlay();
-
-	SetReplicates(true);
-    SetReplicateMovement(true);
 }
 
 void AMyCollectable::PostInitializeComponents()
@@ -78,7 +70,7 @@ void AMyCollectable::Server_Drop_Implementation()
 
 	DropBeforeCharacter();
 
-	GetMesh()->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+	SkeletalMeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
 
 	DropLocation();
 	Multi_Drop();
@@ -88,7 +80,7 @@ void AMyCollectable::Server_Drop_Implementation()
 void AMyCollectable::Multi_Drop_Implementation()
 {
 	Show();
-	GetMesh()->SetSimulatePhysics(true);
+	SkeletalMeshComponent->SetSimulatePhysics(true);
 }
 
 void AMyCollectable::Server_Interact_Implementation(AMyCharacter* Character)
@@ -140,7 +132,7 @@ void AMyCollectable::Server_UseInterrupted_Implementation()
 
 void AMyCollectable::Multi_Interact_Implementation(AMyCharacter* Character)
 {
-	GetMesh()->SetSimulatePhysics(false);
+	SkeletalMeshComponent->SetSimulatePhysics(false);
 	Hide();
 }
 
@@ -160,7 +152,7 @@ bool AMyCollectable::TryAttachItem(AMyCharacter* Character)
 {
 	LOG_FUNC_RAW(LogTemp, Warning, *FString::Printf(TEXT("Setting Owner to : %s"), *Character->GetName()));
 
-	if (GetMesh()->AttachToComponent
+	if (SkeletalMeshComponent->AttachToComponent
 		(
 		 Character->GetMesh(),
 		 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
@@ -189,7 +181,7 @@ bool AMyCollectable::TryAttachItem(AMyCharacter* Character)
 
 bool AMyCollectable::PostInteract(AMyCharacter* Character)
 {
-	GetMesh()->SetSimulatePhysics(false);
+	SkeletalMeshComponent->SetSimulatePhysics(false);
 
 	if (TryAttachItem(Character))
 	{
@@ -219,7 +211,7 @@ bool AMyCollectable::PostInteract(AMyCharacter* Character)
 
 		if (const auto& TargetPlayerState = Character->GetPlayerState<AMyPlayerState>())
 		{
-			if (!IsValid(TargetPlayerState->GetCurrentHand()))
+			if (!IsValid(TargetPlayerState->GetHand()))
 			{
 				TargetPlayerState->SetCurrentItem(this);
 			}
@@ -313,43 +305,18 @@ AMyCharacter* AMyCollectable::GetItemOwner() const
 
 void AMyCollectable::Hide() const
 {
-	GetMesh()->SetVisibility(false);
+	SkeletalMeshComponent->SetVisibility(false);
 }
 
 void AMyCollectable::Show() const
 {
-	GetMesh()->SetVisibility(true);
+	SkeletalMeshComponent->SetVisibility(true);
 }
 
-void AMyCollectable::SetSkeletalMesh()
+void AMyCollectable::UpdateAsset()
 {
-	if (MeshComponent.IsValid())
-	{
-		MeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	}
-
-	MeshComponent = SkeletalMeshComponent;
-
-	SetRootComponent(MeshComponent.Get());
-	GetCollider()->AttachToComponent(MeshComponent.Get(), FAttachmentTransformRules::KeepRelativeTransform);
-}
-
-void AMyCollectable::SetStaticMesh()
-{
-	if (MeshComponent.IsValid())
-	{
-		MeshComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
-	}
-
-	MeshComponent = StaticMeshComponent;
-
-	SetRootComponent(MeshComponent.Get());
-	GetCollider()->AttachToComponent(MeshComponent.Get(), FAttachmentTransformRules::KeepRelativeTransform);
-}
-
-void AMyCollectable::UpdateAsset(UMyCollectableDataAsset* InAsset)
-{
-	GetCollectableComponent()->SetID(InAsset->GetID());
+	LOG_FUNC_PRINTF(LogTemp, Log, "Updating Asset for collectable %s", *GetName());
+	GetCollectableComponent()->ApplyAsset();
 }
 
 bool AMyCollectable::IsBelongToCharacter() const
@@ -381,4 +348,5 @@ void AMyCollectable::OnCharacterOverlapImpl(
 		OnCharacterOverlap(OverlappedComponent , OtherActor , OtherComp , OtherBodyIndex , bFromSweep , Character, SweepResult);
 	}
 }
+
 

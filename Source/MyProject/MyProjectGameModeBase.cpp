@@ -107,7 +107,7 @@ void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 			PlayerState->OnHandChanged.AddUniqueDynamic(Character, &AMyCharacter::OnHandChanged);
 		}
 
-		if (const auto& Collectable = PlayerState->GetCurrentHand())
+		if (const auto& Collectable = PlayerState->GetHand())
 		{
 			if (IsValid(Character))
 			{

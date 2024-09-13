@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"
 
+class UC_Buy;
 /**
  * 
  */
@@ -17,7 +18,6 @@ class MYPROJECT_API AMyPlayerController : public APlayerController
 public:
 	AMyPlayerController();
 
-	void BuyWeapon(const int32 WeaponID) const;
 	void SetSpectator(class AMySpectatorPawn* Spectator);
 
 	UFUNCTION(Client, Reliable)
@@ -25,11 +25,5 @@ public:
 
 protected:
 	virtual void OnRep_PlayerState() override;
-
-private:
-	UFUNCTION(Server, Reliable)
-	void Server_BuyWeapon(class AMyCharacter* RequestCharacter, const int32 WeaponID) const;
-
-	void ProcessBuy(class AMyCharacter* RequestCharacter, const int32 WeaponID) const;
-
+	
 };

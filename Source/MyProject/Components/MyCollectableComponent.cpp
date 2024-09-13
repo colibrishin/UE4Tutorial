@@ -13,8 +13,7 @@
 
 // Sets default values for this component's properties
 UMyCollectableComponent::UMyCollectableComponent()
-	: ID(0),
-	  SlotType(EMySlotType::Unknown)
+	: ID(0)
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -32,6 +31,35 @@ void UMyCollectableComponent::SetID(const int32 InID)
 	UpdateAsset();
 }
 
+EMySlotType UMyCollectableComponent::GetSlotType() const
+{
+	if (DataAsset)
+	{
+		return DataAsset->GetSlotType();
+	}
+		
+	return EMySlotType::Unknown;
+}
+
+void UMyCollectableComponent::OnRep_ID()
+{
+	UpdateAsset();
+}
+
+
+void UMyCollectableComponent::ApplyAsset() const
+{
+	if (!DataAsset)
+	{
+		LOG_FUNC(LogTemp, Error, "Asset is not initialized");
+		return;
+	}
+	
+	if (const AMyCollectable* Collectable = Cast<AMyCollectable>(GetOwner()))
+	{
+		Collectable->GetSkeletalMeshComponent()->SetSkeletalMesh(DataAsset->GetSkeletalMesh());
+	}
+}
 
 // Called when the game starts
 void UMyCollectableComponent::BeginPlay()
@@ -46,31 +74,14 @@ void UMyCollectableComponent::UpdateAsset()
 {
 	if (const FMyCollectableData* Data = GetRowData<FMyCollectableData>(GetWorld(), ID))
 	{
-		const UMyCollectableDataAsset* Asset = Data->CollectableDataAsset;
-		check(Asset);
-
-		SlotType                             = Data->CollectableDataAsset->GetSlotType();
-		
-		AMyCollectable* Collectable = Cast<AMyCollectable>(GetOwner());
-		
-		if (Asset->IsSkeletal())
-		{
-			Collectable->SetSkeletalMesh();
-			Collectable->GetSkeletalMeshComponent()->SetSkeletalMesh(Asset->GetSkeletalMesh());
-		}
-		else
-		{
-			Collectable->SetStaticMesh();
-			Collectable->GetStaticMeshComponent()->SetStaticMesh(Asset->GetStaticMesh());
-		}
+		LOG_FUNC_PRINTF(LogTemp, Log, "Retrieve the collectable data %d...", ID);
+		DataAsset = Data->CollectableDataAsset;
+	}
+	else
+	{
+		LOG_FUNC_PRINTF(LogTemp, Error, "Unable to find collectable data %d", ID);
 	}
 }
-
-void UMyCollectableComponent::OnRep_ID()
-{
-	UpdateAsset();
-}
-
 
 void UMyCollectableComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
