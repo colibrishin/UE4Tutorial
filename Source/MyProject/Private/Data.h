@@ -1,5 +1,4 @@
 #pragma once
-#include "Enum.h"
 
 #include "Engine/DataTable.h"
 
@@ -9,163 +8,16 @@
 
 #include "Data.generated.h"
 
-class UMyCollectableDataAsset;
+class UDA_AssetBase;
+class UDA_Collectable;
 
 USTRUCT()
-struct FMyStat : public FTableRowBase
+struct FBaseAssetRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
-public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Level;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Damage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 MaxHealth;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USkeletalMesh* SkeletalMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	USkeletalMesh* ArmMesh;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<UAnimInstance> AnimInstance;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<UAnimInstance> ArmAnimInstance;
-	
-};
-
-USTRUCT()
-struct FMyWeaponStatBase : public FTableRowBase
-{
-	GENERATED_BODY()
-};
-
-USTRUCT()
-struct FMyRangeWeaponStat : public FMyWeaponStatBase
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 MaxAmmo;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Magazine;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ReloadTime;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float FireRate;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool IsHitscan;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	bool IsAimable;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Range;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UCurveFloat* VSpread;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UCurveFloat* HSpread;
-};
-
-USTRUCT()
-struct FMyMeleeWeaponStat : public FMyWeaponStatBase
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Radius;
-
-};
-
-USTRUCT()
-struct FMyThrowableWeaponStat : public FMyWeaponStatBase
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float Radius;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float CookingTime;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ThrowForce;
-
-	// todo: can be replaced with a mass
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	float ThrowForceMultiplier;
-
-};
-
-USTRUCT()
-struct FMyWeaponStat : public FTableRowBase
-{
-	GENERATED_BODY()
-
-public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	EMyWeaponType WeaponType;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	FString Name;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Damage;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	int32 Price;
-
-private:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
-	FMyMeleeWeaponStat MeleeWeaponStat{};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
-	FMyRangeWeaponStat RangeWeaponStat{};
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Meta=(AllowPrivateAccess))
-	FMyThrowableWeaponStat ThrowableWeaponStat{};
-
-public:
-	template <typename T, typename BaseLock = std::enable_if_t<std::is_base_of_v<FMyWeaponStatBase, T>>>
-	FORCEINLINE const T* Get() const
-	{
-		if constexpr (std::is_same_v<T, FMyMeleeWeaponStat>)
-		{
-			return &MeleeWeaponStat;
-		}
-		if constexpr (std::is_same_v<T, FMyRangeWeaponStat>)
-		{
-			return &RangeWeaponStat;
-		}
-		if constexpr (std::is_same_v<T, FMyThrowableWeaponStat>)
-		{
-			return &ThrowableWeaponStat;
-		}
-	}
-};
-
-USTRUCT()
-struct FMyCollectableData : public FTableRowBase
-{
-	GENERATED_BODY()
+	UDA_AssetBase* AssetToLink;
 
 	virtual void OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName) override;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	UMyCollectableDataAsset* CollectableDataAsset;
 };

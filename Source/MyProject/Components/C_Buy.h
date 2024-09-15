@@ -4,9 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "MyProject/MyCharacter.h"
 #include "C_Buy.generated.h"
 
+
+class AA_Character;
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
 class MYPROJECT_API UC_Buy : public UActorComponent
@@ -17,15 +18,15 @@ public:
 	// Sets default values for this component's properties
 	UC_Buy();
 
-	void BuyWeapon(AMyCharacter* RequestCharacter, const int32 WeaponID) const;
+	void BuyWeapon(AA_Character* RequestCharacter, const int32 WeaponID) const;
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 	
-	void ProcessBuy(AMyCharacter* RequestCharacter , int32 WeaponID) const;
+	void ProcessBuy(AA_Character* RequestCharacter , int32 WeaponID) const;
 
 	UFUNCTION(Server, Reliable)
-	void Server_BuyWeapon(AMyCharacter* RequestCharacter , int32 WeaponID) const;
+	void Server_BuyWeapon(AA_Character* RequestCharacter , int32 WeaponID) const;
 
 
 public:

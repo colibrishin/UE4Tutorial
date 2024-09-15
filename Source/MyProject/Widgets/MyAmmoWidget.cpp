@@ -25,9 +25,9 @@ void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 Remaini
 	AmmoText->SetText(Formatted);
 }
 
-void UMyAmmoWidget::HandleWeaponChanged(AMyCollectable* InPrevious, AMyCollectable* InNew, AMyPlayerState* InPlayerState)
+void UMyAmmoWidget::HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew, AMyPlayerState* InPlayerState)
 {
-	if (const AMyAimableWeapon* PreviousWeapon = Cast<AMyAimableWeapon>(InPrevious))
+	/*if (const AMyAimableWeapon* PreviousWeapon = Cast<AMyAimableWeapon>(InPrevious))
 	{
 		AmmoText->SetText(FText::GetEmpty());
 		PreviousWeapon->GetWeaponStatComponent()->OnAmmoConsumed.RemoveAll(this);
@@ -38,6 +38,6 @@ void UMyAmmoWidget::HandleWeaponChanged(AMyCollectable* InPrevious, AMyCollectab
 		NewWeapon->GetWeaponStatComponent()->OnAmmoConsumed.AddDynamic(this, &UMyAmmoWidget::UpdateAmmo);
 		UpdateAmmo(NewWeapon->GetWeaponStatComponent()->GetCurrentAmmoCount(),
 			NewWeapon->GetWeaponStatComponent()->GetRemainingAmmoCount());
-	}
+	}*/
 }
 

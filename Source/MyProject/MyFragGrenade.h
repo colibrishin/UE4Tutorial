@@ -1,15 +1,12 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
-
+/*
 #include "CoreMinimal.h"
 #include "MyGrenade.h"
 
 #include "MyFragGrenade.generated.h"
 
-/**
- * 
- */
 UCLASS()
 class MYPROJECT_API AMyFragGrenade : public AMyGrenade
 {
@@ -22,3 +19,4 @@ protected:
 	virtual void OnExplosionTimerExpiredImpl() override;
 
 };
+*/

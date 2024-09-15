@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+/*
 #include "MyProject/MyFragGrenade.h"
 
 #include "MyCharacter.h"
@@ -74,3 +74,4 @@ void AMyFragGrenade::OnExplosionTimerExpiredImpl()
 
 	Destroy(true);
 }
+*/

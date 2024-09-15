@@ -3,13 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
 #include "C_PickUp.generated.h"
 
 class IPickableObject;
 class AMyCharacter;
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectPickUp, IPickableObject*, InCaller);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectDrop, IPickableObject*, InCaller);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectPickUp, TScriptInterface<IPickableObject>, InCaller);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectDrop, TScriptInterface<IPickableObject>, InCaller);
 DECLARE_LOG_CATEGORY_EXTERN(LogPickUp, Log, All);
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
@@ -33,10 +33,10 @@ protected:
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void OnPickUpCallback(IPickableObject* InCaller);
+	void OnPickUpCallback(TScriptInterface<IPickableObject> InCaller);
 	
 	UFUNCTION()
-	void OnDropCallback(IPickableObject* InCaller);
+	void OnDropCallback(TScriptInterface<IPickableObject> InCaller);
 
 public:
 	// Called every frame

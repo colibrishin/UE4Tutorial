@@ -2,16 +2,17 @@
 
 #include "CoreMinimal.h"
 #include "Data.h"
-#include "MyProject/MyBuyZone.h"
-#include "MyProject/MyCharacter.h"
 #include "MyProject/MyGameState.h"
 #include "MyProject/MyPlayerState.h"
-#include "MyProject/MyWeaponDataAsset.h"
 #include "Utilities.hpp"
 
 #include "Engine/OverlapResult.h"
 
-inline bool IsPlayerInBuyZone(AMyCharacter* Character)
+#include "MyProject/Actors/A_Character.h"
+#include "MyProject/Actors/MyBuyZone.h"
+#include "MyProject/DataAsset/DA_Weapon.h"
+
+inline bool IsPlayerInBuyZone(AA_Character* Character)
 {
 	const FCollisionQueryParams Params {NAME_None, false, Character};
 
@@ -57,19 +58,17 @@ inline bool IsPlayerInBuyZone(AMyCharacter* Character)
 	return true;
 }
 
-inline bool ValidateBuyRequest(const int32 ID, AMyCharacter* const& Character)
+inline bool ValidateBuyRequest(const int32 ID, AA_Character* const& Character)
 {
-	const auto& WeaponData = GetRowData<FMyCollectableData>(Character, ID);
+	const auto& WeaponData = GetRowData<FBaseAssetRow>(Character, ID);
 
-	const UMyWeaponDataAsset* Downcast = Cast<UMyWeaponDataAsset>(WeaponData->CollectableDataAsset);
+	const UDA_Weapon* Downcast = Cast<UDA_Weapon>(WeaponData->AssetToLink);
 
 	if (!Downcast)
 	{
 		LOG_FUNC(LogTemp, Error, "Invalid collectable information, possibly not a weapon");
 	}
 	
-	const FMyWeaponStat& WeaponStat = Downcast->GetWeaponStat();
-
 	if (WeaponData == nullptr)
 	{
 		LOG_FUNC(LogTemp, Error, "WeaponInfo is nullptr");
@@ -82,7 +81,7 @@ inline bool ValidateBuyRequest(const int32 ID, AMyCharacter* const& Character)
 		return false;
 	}
 
-	if (Character->GetPlayerState<AMyPlayerState>()->GetMoney() - WeaponStat.Price < 0)
+	if (Character->GetPlayerState<AMyPlayerState>()->GetMoney() - Downcast->GetPrice() < 0)
 	{
 		LOG_FUNC(LogTemp, Error, "Player has money but have not enough money to buy");
 		return false;

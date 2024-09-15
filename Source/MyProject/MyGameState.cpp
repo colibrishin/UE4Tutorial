@@ -4,25 +4,23 @@
 #include "MyProject/MyGameState.h"
 
 #include "MyC4.h"
-#include "MyCharacter.h"
-#include "MyCollectable.h"
 #include "MyInGameHUD.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
 #include "MySpectatorPawn.h"
-#include "MyWeapon.h"
-#include "Components/C_Buy.h"
+
+#include "Actors/A_Character.h"
+#include "Actors/A_Collectable.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
-#include "MyProject/Components/MyInventoryComponent.h"
 #include "MyProject/Widgets/MyBombIndicatorWidget.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
 #include "Net/UnrealNetwork.h"
 
 AMyGameState::AMyGameState()
-	: RoundC4(nullptr),
-	  RoundProgress(EMyRoundProgress::Unknown),
+	: RoundProgress(EMyRoundProgress::Unknown),
 	  Winner(EMyTeam::Unknown),
 	  CTWinCount(0),
 	  TWinCount(0),
@@ -87,13 +85,9 @@ AMyGameState::AMyGameState()
 	{
 		BombDefusedSound = BombDefusedSoundFinder.Object;
 	}
-
-	static ConstructorHelpers::FClassFinder<AMyC4> BP_C4(TEXT("Blueprint'/Game/Blueprints/BPMyC4.BPMyC4_C'"));
-
-	if (BP_C4.Succeeded()) { C4BluePrint = BP_C4.Class; }
 }
 
-void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, const AMyWeapon* Weapon) const
+void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, const UC_Weapon* Weapon) const
 {
 	if (HasAuthority())
 	{
@@ -203,7 +197,7 @@ void AMyGameState::Multi_NotifyNewPlayer_Implementation(AMyPlayerState* State) c
 }
 
 void AMyGameState::Multi_KillOccurred_Implementation(
-	AMyPlayerState* Killer, AMyPlayerState* Victim, const AMyWeapon* Weapon
+	AMyPlayerState* Killer, AMyPlayerState* Victim, const UC_Weapon* Weapon
 ) const
 {
 	OnKillOccurred.Broadcast(Killer, Victim, Weapon);
@@ -250,14 +244,12 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerState* PlayerState, const E
 
 		if (State == EMyCharacterState::Dead)
 		{
-			const auto& Character = Cast<AMyCharacter>(PlayerState->GetPawn());
+			const auto& Character = Cast<AA_Character>(PlayerState->GetPawn());
 
 			const auto& Spectator = GetWorld()->SpawnActor<AMySpectatorPawn>(
 				Character->GetActorLocation(),
 				FRotator::ZeroRotator
 			);
-
-			PlayerState->GetInventoryComponent()->DropAll();
 
 			const auto& PlayerController = Cast<AMyPlayerController>(PlayerState->GetOwner());
 
@@ -310,7 +302,7 @@ void AMyGameState::HandleRoundProgress() const
 			for (const auto& Player : PlayerArray)
 			{
 				const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
-				const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
+				const auto& Character = Cast<AA_Character>(PlayerController->GetCharacter());
 
 				if (!IsValid(Character))
 				{
@@ -330,7 +322,7 @@ void AMyGameState::HandleRoundProgress() const
 			for (const auto& Player : PlayerArray)
 			{
 				const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
-				const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
+				const auto& Character = Cast<AA_Character>(PlayerController->GetCharacter());
 
 				if (!IsValid(Character))
 				{
@@ -443,7 +435,7 @@ void AMyGameState::RestartRound()
 	AliveCT = 0;
 	AliveT = 0;
 
-	if (RoundC4)
+	/*if (RoundC4)
 	{
 		if (OnBombStateChangedHandle.IsValid())
 		{
@@ -456,7 +448,7 @@ void AMyGameState::RestartRound()
 		}
 		
 		RoundC4->Destroy(true);
-	}
+	}*/
 
 	BombState = EMyBombState::Unknown;
 
@@ -466,7 +458,7 @@ void AMyGameState::RestartRound()
 	{
 		const auto& PlayerState = Cast<AMyPlayerState>(Player);
 		const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
-		const auto& Character = Cast<AMyCharacter>(PlayerController->GetCharacter());
+		const auto& Character = Cast<AA_Character>(PlayerController->GetCharacter());
 
 		PlayerState->Reset();
 
@@ -508,13 +500,13 @@ void AMyGameState::RestartRound()
 
 	// Cleanup collectables
 	TArray<AActor*> Collectables;
-	UGameplayStatics::GetAllActorsOfClass(this, AMyCollectable::StaticClass(), Collectables);
+	UGameplayStatics::GetAllActorsOfClass(this, AA_Collectable::StaticClass(), Collectables);
 
 	for (const auto& Collectable : Collectables)
 	{
-		const auto& CastedCollectable = Cast<AMyCollectable>(Collectable);
+		const auto& CastedCollectable = Cast<AA_Collectable>(Collectable);
 
-		if (!CastedCollectable->GetItemOwner())
+		if (!CastedCollectable->GetAttachParentActor())
 		{
 			CastedCollectable->Destroy(true);
 		}
@@ -527,7 +519,7 @@ void AMyGameState::RestartRound()
 
 	SpawnParameters.Owner = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
 
-	const auto& C4 = GetWorld()->SpawnActor(
+	/*const auto& C4 = GetWorld()->SpawnActor(
 		C4BluePrint,
 		&SpawnPointLocation,
 		&FRotator::ZeroRotator,
@@ -542,7 +534,7 @@ void AMyGameState::RestartRound()
 	OnBombStateChangedHandle = RoundC4->BindOnBombStateChanged(this, &AMyGameState::OnBombStateChanged);
 	BombState = EMyBombState::Idle;
 
-	OnBombPickedHandle = RoundC4->BindOnBombPicked(this, &AMyGameState::HandleOnBombPicked);
+	OnBombPickedHandle = RoundC4->BindOnBombPicked(this, &AMyGameState::HandleOnBombPicked);*/
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);

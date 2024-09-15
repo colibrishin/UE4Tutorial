@@ -1,50 +1,52 @@
 #include "MyProject/Private/Data.h"
 
+#include "DA_AssetBase.h"
 #include "Editor.h"
 #include "Utilities.hpp"
-#include "MyProject/MyWeaponDataAsset.h"
 
-void FMyCollectableData::OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName)
+void FBaseAssetRow::OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName)
 {
 #if WITH_EDITOR
-
-	const FString StringName = InRowName.ToString();
-	if (!StringName.IsNumeric())
+	if (GIsEditor)
 	{
-		ensure(false);
-		LOG_FUNC_PRINTF(LogTemp, Error, "Weapon data row name is not numerical : %s", *InRowName.ToString());
-		return;
-	}
-
-	if (!CollectableDataAsset)
-	{
-		return;
-	}
-
-	const int32 NewID = FCString::Atoi(*StringName);
-	
-	// Check whether ID is unique;
-	TArray<FMyCollectableData*> Rows;
-	InDataTable->GetAllRows(TEXT(""), Rows);
-	
-	for (int i = 0; i < Rows.Num(); ++i)
-	{
-		if (Rows[i] &&
-			Rows[i]->CollectableDataAsset &&
-			Rows[i]->CollectableDataAsset != CollectableDataAsset &&
-			Rows[i]->CollectableDataAsset->GetID() == NewID)
+		const FString StringName = InRowName.ToString();
+		if (!StringName.IsNumeric())
 		{
-			Rows[i]->CollectableDataAsset->SetID(i);
+			ensure(false);
+			LOG_FUNC_PRINTF(LogTemp, Error, "Data row name is not numerical : %s", *InRowName.ToString());
+			return;
 		}
 
-		if (Rows[i]->CollectableDataAsset == CollectableDataAsset)
+		if (!AssetToLink)
 		{
-			ensureAlwaysMsgf(
-				InRowName == FString::FromInt(i),
-				TEXT("Duplicated data asset found, row %d - row %s"), i, *InRowName.ToString());
+			return;
 		}
-	}
 
-	CollectableDataAsset->SetID(NewID);
+		const int32 NewID = FCString::Atoi(*StringName);
+	
+		// Check whether ID is unique;
+		TArray<FBaseAssetRow*> Rows;
+		InDataTable->GetAllRows(TEXT(""), Rows);
+	
+		for (int i = 0; i < Rows.Num(); ++i)
+		{
+			if (Rows[i] &&
+				Rows[i]->AssetToLink &&
+				Rows[i]->AssetToLink != AssetToLink &&
+				Rows[i]->AssetToLink->GetID() == NewID)
+			{
+				Rows[i]->AssetToLink->SetID(i);
+			}
+
+			if (Rows[i]->AssetToLink == AssetToLink)
+			{
+				ensureAlwaysMsgf(
+					InRowName == FString::FromInt(i),
+					TEXT("Duplicated data asset found, row %d - row %s"), i, *InRowName.ToString());
+			}
+		}
+
+		AssetToLink->SetID(NewID);
+	}
 #endif
 }

@@ -10,6 +10,8 @@
 #include "MyProject/MyCharacter.h"
 #include "MyProject/MyGrenade.h"
 #include "MyProject/MyMeleeWeapon.h"
+#include "MyProject/Actors/A_Character.h"
+#include "MyProject/DataAsset/DA_Weapon.h"
 
 
 // Sets default values for this component's properties
@@ -23,7 +25,7 @@ UC_Buy::UC_Buy()
 	SetIsReplicatedByDefault(true);
 }
 
-void UC_Buy::BuyWeapon(AMyCharacter* RequestCharacter, const int32 WeaponID) const
+void UC_Buy::BuyWeapon(AA_Character* RequestCharacter, const int32 WeaponID) const
 {
 	if (!IsValid(RequestCharacter))
 	{
@@ -43,10 +45,10 @@ void UC_Buy::BuyWeapon(AMyCharacter* RequestCharacter, const int32 WeaponID) con
 	}
 }
 
-void UC_Buy::ProcessBuy(AMyCharacter* RequestCharacter, const int32 WeaponID) const
+void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) const
 {
 	const auto& WeaponData        = GetRowData<FMyCollectableData>(this, WeaponID);
-	const auto& WeaponAsset       = Cast<UMyWeaponDataAsset>(WeaponData->CollectableDataAsset);
+	const auto& WeaponAsset       = Cast<UDA_Weapon>(WeaponData->CollectableDataAsset);
 	const auto& CharacterLocation = RequestCharacter->GetActorLocation();
 
 	if (!WeaponAsset)
@@ -90,7 +92,7 @@ void UC_Buy::ProcessBuy(AMyCharacter* RequestCharacter, const int32 WeaponID) co
 	}
 }
 
-void UC_Buy::Server_BuyWeapon_Implementation(AMyCharacter* RequestCharacter, const int32 WeaponID) const
+void UC_Buy::Server_BuyWeapon_Implementation(AA_Character* RequestCharacter, const int32 WeaponID) const
 {
 	if (!ValidateBuyRequest(WeaponID, RequestCharacter))
 	{

@@ -1,5 +1,5 @@
 // Fill out your copyright notice in the Description page of Project Settings.
-
+/*
 
 #include "MyProject/MySmokeGrenade.h"
 
@@ -63,3 +63,4 @@ void AMySmokeGrenade::Multi_TriggerSmoke_Implementation()
 		false
 	);
 }
+*/

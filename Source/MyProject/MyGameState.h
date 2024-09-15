@@ -5,11 +5,13 @@
 #include "CoreMinimal.h"
 #include "MyPlayerState.h"
 #include "MyProjectGameModeBase.h"
+
 #include "Private/Utilities.hpp"
 
 #include "GameFramework/GameState.h"
 #include "MyGameState.generated.h"
 
+class UC_Weapon;
 class UC_Buy;
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged , EMyRoundProgress)
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool)
@@ -38,7 +40,7 @@ public:
 	DECL_BINDON(OnBombProgressChanged, EMyBombState)
 	DECL_BINDON(OnPlayerStateChanged, class AMyPlayerState*, EMyCharacterState)
 	DECL_BINDON(OnAliveCountChanged, EMyTeam, int32)
-	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
+	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class UC_Weapon*)
 	DECL_BINDON(OnNewPlayerJoined, class AMyPlayerState*)
 	DECL_BINDON(OnBombPicked, class AMyCharacter*)
 
@@ -56,14 +58,13 @@ public:
 		return AMyProjectGameModeBase::MatchRoundTime - GetRoundTime();
 	}
 
-	class AMyC4* GetC4() const { return RoundC4; }
 	EMyBombState GetBombState() const { return BombState; }
 	int32        GetCTWins() const { return CTWinCount; }
 	int32        GetTWins() const { return TWinCount; }
 
 	AMyGameState();
 
-	void HandleKillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
+	void HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, const UC_Weapon* Weapon) const;
 
 	UFUNCTION()
 	void HandlePlayerStateChanged(class AMyPlayerState* PlayerState, const EMyCharacterState State);
@@ -132,22 +133,16 @@ private:
 	void OnRep_AliveT() const;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_KillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
+	void Multi_KillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, const UC_Weapon* Weapon) const;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_NotifyNewPlayer(class AMyPlayerState* State) const;
+	void Multi_NotifyNewPlayer(AMyPlayerState* State) const;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_NotifyBombPicked(class AMyCharacter* Character) const;
+	void Multi_NotifyBombPicked(AA_Character* Character) const;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ResetBombIndicator();
-
-	UPROPERTY(VisibleAnywhere)
-	TSubclassOf<class AMyC4> C4BluePrint;
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	class AMyC4* RoundC4;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_RoundProgress)
 	EMyRoundProgress RoundProgress;

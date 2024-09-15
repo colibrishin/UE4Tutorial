@@ -15,8 +15,8 @@ UC_PickUp::UC_PickUp()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
-	OnObjectPickUp.AddUniqueDynamic(this, &UC_PickUp::OnPickUpCallback);
-	OnObjectDrop.AddUniqueDynamic(this, &UC_PickUp::OnDropCallback);
+	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
+	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
 }
 
 
@@ -27,16 +27,18 @@ void UC_PickUp::BeginPlay()
 
 	// ...
 
-	OnComponentBeginOverlap.AddUniqueDynamic(this, &UC_PickUp::OnBeginOverlap);
-	
+	OnComponentBeginOverlap.AddUniqueDynamic(this , &UC_PickUp::OnBeginOverlap);
 }
 
-void UC_PickUp::OnBeginOverlap(UPrimitiveComponent* /*OverlappedComponent*/, AActor* OtherActor,
-	UPrimitiveComponent* /*OtherComp*/, int32 /*OtherBodyIndex*/, bool /*bFromSweep*/, const FHitResult& /*SweepResult*/)
+void UC_PickUp::OnBeginOverlap(
+	UPrimitiveComponent* /*OverlappedComponent*/ , AActor* OtherActor ,
+	UPrimitiveComponent* /*OtherComp*/ , int32 /*OtherBodyIndex*/ , bool /*bFromSweep*/ ,
+	const FHitResult& /*SweepResult*/
+)
 {
-	if (IPickableObject* const& PickingUpObject = Cast<IPickableObject>(OtherActor))
+	if (Cast<IPickableObject>(OtherActor))
 	{
-		OnObjectPickUp.Broadcast(PickingUpObject);
+		OnObjectPickUp.Broadcast(TScriptInterface<IPickableObject>(OtherActor));
 	}
 }
 
@@ -49,39 +51,38 @@ void UC_PickUp::TickComponent(float DeltaTime , ELevelTick TickType , FActorComp
 	// ...
 }
 
-void UC_PickUp::OnPickUpCallback(IPickableObject* InCaller)
+void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickableObject> InCaller)
 {
 	if (!InCaller)
 	{
-		LOG_FUNC_PRINTF(LogPickUp, Error, "Caught invalid pickup object!");
+		LOG_FUNC_PRINTF(LogPickUp , Error , "Caught invalid pickup object!");
 		return;
 	}
-	
-	LOG_FUNC_PRINTF(LogPickUp, Log, "Caught pickup : %s", *InCaller->_getUObject()->GetName());
+
+	LOG_FUNC_PRINTF(LogPickUp , Log , "Caught pickup : %s" , *InCaller->_getUObject()->GetName());
 
 	OnComponentBeginOverlap.RemoveAll(this);
 	OnObjectPickUp.RemoveAll(this);
-	OnObjectDrop.AddUniqueDynamic(this, &UC_PickUp::OnDropCallback);
-	SetSimulatePhysics( false );
+	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
+	SetSimulatePhysics(false);
 
 	InCaller->PickUp(this);
 }
 
-void UC_PickUp::OnDropCallback(IPickableObject* InCaller)
+void UC_PickUp::OnDropCallback(TScriptInterface<IPickableObject> InCaller)
 {
 	if (!InCaller)
 	{
-		LOG_FUNC_PRINTF(LogPickUp, Error, "Caught invalid drop object!");
+		LOG_FUNC_PRINTF(LogPickUp , Error , "Caught invalid drop object!");
 		return;
 	}
-	
-	LOG_FUNC_PRINTF(LogPickUp, Log, "Caught drop : %s", *InCaller->_getUObject()->GetName());
 
-	OnComponentBeginOverlap.AddUniqueDynamic(this, &UC_PickUp::OnBeginOverlap);
+	LOG_FUNC_PRINTF(LogPickUp , Log , "Caught drop : %s" , *InCaller->_getUObject()->GetName());
+
+	OnComponentBeginOverlap.AddUniqueDynamic(this , &UC_PickUp::OnBeginOverlap);
 	OnObjectDrop.RemoveAll(this);
-	OnObjectPickUp.AddUniqueDynamic(this, &UC_PickUp::OnPickUpCallback);
-	SetSimulatePhysics( true );
+	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
+	SetSimulatePhysics(true);
 
 	InCaller->Drop(this);
 }
-

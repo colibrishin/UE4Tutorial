@@ -5,6 +5,7 @@
 #include <mutex>
 
 #include "CoreMinimal.h"
+
 #include "Private/Enum.h"
 #include "Private/Utilities.hpp"
 
@@ -12,15 +13,17 @@
 #include "MyPlayerState.generated.h"
 
 class UC_PickUp;
+class UC_Weapon;
 class AMyCollectable;
 class UC_Buy;
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged , AMyPlayerState* , InPlayerState ,
                                              const EMyCharacterState , InCurrentState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnHPChanged, const float, InHP);
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, int32)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, AMyPlayerState*, InPlayerState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnHandChanged, UC_PickUp*, InPrevious, UC_PickUp*, InCurrent, AMyPlayerState*, InPlayerState);
-DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, AMyPlayerState*, AMyPlayerState*, const class AMyWeapon*)
+DECLARE_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, AMyPlayerState*, AMyPlayerState*, const UC_Weapon*)
 
 DECLARE_LOG_CATEGORY_EXTERN(LogPlayerState, Log, All);
 /**
@@ -40,9 +43,7 @@ public:
 		return Team;
 	}
 	void AssignTeam();
-
-	class UMyStatComponent* GetStatComponent() const { return StatComponent; }
-	class UMyInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	
 	UC_PickUp* GetHand() const { return PickUpOfHandObject; }
 
 	void SetHand(UC_PickUp* InPickUp);
@@ -67,7 +68,7 @@ public:
 	FOnHandChanged OnHandChanged;
 	
 	DECL_BINDON(OnMoneyChanged, int32)
-	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
+	DECL_BINDON(OnKillOccurred, AMyPlayerState*, AMyPlayerState*, const UC_Weapon*)
 
 	FORCEINLINE int32 GetMoney() const { return Money; }
 
@@ -131,12 +132,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_MoneyChanged)
 	int32 Money;
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UMyStatComponent* StatComponent;
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UMyInventoryComponent* InventoryComponent;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UC_Buy* BuyComponent;

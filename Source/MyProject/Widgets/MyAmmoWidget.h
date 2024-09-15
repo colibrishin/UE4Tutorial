@@ -5,8 +5,12 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "../Interfaces/MyPlayerStateRequiredWidget.h"
+
+#include "MyProject/Components/C_PickUp.h"
+
 #include "MyAmmoWidget.generated.h"
 
+class AA_Collectable;
 class AMyPlayerState;
 class AMyCollectable;
 /**
@@ -26,7 +30,7 @@ private:
 	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount);
 
 	UFUNCTION()
-	void HandleWeaponChanged(AMyCollectable* InPrevious, AMyCollectable* InNew, AMyPlayerState* InPlayerState);
+	void HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew, AMyPlayerState* InPlayerState);
 	
 	
 	UPROPERTY(Meta = (BindWidget))
