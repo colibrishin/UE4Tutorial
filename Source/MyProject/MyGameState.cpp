@@ -10,8 +10,9 @@
 #include "MyProjectGameModeBase.h"
 #include "MySpectatorPawn.h"
 
-#include "Actors/A_Character.h"
-#include "Actors/A_Collectable.h"
+#include "Actors/A_C4.h"
+#include "Actors/BaseClass/A_Character.h"
+#include "Actors/BaseClass/A_Collectable.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
@@ -20,14 +21,13 @@
 #include "Net/UnrealNetwork.h"
 
 AMyGameState::AMyGameState()
-	: RoundProgress(EMyRoundProgress::Unknown),
+	: CTRoundWinSound(nullptr),
+	  TRoundWinSound(nullptr),
+	  RoundProgress(EMyRoundProgress::Unknown),
 	  Winner(EMyTeam::Unknown),
 	  CTWinCount(0),
 	  TWinCount(0),
-	  CTRoundWinSound(nullptr),
-	  TRoundWinSound(nullptr),
 	  bCanBuy(false),
-	  BombState(EMyBombState::Unknown),
 	  LastRoundInWorldTime(0),
 	  AliveCT(0),
 	  AliveT(0),
@@ -85,38 +85,30 @@ AMyGameState::AMyGameState()
 	{
 		BombDefusedSound = BombDefusedSoundFinder.Object;
 	}
+
+	OnBombStateChanged.AddUniqueDynamic(this, &AMyGameState::HandleBombStateChanged);
 }
 
-void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, const UC_Weapon* Weapon) const
+void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon)
 {
-	if (HasAuthority())
+	if (Killer && Victim)
 	{
-		if (Killer && Victim)
-		{
-			Killer->IncrementKills();
-			Victim->IncrementDeaths();
+		Killer->IncrementKills();
+		Victim->IncrementDeaths();
 
-			Multi_KillOccurred(Killer, Victim, Weapon);
-		}
+		Multi_KillOccurred(Killer, Victim, Weapon);
 	}
 }
 
 void AMyGameState::BuyTimeEnded()
 {
 	bCanBuy = false;
-
-	if (HasAuthority())
-	{
-		OnBuyChanged.Broadcast(bCanBuy);
-	}
+	OnBuyChanged.Broadcast(bCanBuy);
 }
 
-void AMyGameState::HandleOnBombPicked(AMyCharacter* Character) const
+void AMyGameState::HandleOnBombPicked(AA_Character* Character) const
 {
-	if (HasAuthority())
-	{
-		Multi_NotifyBombPicked(Character);
-	}
+	Multi_NotifyBombPicked(Character);
 }
 
 void AMyGameState::OnRep_WinnerSet() const
@@ -142,21 +134,6 @@ void AMyGameState::OnRep_RoundProgress() const
 void AMyGameState::OnRep_CanBuy() const
 {
 	OnBuyChanged.Broadcast(bCanBuy);
-}
-
-void AMyGameState::OnRep_BombState(const EMyBombState PreviousBombState)
-{
-	if (PreviousBombState == EMyBombState::Planting && BombState == EMyBombState::Planted)
-	{
-		UGameplayStatics::PlaySound2D(this, BombPlantedSound);
-	}
-
-	if (PreviousBombState == EMyBombState::Defusing && BombState == EMyBombState::Defused)
-	{
-		UGameplayStatics::PlaySound2D(this, BombDefusedSound);
-	}
-
-	OnBombStateChanged(BombState);
 }
 
 void AMyGameState::OnRep_AliveCT() const
@@ -186,7 +163,7 @@ void AMyGameState::Multi_ResetBombIndicator_Implementation()
 	}
 }
 
-void AMyGameState::Multi_NotifyBombPicked_Implementation(AMyCharacter* Character) const
+void AMyGameState::Multi_NotifyBombPicked_Implementation(AA_Character* Character) const
 {
 	OnBombPicked.Broadcast(Character);
 }
@@ -197,7 +174,7 @@ void AMyGameState::Multi_NotifyNewPlayer_Implementation(AMyPlayerState* State) c
 }
 
 void AMyGameState::Multi_KillOccurred_Implementation(
-	AMyPlayerState* Killer, AMyPlayerState* Victim, const UC_Weapon* Weapon
+	AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon
 ) const
 {
 	OnKillOccurred.Broadcast(Killer, Victim, Weapon);
@@ -205,160 +182,145 @@ void AMyGameState::Multi_KillOccurred_Implementation(
 
 void AMyGameState::HandlePlayerStateChanged(AMyPlayerState* PlayerState, const EMyCharacterState State)
 {
-	if (HasAuthority())
+	const auto& Team = PlayerState->GetTeam();
+
+	switch (State)
 	{
-		const auto& Team = PlayerState->GetTeam();
-
-		switch (State)
+	case EMyCharacterState::Alive:
+		switch (Team)
 		{
-		case EMyCharacterState::Alive:
-			switch (Team)
-			{
-			case EMyTeam::CT: ++AliveCT; break;
-			case EMyTeam::T: ++AliveT; break;
-			case EMyTeam::Unknown:
-			default: break;
-			}
-		case EMyCharacterState::Planting: 
+	case EMyTeam::CT: ++AliveCT; break;
+	case EMyTeam::T: ++AliveT; break;
+	case EMyTeam::Unknown:
+	default: break;
+		}
+	case EMyCharacterState::Planting: 
+		break;
+	case EMyCharacterState::Defusing: 
+		break;
+	case EMyCharacterState::Dead:
+		switch (Team)
+		{
+	case EMyTeam::CT: --AliveCT;
 			break;
-		case EMyCharacterState::Defusing: 
+	case EMyTeam::T: --AliveT;
 			break;
-		case EMyCharacterState::Dead:
-			switch (Team)
-			{
-				case EMyTeam::CT: --AliveCT;
-				break;
-				case EMyTeam::T: --AliveT;
-				break;
-				case EMyTeam::Unknown: break;
-			}
-			break;
-		case EMyCharacterState::Unknown:
-		default: break;
+	case EMyTeam::Unknown: break;
 		}
-
-		if (State == EMyCharacterState::Alive || State == EMyCharacterState::Dead)
-		{
-			OnAliveCountChanged.Broadcast(Team, Team == EMyTeam::CT ? AliveCT : AliveT);
-		}
-
-		if (State == EMyCharacterState::Dead)
-		{
-			const auto& Character = Cast<AA_Character>(PlayerState->GetPawn());
-
-			const auto& Spectator = GetWorld()->SpawnActor<AMySpectatorPawn>(
-				Character->GetActorLocation(),
-				FRotator::ZeroRotator
-			);
-
-			const auto& PlayerController = Cast<AMyPlayerController>(PlayerState->GetOwner());
-
-			Spectator->SetPreviousCharacter(Character);
-			PlayerController->SetSpectator(Spectator);
-
-			if (!PlayerController->HasAuthority())
-			{
-				PlayerController->Client_SetSpectator(Spectator);
-			}
-		}
-
-		LOG_FUNC_PRINTF(LogTemp, Warning, "AliveCT: %d, AliveT: %d", AliveCT, AliveT);
-
-		// Elimination
-		if (BombState != EMyBombState::Planted)
-		{
-			if (RoundProgress == EMyRoundProgress::Playing && AliveCT <= 0)
-			{
-				SetWinner(EMyTeam::T);
-				GoToRoundEnd();
-			}
-			else if (RoundProgress == EMyRoundProgress::Playing && AliveT <= 0)
-			{
-				SetWinner(EMyTeam::CT);
-				GoToRoundEnd();
-			}
-		}
-
-		OnPlayerStateChanged.Broadcast(PlayerState, State);
+		break;
+	case EMyCharacterState::Unknown:
+	default: break;
 	}
+
+	if (State == EMyCharacterState::Alive || State == EMyCharacterState::Dead)
+	{
+		OnAliveCountChanged.Broadcast(Team, Team == EMyTeam::CT ? AliveCT : AliveT);
+	}
+
+	if (State == EMyCharacterState::Dead)
+	{
+		const auto& Character = Cast<AA_Character>(PlayerState->GetPawn());
+
+		const auto& Spectator = GetWorld()->SpawnActor<AMySpectatorPawn>(
+			Character->GetActorLocation(),
+			FRotator::ZeroRotator
+		);
+
+		const auto& PlayerController = Cast<AMyPlayerController>(PlayerState->GetOwner());
+
+		Spectator->SetPreviousCharacter(Character);
+		PlayerController->SetSpectator(Spectator);
+
+		if (!PlayerController->HasAuthority())
+		{
+			PlayerController->Client_SetSpectator(Spectator);
+		}
+	}
+
+	LOG_FUNC_PRINTF(LogTemp, Warning, "AliveCT: %d, AliveT: %d", AliveCT, AliveT);
+
+	// Elimination
+	if (RoundC4->GetBombState() != EMyBombState::Planted)
+	{
+		if (RoundProgress == EMyRoundProgress::Playing && AliveCT <= 0)
+		{
+			SetWinner(EMyTeam::T);
+			GoToRoundEnd();
+		}
+		else if (RoundProgress == EMyRoundProgress::Playing && AliveT <= 0)
+		{
+			SetWinner(EMyTeam::CT);
+			GoToRoundEnd();
+		}
+	}
+
+	OnPlayerStateChanged.Broadcast(PlayerState, State);
 }
 
 void AMyGameState::HandleNewPlayer(AMyPlayerState* State) const
 {
-	if (HasAuthority())
-	{
-		Multi_NotifyNewPlayer(State);
-	}
+	Multi_NotifyNewPlayer(State);
 }
 
 void AMyGameState::HandleRoundProgress() const
 {
-	if (HasAuthority())
+	if (RoundProgress == EMyRoundProgress::FreezeTime)
 	{
-		if (RoundProgress == EMyRoundProgress::FreezeTime)
-		{
-			LOG_FUNC(LogTemp, Warning, "FreezeTime");
+		LOG_FUNC(LogTemp, Warning, "FreezeTime");
 
-			for (const auto& Player : PlayerArray)
+		for (const auto& Player : PlayerArray)
+		{
+			const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
+			const auto& Character = Cast<AA_Character>(PlayerController->GetCharacter());
+
+			if (!IsValid(Character))
 			{
-				const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
-				const auto& Character = Cast<AA_Character>(PlayerController->GetCharacter());
-
-				if (!IsValid(Character))
-				{
-					continue;
-				}
-
-				LOG_FUNC(LogTemp, Warning, "SetMovementMode to None");
-				Character->GetCharacterMovement()->SetMovementMode(MOVE_None);
+				continue;
 			}
+
+			LOG_FUNC(LogTemp, Warning, "SetMovementMode to None");
+			Character->GetCharacterMovement()->SetMovementMode(MOVE_None);
 		}
-		else if (RoundProgress == EMyRoundProgress::Playing)
+	}
+	else if (RoundProgress == EMyRoundProgress::Playing)
+	{
+		UGameplayStatics::PlaySound2D(this, RoundStartSound);
+
+		LOG_FUNC(LogTemp, Warning, "Playing");
+
+		for (const auto& Player : PlayerArray)
 		{
-			UGameplayStatics::PlaySound2D(this, RoundStartSound);
+			const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
+			const auto& Character = Cast<AA_Character>(PlayerController->GetCharacter());
 
-			LOG_FUNC(LogTemp, Warning, "Playing");
-
-			for (const auto& Player : PlayerArray)
+			if (!IsValid(Character))
 			{
-				const auto& PlayerController = Cast<AMyPlayerController>(Player->GetOwner());
-				const auto& Character = Cast<AA_Character>(PlayerController->GetCharacter());
-
-				if (!IsValid(Character))
-				{
-					continue;
-				}
-
-				LOG_FUNC(LogTemp, Warning, "SetMovementMode to Walking");
-				Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+				continue;
 			}
+
+			LOG_FUNC(LogTemp, Warning, "SetMovementMode to Walking");
+			Character->GetCharacterMovement()->SetMovementMode(MOVE_Walking);
 		}
-		else if (RoundProgress == EMyRoundProgress::PostRound)
-		{
+	}
+	else if (RoundProgress == EMyRoundProgress::PostRound)
+	{
 			
-		}
 	}
 }
 
 void AMyGameState::SetRoundProgress(const EMyRoundProgress NewProgress)
 {
-	if (HasAuthority())
-	{
-		RoundProgress = NewProgress;
-		HandleRoundProgress();
+	RoundProgress = NewProgress;
+	HandleRoundProgress();
 
-		OnRoundProgressChanged.Broadcast(RoundProgress);
-	}
+	OnRoundProgressChanged.Broadcast(RoundProgress);
 }
 
 void AMyGameState::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (HasAuthority())
-	{
-		Reset();
-	}
+	Reset();
 }
 
 void AMyGameState::Reset()
@@ -369,7 +331,6 @@ void AMyGameState::Reset()
 	TWinCount = 0;
 	Winner = EMyTeam::Unknown;
 	bCanBuy = true;
-	BombState = EMyBombState::Unknown;
 	LastRoundInWorldTime = GetServerWorldTimeSeconds();
 }
 
@@ -385,36 +346,28 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AMyGameState, CTWinCount);
 	DOREPLIFETIME(AMyGameState, TWinCount);
 	DOREPLIFETIME(AMyGameState, RoundC4);
-	DOREPLIFETIME(AMyGameState, BombState);
 }
 
-void AMyGameState::OnBombStateChanged(const EMyBombState NewState)
+void AMyGameState::HandleBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character* InDefuser)
 {
-	LOG_FUNC_PRINTF(LogTemp, Warning, "BombState: %s", *EnumToString(NewState));
-
-	if (HasAuthority())
+	LOG_FUNC_PRINTF(LogTemp, Warning, "BombState: %s", *EnumToString(InNewState));
+	
+	if (InOldState == EMyBombState::Planting && InNewState == EMyBombState::Planted)
 	{
-		if (BombState == EMyBombState::Planting && NewState == EMyBombState::Planted)
-		{
-			UGameplayStatics::PlaySound2D(this, BombPlantedSound);
-		}
-
-		if (BombState == EMyBombState::Defusing && NewState == EMyBombState::Defused)
-		{
-			UGameplayStatics::PlaySound2D(this, BombDefusedSound);
-		}
-
-		BombState = NewState;
+		UGameplayStatics::PlaySound2D(this, BombPlantedSound);
 	}
 
-	OnBombProgressChanged.Broadcast(BombState);
+	if (InOldState == EMyBombState::Defusing && InNewState == EMyBombState::Defused)
+	{
+		UGameplayStatics::PlaySound2D(this, BombDefusedSound);
+	}
 
-	if (BombState == EMyBombState::Defused)
+	if (InNewState == EMyBombState::Defused)
 	{
 		SetWinner(EMyTeam::CT);
 		GoToRoundEnd();
 	}
-	else if (BombState == EMyBombState::Exploded)
+	else if (InNewState == EMyBombState::Exploded)
 	{
 		SetWinner(EMyTeam::T);
 		GoToRoundEnd();
@@ -423,35 +376,18 @@ void AMyGameState::OnBombStateChanged(const EMyBombState NewState)
 
 void AMyGameState::RestartRound()
 {
-	if (!HasAuthority())
-	{
-		LOG_FUNC(LogTemp, Error, "This function should be called on server");
-		return;
-	}
-
 	LOG_FUNC(LogTemp, Warning, "Restarting Round");
 	SetWinner(EMyTeam::Unknown);
 
 	AliveCT = 0;
 	AliveT = 0;
 
-	/*if (RoundC4)
+	if (RoundC4)
 	{
-		if (OnBombStateChangedHandle.IsValid())
-		{
-			RoundC4->UnbindOnBombStateChanged(OnBombStateChangedHandle);
-		}
-
-		if (OnBombPickedHandle.IsValid())
-		{
-			RoundC4->UnbindOnBombPicked(OnBombPickedHandle);
-		}
-		
+		RoundC4->OnBombStateChanged.RemoveAll(this);
 		RoundC4->Destroy(true);
-	}*/
-
-	BombState = EMyBombState::Unknown;
-
+	}
+	
 	Multi_ResetBombIndicator();
 
 	for (const auto& Player : PlayerArray)
@@ -519,22 +455,18 @@ void AMyGameState::RestartRound()
 
 	SpawnParameters.Owner = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
 
-	/*const auto& C4 = GetWorld()->SpawnActor(
-		C4BluePrint,
-		&SpawnPointLocation,
-		&FRotator::ZeroRotator,
+	AA_C4* const& C4 = GetWorld()->SpawnActor<AA_C4>(
+		AA_C4::StaticClass(),
+		SpawnPointLocation,
+		FRotator::ZeroRotator,
 		SpawnParameters
 	);
 
 	C4->SetReplicateMovement(true);
 	C4->SetReplicates(true);
 
-	RoundC4 = Cast<AMyC4>(C4);
-
-	OnBombStateChangedHandle = RoundC4->BindOnBombStateChanged(this, &AMyGameState::OnBombStateChanged);
-	BombState = EMyBombState::Idle;
-
-	OnBombPickedHandle = RoundC4->BindOnBombPicked(this, &AMyGameState::HandleOnBombPicked);*/
+	RoundC4 = Cast<AA_C4>(C4);
+	RoundC4->OnBombStateChanged.AddRaw(&OnBombStateChanged, &FOnBombStateChangedDynamic::Broadcast);
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);
@@ -550,25 +482,21 @@ void AMyGameState::RestartRound()
 	);
 
 	bCanBuy = true;
-
 	GoToFreeze();
 }
 
 void AMyGameState::SetWinner(const EMyTeam NewWinner)
 {
-	if (HasAuthority())
+	Winner = NewWinner;
+
+	if (Winner != EMyTeam::Unknown)
 	{
-		Winner = NewWinner;
+		LOG_FUNC_PRINTF(LogTemp, Warning, "Winner: %s", *EnumToString(Winner));
 
-		if (Winner != EMyTeam::Unknown)
-		{
-			LOG_FUNC_PRINTF(LogTemp, Warning, "Winner: %s", *EnumToString(Winner));
-
-			UGameplayStatics::PlaySound2D(this, Winner == EMyTeam::CT ? CTRoundWinSound : TRoundWinSound);
-			(Winner == EMyTeam::CT ? CTWinCount : TWinCount)++;
-			OnWinnerSet.Broadcast(Winner);
-			GoToRoundEnd();
-		}
+		UGameplayStatics::PlaySound2D(this, Winner == EMyTeam::CT ? CTRoundWinSound : TRoundWinSound);
+		(Winner == EMyTeam::CT ? CTWinCount : TWinCount)++;
+		OnWinnerSet.Broadcast(Winner);
+		GoToRoundEnd();
 	}
 }
 

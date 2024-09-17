@@ -21,5 +21,15 @@ class MYPROJECT_API IInteractiveObject
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
 
-	virtual void Interaction();
+	FORCEINLINE bool DoesHavePredication() const { return bUsePredicate; }
+
+	virtual bool PredicateInteraction() = 0;
+
+	virtual void Interaction() = 0;
+
+	virtual void StopInteraction() = 0;
+
+protected:
+	bool bUsePredicate = false;
+	
 };

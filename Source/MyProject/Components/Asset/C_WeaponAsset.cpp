@@ -4,9 +4,11 @@
 #include "C_WeaponAsset.h"
 
 #include "MyProject/Components/Weapon/C_RangeWeapon.h"
+#include "MyProject/Components/Weapon/C_ThrowWeapon.h"
 #include "MyProject/Components/Weapon/C_Weapon.h"
-#include "MyProject/Private/DataAsset/DA_Weapon.h"
-#include "MyProject/Private/DataAsset/DA_RangeWeapon.h"
+#include "MyProject/DataAsset/DA_RangeWeapon.h"
+#include "MyProject/DataAsset/DA_ThrowWeapon.h"
+#include "MyProject/DataAsset/DA_Weapon.h"
 
 DEFINE_LOG_CATEGORY(LogWeaponAssetComponent);
 
@@ -57,7 +59,20 @@ void UC_WeaponAsset::ApplyAsset()
 				break;
 			}
 		case EMyWeaponType::Melee: break;
-		case EMyWeaponType::Throwable: break;
+		case EMyWeaponType::Throwable:
+			{
+				const UDA_ThrowWeapon* ThrowAsset = GetAsset<UDA_ThrowWeapon>();
+				check(ThrowAsset);
+
+				if (UC_ThrowWeapon* ThrowWeapon = Cast<UC_ThrowWeapon>(WeaponComponent))
+				{
+					ThrowWeapon->CookingTime = ThrowAsset->GetCookingTime();
+					ThrowWeapon->ThrowForce = ThrowAsset->GetThrowForce();
+					ThrowWeapon->ThrowForceMultiplier = ThrowAsset->GetThrowMultiplier();
+				}
+				
+				break;
+			}
 		case EMyWeaponType::Unknown:
 		default:
 			// Unknown weapon type caught

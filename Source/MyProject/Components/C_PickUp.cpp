@@ -3,7 +3,7 @@
 
 #include "C_PickUp.h"
 
-#include "MyProject/Interfaces/PickableObject.h"
+#include "..\Interfaces\PickingUp.h"
 #include "MyProject/Private/Utilities.hpp"
 
 DEFINE_LOG_CATEGORY(LogPickUp);
@@ -13,7 +13,7 @@ UC_PickUp::UC_PickUp()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
 	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
@@ -36,26 +36,17 @@ void UC_PickUp::OnBeginOverlap(
 	const FHitResult& /*SweepResult*/
 )
 {
-	if (Cast<IPickableObject>(OtherActor))
+	if (Cast<IPickingUp>(OtherActor))
 	{
-		OnObjectPickUp.Broadcast(TScriptInterface<IPickableObject>(OtherActor));
+		OnObjectPickUp.Broadcast(TScriptInterface<IPickingUp>(OtherActor));
 	}
 }
 
-
-// Called every frame
-void UC_PickUp::TickComponent(float DeltaTime , ELevelTick TickType , FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime , TickType , ThisTickFunction);
-
-	// ...
-}
-
-void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickableObject> InCaller)
+void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickingUp> InCaller)
 {
 	if (!InCaller)
 	{
-		LOG_FUNC_PRINTF(LogPickUp , Error , "Caught invalid pickup object!");
+		LOG_FUNC(LogPickUp , Error , "Caught invalid pickup object!");
 		return;
 	}
 
@@ -69,11 +60,11 @@ void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickableObject> InCaller)
 	InCaller->PickUp(this);
 }
 
-void UC_PickUp::OnDropCallback(TScriptInterface<IPickableObject> InCaller)
+void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller)
 {
 	if (!InCaller)
 	{
-		LOG_FUNC_PRINTF(LogPickUp , Error , "Caught invalid drop object!");
+		LOG_FUNC(LogPickUp , Error , "Caught invalid drop object!");
 		return;
 	}
 

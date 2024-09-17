@@ -24,6 +24,7 @@ private:
 	UPROPERTY(EditAnywhere, Category="Range", BlueprintReadWrite, meta=(AllowPrivateAccess))
 	bool bAimable;
 
+	// todo: projectile class for non-hitscan weapon.
 	UPROPERTY(EditAnywhere, Category="Range", BlueprintReadWrite, meta=(AllowPrivateAccess))
 	bool bHitscan;
 	

@@ -4,9 +4,11 @@
 
 #include "CoreMinimal.h"
 
+#include "MyProject/Components/C_PickUp.h"
+
 #include "C_Weapon.generated.h"
 
-class IPickableObject;
+class IPickingUp;
 struct FEnhancedInputActionEventBinding;
 class UInputAction;
 class UInputMappingContext;
@@ -27,7 +29,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadEnd , UC_Weapon* , InWeapon
 DECLARE_LOG_CATEGORY_EXTERN(LogWeaponComponent , Log , All);
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_Weapon : public UActorComponent
+class MYPROJECT_API UC_Weapon : public UC_PickUp
 {
 	GENERATED_BODY()
 
@@ -50,6 +52,8 @@ public:
 	uint32 GetRemainingAmmo() const;
 
 	uint32 GetRemainingAmmoInClip() const;
+
+	uint32 GetRemainingAmmoWithoutCurrentClip() const;
 
 	uint32 GetAmmoPerClip() const;
 
@@ -94,10 +98,10 @@ protected:
 	void HandleReloadEnd(UC_Weapon* InWeapon);
 
 	UFUNCTION()
-	virtual void HandlePickUp(TScriptInterface<IPickableObject> InPickUpObject);
+	virtual void HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject);
 
 	UFUNCTION()
-	virtual void HandleDrop(TScriptInterface<IPickableObject> InPickUpObject);
+	virtual void HandleDrop(TScriptInterface<IPickingUp> InPickUpObject);
 
 	UFUNCTION(NetMulticast , Unreliable)
 	void Multi_PlayAttackSound();
@@ -122,6 +126,15 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
 	int32 AmmoSpentInClip;
+
+	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
+	int32 LoadedAmmo;
+	
+	UPROPERTY(VisibleAnywhere)
+	int32 AmmoPerClip;
+
+	UPROPERTY(VisibleAnywhere)
+	int32 TotalAmmo;
 	
 	UPROPERTY(VisibleAnywhere)
 	bool bCanSpray;
@@ -137,12 +150,6 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere)
 	int32 ConsecutiveShot;
-	
-	UPROPERTY(VisibleAnywhere)
-	int32 AmmoPerClip;
-
-	UPROPERTY(VisibleAnywhere)
-	int32 TotalAmmo;
 
 	UPROPERTY(VisibleAnywhere)
 	USoundBase* AttackSound;

@@ -6,9 +6,11 @@
 #include "../MyPlayerState.h"
 #include "Components/ProgressBar.h"
 
+#include "MyProject/Components/C_Health.h"
+
 void UMyCharacterWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 {
-	InPlayerState->OnHPChanged.AddUniqueDynamic(this, &UMyCharacterWidget::UpdateHpRatio);
+	InPlayerState->GetHealthComponent()->OnHPChangedRatio.AddUniqueDynamic(this, &UMyCharacterWidget::UpdateHpRatio);
 }
 
 void UMyCharacterWidget::NativeConstruct()

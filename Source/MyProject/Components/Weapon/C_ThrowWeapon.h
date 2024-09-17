@@ -13,6 +13,8 @@ class MYPROJECT_API UC_ThrowWeapon : public UC_Weapon
 	GENERATED_BODY()
 
 public:
+	friend class UC_WeaponAsset;
+	
 	// Sets default values for this component's properties
 	UC_ThrowWeapon();
 

@@ -1,7 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyProject/MyBuyZone.h"
+#include "MyProject/Actors/MyBuyZone.h"
+
+#include "MyProject/Private/Enum.h"
 
 // Sets default values
 AMyBuyZone::AMyBuyZone()

@@ -3,18 +3,20 @@
 
 #include "MyProjectGameModeBase.h"
 
-#include "MyCharacter.h"
-#include "MyCollectable.h"
 #include "MyGameState.h"
 #include "MyInGameHUD.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
-#include "MyWeapon.h"
+
+#include "Actors/BaseClass/A_Character.h"
+#include "Actors/BaseClass/A_Weapon.h"
+
+#include "Components/C_Health.h"
+
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
-#include "MyProject/Components/MyStatComponent.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
 	: TSpawnPoint(nullptr),
@@ -24,7 +26,7 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 	// GetClass, 런타임 타입 (Base class 포인터)
 	// DefaultPawnClass = AMyCharacter::StaticClass();
 
-	static ConstructorHelpers::FClassFinder<AMyCharacter> BP_Char
+	static ConstructorHelpers::FClassFinder<AA_Character> BP_Char
 		(TEXT("Blueprint'/Game/Blueprints/BPMyCharacter.BPMyCharacter_C'"));
 
 	if (BP_Char.Succeeded()) { DefaultPawnClass = BP_Char.Class; }
@@ -55,7 +57,7 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	PlayerState->SetHP(PlayerState->GetStatComponent()->GetMaxHealth());
+	PlayerState->GetHealthComponent()->Reset();
 	PlayerState->AddMoney(18000);
 
 	const auto& MyGameState = GetGameState<AMyGameState>();
@@ -68,7 +70,7 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 
 	PlayerState->OnStateChanged.AddUniqueDynamic(MyGameState, &AMyGameState::HandlePlayerStateChanged);
 	PlayerState->SetState(EMyCharacterState::Alive);
-	PlayerState->BindOnKillOccurred(MyGameState, &AMyGameState::HandleKillOccurred);
+	PlayerState->OnKillOccurred.AddUniqueDynamic(MyGameState, &AMyGameState::HandleKillOccurred);
 	MyGameState->HandleNewPlayer(PlayerState);
 
 	if (!IsValid(MyGameState))
@@ -97,32 +99,6 @@ AActor* AMyProjectGameModeBase::FindPlayerStart_Implementation(AController* Play
 void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
 {
 	Super::RestartPlayer(NewPlayer);
-
-	if (const auto& PlayerState = Cast<AMyPlayerState>(NewPlayer->PlayerState))
-	{
-		const auto& Character = Cast<AMyCharacter>(NewPlayer->GetPawn());
-
-		if (IsValid(PlayerState))
-		{
-			PlayerState->OnHandChanged.AddUniqueDynamic(Character, &AMyCharacter::OnHandChanged);
-		}
-
-		if (const auto& Collectable = PlayerState->GetHand())
-		{
-			if (IsValid(Character))
-			{
-				if (const auto& Weapon = Cast<AMyWeapon>(Collectable))
-				{
-					PlayerState->SetCurrentWeapon(Weapon);
-				}
-				else
-				{
-					PlayerState->SetCurrentItem(Collectable);
-				}
-			}
-		}
-	}
-
 }
 
 void AMyProjectGameModeBase::InitStartSpot_Implementation(AActor* StartSpot, AController* NewPlayer)

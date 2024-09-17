@@ -5,11 +5,11 @@
 #include "CoreMinimal.h"
 #include "C_PickUp.generated.h"
 
-class IPickableObject;
+class IPickingUp;
 class AMyCharacter;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectPickUp, TScriptInterface<IPickableObject>, InCaller);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectDrop, TScriptInterface<IPickableObject>, InCaller);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectPickUp, TScriptInterface<IPickingUp>, InCaller);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectDrop, TScriptInterface<IPickingUp>, InCaller);
 DECLARE_LOG_CATEGORY_EXTERN(LogPickUp, Log, All);
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
@@ -33,13 +33,8 @@ protected:
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void OnPickUpCallback(TScriptInterface<IPickableObject> InCaller);
+	void OnPickUpCallback(TScriptInterface<IPickingUp> InCaller);
 	
 	UFUNCTION()
-	void OnDropCallback(TScriptInterface<IPickableObject> InCaller);
-
-public:
-	// Called every frame
-	virtual void TickComponent(float DeltaTime , ELevelTick TickType ,
-	                           FActorComponentTickFunction* ThisTickFunction) override;
+	void OnDropCallback(TScriptInterface<IPickingUp> InCaller);
 };

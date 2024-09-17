@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyProject/MyPlantableArea.h"
+#include "MyProject/Actors/MyPlantableArea.h"
 
 // Sets default values
 AMyPlantableArea::AMyPlantableArea()

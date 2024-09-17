@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyProject/MyBTSearchTargetService.h"
+#include "MyProject/AI/MyBTSearchTargetService.h"
 
 #include "AIController.h"
-#include "MyCharacter.h"
+#include "MyProject/Actors/BaseClass/A_Character.h"
 
 #include "DrawDebugHelpers.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -48,7 +48,7 @@ void UMyBTSearchTargetService::TickNode(UBehaviorTreeComponent& OwnerComp, uint8
 		{
 			for (const auto& Overlap : Overlaps)
 			{
-				const auto& Character = Cast<AMyCharacter>(Overlap.GetActor());
+				const auto& Character = Cast<AA_Character>(Overlap.GetActor());
 
 				if (IsValid(Character))
 				{

@@ -3,7 +3,7 @@
 
 #include "MyProject/MySpectatorPawn.h"
 
-#include "Actors/A_Character.h"
+#include "Actors/BaseClass/A_Character.h"
 
 AMySpectatorPawn::AMySpectatorPawn()
 {

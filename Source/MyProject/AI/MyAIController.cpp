@@ -1,12 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyProject/MyAIController.h"
+#include "MyProject/AI/MyAIController.h"
 
-#include "NavigationSystem.h"
 #include "TimerManager.h"
-
-#include "Blueprint/AIBlueprintHelperLibrary.h"
 
 #include "Engine/World.h"
 

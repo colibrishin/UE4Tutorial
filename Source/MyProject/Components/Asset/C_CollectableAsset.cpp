@@ -3,7 +3,7 @@
 
 #include "C_CollectableAsset.h"
 
-#include "MyProject/Private/DataAsset/DA_Collectable.h"
+#include "MyProject/DataAsset/DA_Collectable.h"
 
 
 // Sets default values for this component's properties

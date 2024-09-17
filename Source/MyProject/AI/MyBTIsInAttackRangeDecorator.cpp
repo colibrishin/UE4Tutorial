@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyProject/MyBTIsInAttackRangeDecorator.h"
+#include "MyProject/AI/MyBTIsInAttackRangeDecorator.h"
 
 #include "AIController.h"
-#include "MyCharacter.h"
+#include "MyProject/Actors/BaseClass/A_Character.h"
 
 #include "BehaviorTree/BlackboardComponent.h"
 
@@ -28,7 +28,7 @@ bool UMyBTIsInAttackRangeDecorator::CalculateRawConditionValue(
 		return false;
 	}
 
-	const auto& Target = Cast<AMyCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(Key));
+	const auto& Target = Cast<AA_Character>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(Key));
 
 	if (!IsValid(Target))
 	{

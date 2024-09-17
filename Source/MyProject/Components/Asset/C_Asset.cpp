@@ -3,9 +3,11 @@
 
 #include "C_Asset.h"
 
-#include "MyProject/Private/DataAsset/DA_AssetBase.h"
+#include "MyProject/DataAsset/DA_AssetBase.h"
 #include "MyProject/Private/Data.h"
 #include "MyProject/Private/Utilities.hpp"
+
+#include "Net/UnrealNetwork.h"
 
 DEFINE_LOG_CATEGORY(LogAssetComponent);
 
@@ -40,6 +42,12 @@ void UC_Asset::BeginPlay()
 	
 }
 
+void UC_Asset::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UC_Asset, ID);
+}
+
 void UC_Asset::OnRep_ID()
 {
 	FetchAsset();
@@ -55,7 +63,7 @@ void UC_Asset::FetchAsset()
 	}
 	else
 	{
-		LOG_FUNC_PRINTF(LogAssetComponent, Error, "Unable to fetch the asset %d", ID);
+		LOG_FUNC_PRINTF(LogAssetComponent, Warning, "Unable to fetch the asset %d", ID);
 	}
 }
 

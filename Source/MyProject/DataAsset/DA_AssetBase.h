@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "DA_AssetBase.generated.h"
 
+class IAssetFetchable;
 /**
  * 
  */
@@ -15,6 +16,7 @@ class MYPROJECT_API UDA_AssetBase : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
+	TSubclassOf<IAssetFetchable> GetOverrideActorClass() const { return OverrideActorClass; }
 	USkeletalMesh* GetSkeletalMesh() const { return SkeletalMesh; }
 	void        SetID(const int32 InID) { ID = InID; }
 	int32       GetID() const { return ID; }
@@ -24,5 +26,8 @@ private:
 	int32 ID;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
-	USkeletalMesh* SkeletalMesh; 
+	USkeletalMesh* SkeletalMesh;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	TSubclassOf<IAssetFetchable> OverrideActorClass;
 };

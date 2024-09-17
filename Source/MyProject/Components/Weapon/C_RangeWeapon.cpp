@@ -5,7 +5,9 @@
 
 #include "Camera/CameraComponent.h"
 
-#include "MyProject/Actors/A_Character.h"
+#include "Engine/DamageEvents.h"
+
+#include "MyProject/Actors/BaseClass/A_Character.h"
 
 
 // Sets default values for this component's properties
@@ -80,7 +82,8 @@ void UC_RangeWeapon::DoHitscan(const FVector& InRecoiledNormal)
 		if (AA_Character* HitCharacter = Cast<AA_Character>(OutHitResult.GetActor()))
 		{
 			// todo: utilize the damage event
-			HitCharacter->TakeDamage(Damage, FDamageEvent{}, HitCharacter->GetController(), GetOwner());
+			const FDamageEvent DamageEvent{};
+			HitCharacter->TakeDamage(Damage, DamageEvent, HitCharacter->GetController(), GetOwner());
 		}
 		else
 		{

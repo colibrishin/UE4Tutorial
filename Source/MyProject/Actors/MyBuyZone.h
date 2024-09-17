@@ -3,10 +3,11 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Private/Enum.h"
 
 #include "GameFramework/Actor.h"
 #include "MyBuyZone.generated.h"
+
+enum class EMyTeam : uint8;
 
 UCLASS()
 class MYPROJECT_API AMyBuyZone : public AActor

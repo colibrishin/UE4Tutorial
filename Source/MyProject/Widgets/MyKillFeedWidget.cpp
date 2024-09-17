@@ -8,7 +8,8 @@
 #include "Components/VerticalBox.h"
 #include "MyProject/MyGameState.h"
 #include "MyProject/MyPlayerState.h"
-#include "MyProject/MyWeapon.h"
+#include "MyProject/Components/Asset/C_WeaponAsset.h"
+#include "MyProject/DataAsset/DA_Weapon.h"
 
 void UMyKillFeedWidget::NativeConstruct()
 {
@@ -16,7 +17,7 @@ void UMyKillFeedWidget::NativeConstruct()
 
 	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
 	{
-		GameState->BindOnKillOccurred(this, &UMyKillFeedWidget::HandleKillOccurred);
+		GameState->OnKillOccurred.AddUniqueDynamic(this, &UMyKillFeedWidget::HandleKillOccurred);
 	}
 }
 
@@ -37,14 +38,22 @@ void UMyKillFeedWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 }
 
 void UMyKillFeedWidget::HandleKillOccurred(
-	AMyPlayerState* Killer, AMyPlayerState* Victim, const AMyWeapon* Weapon
+	AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon
 )
 {
 	if (Killer && Victim && Weapon)
 	{
 		const auto& KillerName = FText::FromString(*Killer->GetPlayerName());
 		const auto& VictimName = FText::FromString(*Victim->GetPlayerName());
-		const auto& WeaponImage = Weapon->GetWeaponImage();
+		UTexture2D* WeaponImage = nullptr;
+
+		if (const UC_WeaponAsset* AssetComponent = Weapon->GetOwner()->GetComponentByClass<UC_WeaponAsset>())
+		{
+			const UDA_Weapon* WeaponAsset = AssetComponent->GetAsset<UDA_Weapon>();
+			ensure(WeaponAsset);
+
+			WeaponImage = WeaponAsset->GetImage();
+		}
 
 		AddKillFeed(KillerName, VictimName, WeaponImage);
 	}

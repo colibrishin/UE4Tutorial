@@ -4,16 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "DA_AssetBase.h"
-#include "UDA_Character.generated.h"
+#include "DA_Character.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MYPROJECT_API UUDA_Character : public UDA_AssetBase
+class MYPROJECT_API UDA_Character : public UDA_AssetBase
 {
 	GENERATED_BODY()
 
+public:
 	int32 GetMaxHealth() const { return MaxHealth; }
 	USkeletalMesh* GetArmMesh() const { return ArmMesh; }
 	TSubclassOf<UAnimInstance> GetAnimInstance() const { return AnimInstance; }

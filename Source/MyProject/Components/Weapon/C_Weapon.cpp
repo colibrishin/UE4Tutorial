@@ -6,15 +6,15 @@
 #include "MyProject/Components/C_PickUp.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "MyProject/Actors/A_Character.h"
+#include "MyProject/Actors/BaseClass/A_Character.h"
 #include "../../../../../UnrealEngine/Engine/Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
 #include "MyProject/Private/Utilities.hpp"
 
 #include "MyProject/Interfaces/AttackObject.h"
 #include "MyProject/Interfaces/ReloadObject.h"
 
+DEFINE_LOG_CATEGORY(LogWeaponComponent);
 
-class UEnhancedInputLocalPlayerSubsystem;
 // Sets default values for this component's properties
 UC_Weapon::UC_Weapon()
 	: bFiring(false),
@@ -32,6 +32,11 @@ UC_Weapon::UC_Weapon()
 	OnAttackEnd.AddUniqueDynamic(this , &UC_Weapon::HandleAttackEnd);
 	OnReloadStart.AddUniqueDynamic(this , &UC_Weapon::HandleReloadStart);
 	OnReloadEnd.AddUniqueDynamic(this , &UC_Weapon::HandleReloadEnd);
+
+	static IAttackObject* AttackCast = Cast<IAttackObject>(GetOwner());
+	static IReloadObject* ReloadCast = Cast<IReloadObject>(GetOwner());
+	ensureAlwaysMsgf(AttackCast, TEXT("Weapon should inherits IAttackObject"));
+	ensureAlwaysMsgf(ReloadCast, TEXT("Weapon should inherits IReloadObject"));
 }
 
 
@@ -42,7 +47,12 @@ uint32 UC_Weapon::GetRemainingAmmo() const
 
 uint32 UC_Weapon::GetRemainingAmmoInClip() const
 {
-	return AmmoPerClip - AmmoSpentInClip;
+	return LoadedAmmo - AmmoSpentInClip;
+}
+
+uint32 UC_Weapon::GetRemainingAmmoWithoutCurrentClip() const
+{
+	return GetRemainingAmmo() - LoadedAmmo;
 }
 
 uint32 UC_Weapon::GetAmmoPerClip() const
@@ -133,7 +143,6 @@ void UC_Weapon::Server_Attack_Implementation()
 			}
 		}
 
-		AmmoSpent++;
 		AmmoSpentInClip++;
 		ConsecutiveShot++;
 		OnAttackStart.Broadcast(this);
@@ -150,8 +159,6 @@ void UC_Weapon::Server_Reload_Implementation()
 {
 	if (ValidateReload())
 	{
-		AmmoSpent       = 0;
-		AmmoSpentInClip = 0;
 		OnReloadStart.Broadcast(this);
 		Multi_PlayReloadSound();
 		Cast<IReloadObject>(GetOwner())->Reload();
@@ -223,7 +230,7 @@ void UC_Weapon::HandleAttackStart(UC_Weapon* /*InWeapon*/)
 void UC_Weapon::HandleAttackEnd(UC_Weapon* /*InWeapon*/)
 {
 	const bool AmmoLeft     = GetRemainingAmmo() > 0;
-	const bool MagazineLeft = AmmoSpentInClip < AmmoPerClip;
+	const bool MagazineLeft = LoadedAmmo > AmmoSpentInClip;
 
 	if (!(AmmoLeft && MagazineLeft))
 	{
@@ -244,9 +251,13 @@ void UC_Weapon::HandleReloadEnd(UC_Weapon* /*InWeapon*/)
 {
 	bCanFire   = true;
 	bCanReload = true;
+
+	AmmoSpent       += AmmoSpentInClip;
+	AmmoSpentInClip = 0;
+	LoadedAmmo = FMath::Clamp(GetRemainingAmmo(), 0, AmmoPerClip);
 }
 
-void UC_Weapon::HandlePickUp(TScriptInterface<IPickableObject> InPickUpObject)
+void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject)
 {
 	if (const ACharacter* Character = Cast<ACharacter>(InPickUpObject.GetInterface()))
 	{
@@ -279,7 +290,7 @@ void UC_Weapon::HandlePickUp(TScriptInterface<IPickableObject> InPickUpObject)
 	}
 }
 
-void UC_Weapon::HandleDrop(TScriptInterface<IPickableObject> InPickUpObject)
+void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject)
 {
 	if (const ACharacter* Character = Cast<ACharacter>(InPickUpObject.GetInterface()))
 	{
@@ -330,6 +341,7 @@ void UC_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(UC_Weapon , bCanSpray);
 	DOREPLIFETIME(UC_Weapon , AmmoSpent);
 	DOREPLIFETIME(UC_Weapon , AmmoSpentInClip);
+	DOREPLIFETIME(UC_Weapon , LoadedAmmo);
 	DOREPLIFETIME(UC_Weapon , AmmoPerClip);
 	DOREPLIFETIME(UC_Weapon , TotalAmmo);
 }

@@ -1,9 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyProject/MyBTPatrolVectorNode.h"
+#include "MyProject/AI/MyBTPatrolVectorNode.h"
 
-#include <string>
 
 #include "AIController.h"
 #include "NavigationSystem.h"
@@ -39,11 +38,7 @@ EBTNodeResult::Type UMyBTPatrolVectorNode::ExecuteTask(UBehaviorTreeComponent& O
 
 		return EBTNodeResult::Failed;
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("TargetPawn is nullptr"));
-		return EBTNodeResult::Failed;
-	}
 
+	UE_LOG(LogTemp, Error, TEXT("TargetPawn is nullptr"));
 	return EBTNodeResult::Failed;
 }

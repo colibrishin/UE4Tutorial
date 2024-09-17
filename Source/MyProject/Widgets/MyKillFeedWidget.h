@@ -4,6 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+
+#include "MyProject/MyPlayerState.h"
+#include "MyProject/Components/Weapon/C_Weapon.h"
+
 #include "MyKillFeedWidget.generated.h"
 
 /**
@@ -23,7 +27,7 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
-	void HandleKillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon);
+	void HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon);
 
 	void AddKillFeed(const FText& KillerName, const FText& VictimName, class UTexture2D* WeaponImage);
 

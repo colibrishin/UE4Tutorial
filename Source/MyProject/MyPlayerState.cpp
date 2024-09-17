@@ -3,19 +3,14 @@
 
 #include "MyProject/MyPlayerState.h"
 
-#include "MyAIController.h"
+#include "AIController.h"
 
-#include "GameFramework/GameStateBase.h"
-#include "MyCharacter.h"
 #include "MyGameState.h"
-#include "MyProject/Components/MyInventoryComponent.h"
 #include "MyPlayerController.h"
-#include "MyProject/Components/MyStatComponent.h"
-#include "MyWeapon.h"
-#include "Components/C_PickUp.h"
 #include "Components/C_Buy.h"
-
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Components/C_Health.h"
+#include "Components/C_PickUp.h"
+#include "GameFramework/GameStateBase.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -29,13 +24,10 @@ AMyPlayerState::AMyPlayerState()
 	  Kill(0),
 	  Death(0),
 	  Assist(0),
-	  Health(0),
-	  Money(0),
-      PickUpOfHandObject(nullptr)
+	  Money(0)
 {
-	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
-	InventoryComponent = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("InventoryComponent"));
 	BuyComponent = CreateDefaultSubobject<UC_Buy>(TEXT("BuyComponent"));
+	HealthComponent = CreateDefaultSubobject<UC_Health>(TEXT("HealthComponent"));
 }
 
 void AMyPlayerState::BeginPlay()
@@ -47,8 +39,6 @@ float AMyPlayerState::TakeDamage(
 	float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser
 )
 {
-	SetHP(Health - DamageAmount);
-
 	if (HasAuthority())
 	{
 		// todo: AIController + Player State?
@@ -59,28 +49,15 @@ float AMyPlayerState::TakeDamage(
 
 		const auto& DamageGiver = Cast<AMyPlayerController>(EventInstigator)->GetPlayerState<AMyPlayerState>();
 		const auto& Victim = Cast<AMyPlayerController>(GetOwner())->GetPlayerState<AMyPlayerState>();
-		const auto& KillerWeapon = Cast<AMyWeapon>(DamageCauser);
+		const auto& KillerWeapon = DamageCauser->GetComponentByClass<UC_PickUp>();
 
-		if (GetHP() <= 0)
+		if (HealthComponent->GetHealth() <= 0)
 		{
 			OnKillOccurred.Broadcast(DamageGiver, Victim, KillerWeapon);
-		}
-		else
-		{
-			if (HasAuthority())
-			{
-				OnDamageTaken.Broadcast(DamageGiver);
-				Client_OnDamageTaken(DamageGiver);
-			}
 		}
 	}
 
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-}
-
-int32 AMyPlayerState::GetDamage() const
-{
-	return StatComponent->GetDamage();
 }
 
 void AMyPlayerState::Reset()
@@ -91,15 +68,8 @@ void AMyPlayerState::Reset()
 	{
 		LOG_FUNC(LogPlayerState, Log, "Reset PlayerState");
 
-		if (State != EMyCharacterState::Alive)
-		{
-			PickUpOfHandObject->OnObjectDrop.Broadcast(Cast<IPickableObject>(GetPawn()));
-			PickUpOfHandObject = nullptr;
-			InventoryComponent->Clear();
-		}
-
 		SetState(EMyCharacterState::Alive);
-		SetHP(StatComponent->GetMaxHealth());
+		HealthComponent->Reset();
 		// todo: Add money by winning or losing
 	}
 }
@@ -128,27 +98,9 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, Death);
 	DOREPLIFETIME(AMyPlayerState, Assist);
 	DOREPLIFETIME(AMyPlayerState, State);
-	DOREPLIFETIME(AMyPlayerState, Health);
 	DOREPLIFETIME(AMyPlayerState, Money);
-	DOREPLIFETIME(AMyPlayerState, InventoryComponent);
-	DOREPLIFETIME(AMyPlayerState, StatComponent);
+	DOREPLIFETIME(AMyPlayerState, HealthComponent);
 	DOREPLIFETIME(AMyPlayerState, BuyComponent);
-	DOREPLIFETIME(AMyPlayerState, PickUpOfHandObject);
-}
-
-void AMyPlayerState::OnRep_HealthChanged() const
-{
-	OnHPChanged.Broadcast(GetHPRatio());
-}
-
-void AMyPlayerState::OnRep_HandChanged(UC_PickUp* PreviousHand)
-{
-	OnHandChanged.Broadcast(PreviousHand, PickUpOfHandObject, this);
-}
-
-void AMyPlayerState::Client_OnDamageTaken_Implementation(AMyPlayerState* DamageGiver)
-{
-	OnDamageTaken.Broadcast(DamageGiver);
 }
 
 void AMyPlayerState::OnRep_MoneyChanged() const
@@ -207,12 +159,6 @@ void AMyPlayerState::AssignTeam()
 	SetTeam(NewTeam);
 }
 
-void AMyPlayerState::SetHand(UC_PickUp* InPickUp)
-{
-	OnHandChanged.Broadcast(PickUpOfHandObject, InPickUp, this);
-	PickUpOfHandObject = InPickUp;
-}
-
 void AMyPlayerState::SetState(const EMyCharacterState NewState)
 {
 	State = NewState;
@@ -223,31 +169,14 @@ void AMyPlayerState::SetState(const EMyCharacterState NewState)
 	}
 }
 
-float AMyPlayerState::GetHPRatio() const
-{
-	return FMath::Clamp((float)Health / (float)StatComponent->GetMaxHealth(), 0.f, 1.f);
-}
-
 UC_Buy* AMyPlayerState::GetBuyComponent() const
 {
 	return BuyComponent;
 }
 
-void AMyPlayerState::SetHP(const int32 NewHP)
+UC_Health* AMyPlayerState::GetHealthComponent() const
 {
-	LOG_FUNC_PRINTF(LogTemp, Warning, "SetHP: %d", NewHP);
-	Health = FMath::Clamp(NewHP, 0, StatComponent->GetMaxHealth());
-
-	if (HasAuthority())
-	{
-		if (Health <= 0 && State != EMyCharacterState::Dead)
-		{
-			SetState(EMyCharacterState::Dead);
-		}
-
-		OnHPChanged.Broadcast(GetHPRatio());
-	}
-	
+	return HealthComponent;
 }
 
 void AMyPlayerState::AddMoney(const int32 Amount)

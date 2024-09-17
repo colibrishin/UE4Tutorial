@@ -3,23 +3,22 @@
 
 #include "C_Buy.h"
 
-#include "MyWeaponStatComponent.h"
-#include "MyProject/MyAimableWeapon.h"
+#include "Asset/C_CollectableAsset.h"
+
 #include "MyProject/Private/Utilities.hpp"
 #include "MyProject/Private/CommonBuy.hpp"
-#include "MyProject/MyCharacter.h"
-#include "MyProject/MyGrenade.h"
-#include "MyProject/MyMeleeWeapon.h"
-#include "MyProject/Actors/A_Character.h"
+#include "MyProject/Actors/BaseClass/A_Character.h"
+#include "MyProject/Actors/BaseClass/A_Weapon.h"
 #include "MyProject/DataAsset/DA_Weapon.h"
 
+DEFINE_LOG_CATEGORY(LogBuyComponent);
 
 // Sets default values for this component's properties
 UC_Buy::UC_Buy()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	// ...
 	SetIsReplicatedByDefault(true);
@@ -29,13 +28,13 @@ void UC_Buy::BuyWeapon(AA_Character* RequestCharacter, const int32 WeaponID) con
 {
 	if (!IsValid(RequestCharacter))
 	{
-		LOG_FUNC(LogTemp, Error, "Player is invalid");
+		LOG_FUNC(LogBuyComponent, Error, "Player is invalid");
 		return;
 	}
 
 	if (!ValidateBuyRequest(WeaponID, RequestCharacter))
 	{
-		LOG_FUNC(LogTemp, Error, "BuyWeapon_Validate failed");
+		LOG_FUNC(LogBuyComponent, Error, "BuyWeapon_Validate failed");
 		return;
 	}
 
@@ -47,48 +46,38 @@ void UC_Buy::BuyWeapon(AA_Character* RequestCharacter, const int32 WeaponID) con
 
 void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) const
 {
-	const auto& WeaponData        = GetRowData<FMyCollectableData>(this, WeaponID);
-	const auto& WeaponAsset       = Cast<UDA_Weapon>(WeaponData->CollectableDataAsset);
+	const auto& WeaponData        = GetRowData<FBaseAssetRow>(this, WeaponID);
+	const auto& WeaponAsset       = Cast<UDA_Weapon>(WeaponData->AssetToLink);
+	ensureAlwaysMsgf(WeaponAsset, TEXT("Asset is not link to weapon asset"));
 	const auto& CharacterLocation = RequestCharacter->GetActorLocation();
-
-	if (!WeaponAsset)
-	{
-		LOG_FUNC(LogTemp, Error, "Invalid collectable information, possibly not a weapon");
-		return;
-	}
 	
 	RequestCharacter->GetPlayerState<AMyPlayerState>()->AddMoney
 		(
-		 -WeaponAsset->GetWeaponStat().Price
+		 -WeaponAsset->GetPrice()
 		);
-
-	static const TMap<EMyWeaponType, TSubclassOf<AMyWeapon>> TypeMapping
-	{
-			{EMyWeaponType::Range, AMyAimableWeapon::StaticClass()},
-			{EMyWeaponType::Melee, AMyMeleeWeapon::StaticClass()},
-			{EMyWeaponType::Throwable, AMyGrenade::StaticClass()}
-	};
 
 	static FActorSpawnParameters ActorSpawnParameters;
 	ActorSpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	
-	AMyWeapon* GeneratedWeapon = GetWorld()->SpawnActor<AMyWeapon>(
-		TypeMapping[WeaponAsset->GetWeaponStat().WeaponType],
-		CharacterLocation,
-		FRotator::ZeroRotator,
-		ActorSpawnParameters);
+	AA_Weapon* GeneratedWeapon = GetWorld()->SpawnActor<AA_Weapon>
+		(
+		 AA_Weapon::StaticClass(),
+		 CharacterLocation,
+		 FRotator::ZeroRotator,
+		 ActorSpawnParameters
+		);
 
-	LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponAsset->GetWeaponStat().Name);
-	
-	GeneratedWeapon->GetWeaponStatComponent()->SetID(WeaponID);
-	GeneratedWeapon->UpdateAsset();
+	LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponAsset->GetAssetName());
+
+	GeneratedWeapon->GetAssetComponent()->SetID(WeaponID);
+	GeneratedWeapon->FetchAsset();
 	
 	if (IsValid(GeneratedWeapon))
 	{
-		GeneratedWeapon->SetOwner(RequestCharacter->GetOuter());
+		GeneratedWeapon->SetOwner(RequestCharacter);
 		GeneratedWeapon->SetReplicateMovement(true);
 		GeneratedWeapon->SetReplicates(true);
-		GeneratedWeapon->Server_Interact(RequestCharacter);
+		GeneratedWeapon->GetPickUpComponent()->OnObjectPickUp.Broadcast(RequestCharacter);
 	}
 }
 
@@ -96,13 +85,13 @@ void UC_Buy::Server_BuyWeapon_Implementation(AA_Character* RequestCharacter, con
 {
 	if (!ValidateBuyRequest(WeaponID, RequestCharacter))
 	{
-		LOG_FUNC(LogTemp, Error, "BuyWeapon_Validate failed");
+		LOG_FUNC(LogBuyComponent, Error, "BuyWeapon_Validate failed");
 		return;
 	}
 
 	if (!IsValid(RequestCharacter))
 	{
-		LOG_FUNC(LogTemp, Error, "Player is invalid");
+		LOG_FUNC(LogBuyComponent, Error, "Player is invalid");
 		return;
 	}
 

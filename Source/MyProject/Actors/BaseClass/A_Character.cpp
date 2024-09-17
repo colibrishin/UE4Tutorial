@@ -8,7 +8,9 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 
-DEFINE_LOG_CATEGORY( LogCharacter );
+#include "Net/UnrealNetwork.h"
+
+DEFINE_LOG_CATEGORY(LogCharacter);
 
 const FName AA_Character::LeftHandSocketName( TEXT( "hand_l_socket" ) );
 const FName AA_Character::RightHandSocketName( TEXT( "hand_r_socket" ) );
@@ -20,7 +22,8 @@ AA_Character::AA_Character()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
+	ArmMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmMesh"));
 }
 
 // Called when the game starts or when spawned
@@ -39,7 +42,7 @@ void AA_Character::BeginPlay()
 
 void AA_Character::PickUp(UC_PickUp* InPickUp)
 {
-	IPickableObject::PickUp(InPickUp);
+	IPickingUp::PickUp(InPickUp);
 
 	if (bHandBusy)
 	{
@@ -55,6 +58,8 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	) )
 	{
 		bHandBusy = true;
+		OnHandChanged.Broadcast(nullptr, InPickUp);
+		Hand = InPickUp;
 	}
 	else
 	{
@@ -64,14 +69,16 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 
 void AA_Character::Drop(UC_PickUp* InPickUp)
 {
-	IPickableObject::Drop(InPickUp);
+	IPickingUp::Drop(InPickUp);
 
 	// If Item is attached to character;
-	if (USkeletalMeshComponent* ObjectMesh = InPickUp->GetOwner()->GetComponentByClass<USkeletalMeshComponent>();
-		 ObjectMesh && ObjectMesh->GetAttachParentActor() == this)
+	if (UC_PickUp* PickUp = InPickUp->GetOwner()->GetComponentByClass<UC_PickUp>();
+		 PickUp && PickUp->GetAttachParentActor() == this)
 	{
-		ObjectMesh->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+		PickUp->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
 		bHandBusy = false;
+		OnHandChanged.Broadcast(PickUp, nullptr);
+		Hand = nullptr;
 	}
 }
 
@@ -85,5 +92,16 @@ void AA_Character::Tick(float DeltaTime)
 void AA_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+void AA_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AA_Character, bHandBusy);
+}
+
+void AA_Character::OnRep_Hand(UC_PickUp* InOldHand) const
+{
+	OnHandChanged.Broadcast(InOldHand, Hand);
 }
 

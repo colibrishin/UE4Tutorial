@@ -1,10 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "MyProject/MyBTAttackNode.h"
+#include "MyProject/AI/MyBTAttackNode.h"
 
 #include "AIController.h"
-#include "MyCharacter.h"
+#include "MyProject/Actors/BaseClass/A_Character.h"
 
 #include "BehaviorTree/BlackboardComponent.h"
 
@@ -18,7 +18,7 @@ UMyBTAttackNode::UMyBTAttackNode()
 EBTNodeResult::Type UMyBTAttackNode::ExecuteTask(UBehaviorTreeComponent& OwnerComp, uint8* NodeMemory)
 {
 	const auto& SuperResult = Super::ExecuteTask(OwnerComp , NodeMemory);
-	const auto& AIOwner = Cast<AMyCharacter>(OwnerComp.GetAIOwner()->GetPawn());
+	const auto& AIOwner = Cast<AA_Character>(OwnerComp.GetAIOwner()->GetPawn());
 	constexpr wchar_t TargetKey[] = L"Target";
 
 	if (!IsValid(AIOwner))
@@ -26,14 +26,14 @@ EBTNodeResult::Type UMyBTAttackNode::ExecuteTask(UBehaviorTreeComponent& OwnerCo
 		return EBTNodeResult::Failed;
 	}
 
-	const auto& Target = Cast<AMyCharacter>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(TargetKey));
+	const auto& Target = Cast<AA_Character>(OwnerComp.GetBlackboardComponent()->GetValueAsObject(TargetKey));
 
 	if (!IsValid(Target))
 	{
 		return EBTNodeResult::Failed;
 	}
 
-	AIOwner->Attack(1.f);
+	//AIOwner->Attack(1.f);
 	bIsAttacking = true;
 
 	return SuperResult;
@@ -53,11 +53,11 @@ void UMyBTAttackNode::OnInstanceCreated(UBehaviorTreeComponent& OwnerComp)
 {
 	Super::OnInstanceCreated(OwnerComp);
 
-	const auto& AIOwner = Cast<AMyCharacter>(OwnerComp.GetAIOwner()->GetPawn());
+	const auto& AIOwner = Cast<AA_Character>(OwnerComp.GetAIOwner()->GetPawn());
 
 	if (!IsValid(AIOwner)) { return; }
 
-	AIOwner->OnAttackEnded.AddUniqueDynamic(this, &UMyBTAttackNode::OnAttackEnded);
+	//AIOwner->OnAttackEnded.AddUniqueDynamic(this, &UMyBTAttackNode::OnAttackEnded);
 }
 
 void UMyBTAttackNode::OnAttackEnded()

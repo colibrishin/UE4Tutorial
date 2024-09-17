@@ -29,7 +29,7 @@ private:
 	float DeltaTime = 0.f;
 
 	UFUNCTION()
-	void HandleDamageTaken(class AMyPlayerState* DamageGiver);
+	void HandleDamageTaken(AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser);
 
 	UPROPERTY(VisibleAnywhere, meta=(BindWidget))
 	class UImage* IndicatorImage;

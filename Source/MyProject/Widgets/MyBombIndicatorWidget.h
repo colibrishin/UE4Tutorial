@@ -3,11 +3,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "../Private/Enum.h"
-
 #include "Blueprint/UserWidget.h"
+
 #include "MyBombIndicatorWidget.generated.h"
 
+enum class EMyBombState : uint8;
+class AA_Character;
 /**
  * 
  */
@@ -25,9 +26,15 @@ protected:
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 private:
-	void OnBombProgressChanged(const EMyBombState State);
+	UFUNCTION()
+	void HandleBombStateChanged(
+		const EMyBombState InOldState , const EMyBombState InNewState , const AA_Character* InPlanter ,
+		const AA_Character*
+		InDefuser
+	);
 
-	void OnBombPicked(class AMyCharacter* Character);
+	UFUNCTION()
+	void OnBombPicked(AA_Character* InCharacter);
 
 	void FlickerIndicator();
 

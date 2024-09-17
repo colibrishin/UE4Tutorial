@@ -6,6 +6,9 @@
 #include "../Private/Enum.h"
 
 #include "Blueprint/UserWidget.h"
+
+#include "MyProject/Actors/BaseClass/A_Character.h"
+
 #include "MyBombProgressWidget.generated.h"
 
 /**
@@ -27,7 +30,8 @@ protected:
 private:
 	void BindGameState(class AMyGameState* GameState);
 
-	void OnBombStateChanged(const EMyBombState NewState);
+	void OnBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character*
+	                        InDefuser);
 
 	UPROPERTY(Meta=(BindWidget))
 	class UProgressBar* ProgressBar;

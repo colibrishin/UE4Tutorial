@@ -32,7 +32,9 @@ protected:
 
 private:
 	void ProcessBuy(const int32 ID) const;
-	void UpdateMoney(const int32 Money) const;
+
+	UFUNCTION()
+	void UpdateMoney(const int32 Money);
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget, AllowPrivateAccess))
 	class UUniformGridPanel* WeaponGridPanel;

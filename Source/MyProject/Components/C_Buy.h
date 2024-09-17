@@ -6,6 +6,7 @@
 #include "Components/ActorComponent.h"
 #include "C_Buy.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogBuyComponent, Log, All);
 
 class AA_Character;
 

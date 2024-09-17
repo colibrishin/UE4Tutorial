@@ -1,8 +1,8 @@
 #include "MyProject/Private/Data.h"
 
-#include "DA_AssetBase.h"
 #include "Editor.h"
 #include "Utilities.hpp"
+#include "MyProject/DataAsset/DA_AssetBase.h"
 
 void FBaseAssetRow::OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName)
 {

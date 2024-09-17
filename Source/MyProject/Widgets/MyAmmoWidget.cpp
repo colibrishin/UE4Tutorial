@@ -3,12 +3,10 @@
 
 #include "MyAmmoWidget.h"
 
-#include "../MyAimableWeapon.h"
 #include "../MyPlayerState.h"
-#include "../MyWeapon.h"
-#include "../Components/MyWeaponStatComponent.h"
-
 #include "Components/TextBlock.h"
+
+#include "MyProject/Components/Weapon/C_Weapon.h"
 
 void UMyAmmoWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 {
@@ -16,7 +14,7 @@ void UMyAmmoWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 	InPlayerState->OnHandChanged.AddUniqueDynamic(this, &UMyAmmoWidget::HandleWeaponChanged);
 }
 
-void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount)
+void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount, UC_Weapon* /*InWeapon*/)
 {
 	const FText Formatted = FText::Format(FText::FromString(TEXT("{0}/{1}")), 
 	                                     FText::AsNumber(CurrentAmmoCount), 
@@ -25,19 +23,21 @@ void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 Remaini
 	AmmoText->SetText(Formatted);
 }
 
-void UMyAmmoWidget::HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew, AMyPlayerState* InPlayerState)
+void UMyAmmoWidget::HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew)
 {
-	/*if (const AMyAimableWeapon* PreviousWeapon = Cast<AMyAimableWeapon>(InPrevious))
+	if (UC_Weapon* PreviousWeapon = Cast<UC_Weapon>(InPrevious))
 	{
 		AmmoText->SetText(FText::GetEmpty());
-		PreviousWeapon->GetWeaponStatComponent()->OnAmmoConsumed.RemoveAll(this);
+		PreviousWeapon->OnAmmoUpdated.RemoveAll(this);
 	}
 
-	if (const AMyAimableWeapon* NewWeapon = Cast<AMyAimableWeapon>(InNew))
+	if (UC_Weapon* NewWeapon = Cast<UC_Weapon>(InNew))
 	{
-		NewWeapon->GetWeaponStatComponent()->OnAmmoConsumed.AddDynamic(this, &UMyAmmoWidget::UpdateAmmo);
-		UpdateAmmo(NewWeapon->GetWeaponStatComponent()->GetCurrentAmmoCount(),
-			NewWeapon->GetWeaponStatComponent()->GetRemainingAmmoCount());
-	}*/
+		NewWeapon->OnAmmoUpdated.AddUniqueDynamic(this, &UMyAmmoWidget::UpdateAmmo);
+		UpdateAmmo(
+			NewWeapon->GetRemainingAmmoInClip(),
+		           NewWeapon->GetRemainingAmmoWithoutCurrentClip(),
+		           NewWeapon);
+	}
 }
 

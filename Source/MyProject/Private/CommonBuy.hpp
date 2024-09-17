@@ -8,7 +8,7 @@
 
 #include "Engine/OverlapResult.h"
 
-#include "MyProject/Actors/A_Character.h"
+#include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Actors/MyBuyZone.h"
 #include "MyProject/DataAsset/DA_Weapon.h"
 

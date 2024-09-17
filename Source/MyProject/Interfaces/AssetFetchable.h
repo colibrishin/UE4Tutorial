@@ -3,15 +3,13 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "UObject/Interface.h"
+#include "AssetFetchable.generated.h"
 
-#include "PickableObject.generated.h"
-
-DECLARE_LOG_CATEGORY_EXTERN(LogPickableObject, All, Log);
-
-class UC_PickUp;
+class UC_CollectableAsset;
 // This class does not need to be modified.
 UINTERFACE()
-class UPickableObject : public UInterface
+class UAssetFetchable : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -19,18 +17,12 @@ class UPickableObject : public UInterface
 /**
  * 
  */
-class MYPROJECT_API IPickableObject
+class MYPROJECT_API IAssetFetchable
 {
 	GENERATED_BODY()
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-
-	virtual void PickUp(UC_PickUp* InPickUp);
-
-	virtual void Drop(UC_PickUp* InPickUp);
-
-private:
-	void ClientCheck(const UC_PickUp* InPickUp) const;
+	void FetchAsset();
 	
 };

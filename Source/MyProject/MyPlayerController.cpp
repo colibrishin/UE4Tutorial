@@ -3,22 +3,13 @@
 
 #include "MyProject/MyPlayerController.h"
 
-#include "MyAimableWeapon.h"
-#include "Private/CommonBuy.hpp"
 #include "MyCameraManager.h"
-#include "MyCharacter.h"
-#include "MyGrenade.h"
 #include "MyInGameHUD.h"
-#include "MyMeleeWeapon.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
-#include "MyWeapon.h"
-#include "MyWeaponDataAsset.h"
 
-#include "GameFramework/GameStateBase.h"
 #include "Interfaces/MyPlayerStateRequiredWidget.h"
-#include "Net/UnrealNetwork.h"
 
 AMyPlayerController::AMyPlayerController()
 {
@@ -29,12 +20,21 @@ void AMyPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
+	if (GetWorld()->GetFirstPlayerController() != this)
+	{
+		return;
+	}
+
 	AMyPlayerState* MyPlayerState = Cast<AMyPlayerState>(PlayerState);
 
 	if (!IsValid(MyPlayerState))
 	{
 		return;
 	}
+
+	// fixme: workaround for avoiding ContainerPtr assertion;
+	// spin lock;
+	while (!MyPlayerState->IsValidLowLevel()) {}
 
 	// Player state replication would be happened in client side and player controller exists in local player. 
 	if (const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD()))
@@ -50,6 +50,35 @@ void AMyPlayerController::OnRep_PlayerState()
 				Interface->DispatchPlayerState(MyPlayerState);
 			}
 		} 
+	}
+}
+
+void AMyPlayerController::OnRep_Pawn()
+{
+	if (GetWorld()->GetFirstPlayerController() != this)
+	{
+		Super::OnRep_Pawn();
+		return;
+	}
+
+	const AMyPlayerState* MyPlayerState = Cast<AMyPlayerState>(PlayerState);
+	AA_Character* OldCharacter = Cast<AA_Character>(GetCharacter());
+	ensure(MyPlayerState);
+	ensure(OldCharacter);
+
+	if (OldCharacter && CharacterForwardHandle.IsValid())
+	{
+		OldCharacter->OnHandChanged.Remove(CharacterForwardHandle);
+	}
+	CharacterForwardHandle = {};
+	
+	Super::OnRep_Pawn();
+
+	if (AA_Character* NewCharacter = Cast<AA_Character>(GetCharacter()))
+	{
+		CharacterForwardHandle = NewCharacter->OnHandChanged.AddRaw(
+			&MyPlayerState->OnHandChanged,
+			&FOnHandChangedDynamic::Broadcast);
 	}
 }
 

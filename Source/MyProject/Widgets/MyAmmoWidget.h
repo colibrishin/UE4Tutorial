@@ -7,6 +7,7 @@
 #include "../Interfaces/MyPlayerStateRequiredWidget.h"
 
 #include "MyProject/Components/C_PickUp.h"
+#include "MyProject/Components/Weapon/C_Weapon.h"
 
 #include "MyAmmoWidget.generated.h"
 
@@ -27,10 +28,10 @@ protected:
 private:
 	
 	UFUNCTION()
-	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount);
+	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount, UC_Weapon* InWeapon);
 
 	UFUNCTION()
-	void HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew, AMyPlayerState* InPlayerState);
+	void HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew);
 	
 	
 	UPROPERTY(Meta = (BindWidget))

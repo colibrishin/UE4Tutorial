@@ -19,6 +19,7 @@ public:
 	EMyWeaponType GetType() const { return Type; }
 	USoundBase* GetAttackSound() const { return WeaponFireSound; }
 	USoundBase* GetReloadSound() const { return WeaponReloadSound; }
+	UTexture2D* GetImage() const { return WeaponImage; }
 	int32 GetDamage() const { return Damage; }
 	int32 GetPrice() const { return Price; }
 	float GetRadius() const { return Radius; }
@@ -38,6 +39,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Common", BlueprintReadWrite, meta=(AllowPrivateAccess))
 	USoundBase* WeaponReloadSound;
+
+	UPROPERTY(EditAnywhere, Category="Common", BlueprintReadWrite, meta=(AllowPrivateAccess))
+	UTexture2D* WeaponImage;
 
 	UPROPERTY(EditAnywhere, Category="Common", BlueprintReadWrite, meta=(AllowPrivateAccess))
 	int32 Damage;
