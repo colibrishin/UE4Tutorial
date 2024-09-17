@@ -8,9 +8,14 @@
 
 #include "Engine/OverlapResult.h"
 
+#include "Kismet/GameplayStatics.h"
+
 #include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Actors/MyBuyZone.h"
 #include "MyProject/DataAsset/DA_Weapon.h"
+#include "MyProject/Frameworks/Subsystems/SS_World.h"
+
+class USS_World;
 
 inline bool IsPlayerInBuyZone(AA_Character* Character)
 {
@@ -60,8 +65,7 @@ inline bool IsPlayerInBuyZone(AA_Character* Character)
 
 inline bool ValidateBuyRequest(const int32 ID, AA_Character* const& Character)
 {
-	const auto& WeaponData = GetRowData<FBaseAssetRow>(Character, ID);
-
+	const auto& WeaponData = Character->GetWorld()->GetSubsystem<USS_World>()->GetRowData<FBaseAssetRow>(ID);
 	const UDA_Weapon* Downcast = Cast<UDA_Weapon>(WeaponData->AssetToLink);
 
 	if (!Downcast)

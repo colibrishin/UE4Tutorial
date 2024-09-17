@@ -3,6 +3,7 @@
 
 #include "C_Interactive.h"
 
+#include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Interfaces/InteractiveObject.h"
 
 #include "Net/UnrealNetwork.h"
@@ -16,8 +17,6 @@ UC_Interactive::UC_Interactive()
 	PrimaryComponentTick.SetTickFunctionEnable(false);
 
 	// ...
-	static IInteractiveObject* ObjectTest = Cast<IInteractiveObject>(GetOwner());
-	ensureAlwaysMsgf(ObjectTest, TEXT("Owner should be inherits IInteractiveObejct"));
 }
 
 void UC_Interactive::Interaction(AA_Character* InInteractor)
@@ -47,6 +46,16 @@ void UC_Interactive::Interaction(AA_Character* InInteractor)
 		}
 
 		Interactor = InInteractor;
+		
+		IInteractiveObject* Object = Cast<IInteractiveObject>(GetOwner());
+
+		if (!Object->PredicateInteraction())
+		{
+			StopInteraction();
+			return;
+		}
+		
+		Object->StartInteraction();
 	}
 	else
 	{

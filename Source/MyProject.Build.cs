@@ -25,7 +25,8 @@ public class MyProject: ModuleRules
 			"AIModule",
 			"GameplayTasks",
 			"Niagara",
-			"EnhancedInput"
+			"EnhancedInput",
+			"UnrealEd"
         });
 
 		PrivateDependencyModuleNames.AddRange(new string[]

@@ -4,17 +4,17 @@
 
 #include "CoreMinimal.h"
 #include "C_Asset.h"
-#include "C_Character.generated.h"
+#include "C_CharacterAsset.generated.h"
 
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_Character : public UC_Asset
+class MYPROJECT_API UC_CharacterAsset : public UC_Asset
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this component's properties
-	UC_Character();
+	UC_CharacterAsset();
 
 	virtual void ApplyAsset() override;
 

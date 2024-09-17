@@ -5,8 +5,11 @@
 
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Private/Utilities.hpp"
-#include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+
+#include "Camera/CameraComponent.h"
+
+#include "MyProject/Components/Asset/C_CharacterAsset.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -21,9 +24,14 @@ const FName AA_Character::ChestSocketName( TEXT( "Chest" ) );
 AA_Character::AA_Character()
 {
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	ArmMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmMesh"));
+	AssetComponent = CreateDefaultSubobject<UC_CharacterAsset>(TEXT("AssetComponent"));
+	Camera1P = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+
+	GetMesh()->SetOwnerNoSee(true);
+	ArmMeshComponent->SetOnlyOwnerSee(true);
 }
 
 // Called when the game starts or when spawned

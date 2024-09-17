@@ -5,7 +5,6 @@
 
 #include "../Private/CommonBuy.hpp"
 #include "MyBuyMenuWeaponWidget.h"
-#include "../MyGameInstance.h"
 #include "../MyGameState.h"
 
 #include "../MyPlayerController.h"
@@ -21,13 +20,13 @@
 
 void UMyBuyMenuWidget::Populate()
 {
-	const auto& Instance = Cast<UMyGameInstance>(GetGameInstance());
+	const auto& Subsystem = GetWorld()->GetSubsystem<USS_World>();
 
-	if (IsValid(Instance))
+	if (IsValid(Subsystem))
 	{
-		for (int i = 1; i < Instance->GetCollectableCount(); ++i)
+		for (int i = 1; i < Subsystem->GetAssetCount(); ++i)
 		{
-			const auto& WeaponData = GetRowData<FBaseAssetRow>(this, i);
+			const auto& WeaponData = Subsystem->GetRowData<FBaseAssetRow>(i);
 			
 			if (WeaponData == nullptr)
 			{

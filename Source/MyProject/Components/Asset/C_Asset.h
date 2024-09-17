@@ -38,6 +38,10 @@ public:
 
 	virtual void ApplyAsset();
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -50,8 +54,8 @@ protected:
 	void FetchAsset();
 
 private:
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_ID, meta=(AllowPrivateAccess))
-	uint32 ID;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, ReplicatedUsing=OnRep_ID, meta=(AllowPrivateAccess, ClampMin=0))
+	int32 ID;
 
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	UDA_AssetBase* AssetData;

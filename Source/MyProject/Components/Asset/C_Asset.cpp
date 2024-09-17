@@ -4,6 +4,7 @@
 #include "C_Asset.h"
 
 #include "MyProject/DataAsset/DA_AssetBase.h"
+#include "MyProject/Frameworks/Subsystems/SS_World.h"
 #include "MyProject/Private/Data.h"
 #include "MyProject/Private/Utilities.hpp"
 
@@ -33,6 +34,20 @@ void UC_Asset::ApplyAsset()
 	}
 }
 
+#if WITH_EDITOR
+void UC_Asset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (PropertyChangedEvent.Property->GetNameCPP() == "ID" &&
+		PropertyChangedEvent.ChangeType == EPropertyChangeType::ValueSet)
+	{
+		FetchAsset();
+		ApplyAsset();
+	}
+}
+#endif
+
 // Called when the game starts
 void UC_Asset::BeginPlay()
 {
@@ -56,7 +71,17 @@ void UC_Asset::OnRep_ID()
 void UC_Asset::FetchAsset()
 {
 	LOG_FUNC_PRINTF(LogAssetComponent, Log, "Fetch the asset %d...", ID);
-	if (const FBaseAssetRow* Data = GetRowData<FBaseAssetRow>(GetWorld(), ID))
+
+	const UWorld* World = GetWorld();
+
+#if WITH_EDITOR
+	if (GIsEditor)
+	{
+		World = GEditor->GetEditorWorldContext().World();
+	}
+#endif
+	
+	if (const FBaseAssetRow* Data = World->GetSubsystem<USS_World>()->GetRowData<FBaseAssetRow>(ID))
 	{
 		check(Data->AssetToLink);
 		AssetData = Data->AssetToLink;

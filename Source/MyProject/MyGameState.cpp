@@ -16,6 +16,9 @@
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
+
+#include "Kismet/GameplayStatics.h"
+
 #include "MyProject/Widgets/MyBombIndicatorWidget.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
 #include "Net/UnrealNetwork.h"

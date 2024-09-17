@@ -67,19 +67,7 @@ void  AA_C4::BeginPlay()
 
 bool AA_C4::PredicateInteraction()
 {
-	if (const EMyBombState PreviousState = BombState;
-		Planter && Defuser && BombState == EMyBombState::Planted)
-	{
-		BombState = EMyBombState::Defusing;
-		Defuser = InteractiveComponent->GetInteractor();
-		OnBombStateChanged.Broadcast(PreviousState, BombState, Planter, Defuser);
-	}
-	else if (Planter && !Defuser && BombState == EMyBombState::Idle)
-	{
-		BombState = EMyBombState::Planting;
-		Planter = InteractiveComponent->GetInteractor();
-		OnBombStateChanged.Broadcast(PreviousState, BombState, Planter, Defuser);
-	}
+	//todo: range check, viewport check
 
 	return true;
 }
@@ -93,6 +81,8 @@ void AA_C4::Interaction()
 		BombState = EMyBombState::Planted;
 		OnBombStateChanged.Broadcast(PreviousState, BombState, Planter, Defuser);
 		InteractiveComponent->SetDelayTime(DefusingTime);
+
+		// todo: drop object and disable physics simulation;
 		return;
 	}
 	else if (BombState == EMyBombState::Defusing)
@@ -102,6 +92,25 @@ void AA_C4::Interaction()
 		OnBombStateChanged.Broadcast(PreviousState, BombState, Planter, Defuser);
 		InteractiveComponent->SetActive(false);
 		return;
+	}
+
+	ensureAlwaysMsgf(false, TEXT("Uncaught state"));
+}
+
+void AA_C4::StartInteraction()
+{
+	if (const EMyBombState PreviousState = BombState;
+		Planter && Defuser && BombState == EMyBombState::Planted)
+	{
+		BombState = EMyBombState::Defusing;
+		Defuser = InteractiveComponent->GetInteractor();
+		OnBombStateChanged.Broadcast(PreviousState, BombState, Planter, Defuser);
+	}
+	else if (Planter && !Defuser && BombState == EMyBombState::Idle)
+	{
+		BombState = EMyBombState::Planting;
+		Planter = InteractiveComponent->GetInteractor();
+		OnBombStateChanged.Broadcast(PreviousState, BombState, Planter, Defuser);
 	}
 
 	ensureAlwaysMsgf(false, TEXT("Uncaught state"));

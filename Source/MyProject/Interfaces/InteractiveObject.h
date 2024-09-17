@@ -27,6 +27,8 @@ public:
 
 	virtual void Interaction() = 0;
 
+	virtual void StartInteraction() = 0;
+
 	virtual void StopInteraction() = 0;
 
 protected:

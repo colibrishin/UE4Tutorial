@@ -4,10 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+
+#include "MyProject/Actors/BaseClass/A_Character.h"
+#include "MyProject/Interfaces/InteractiveObject.h"
+
 #include "C_Interactive.generated.h"
 
-
-class AA_Character;
 class AMyPlayerState;
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))

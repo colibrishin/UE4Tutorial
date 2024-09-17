@@ -16,7 +16,7 @@ struct FBaseAssetRow : public FTableRowBase
 {
 	GENERATED_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AssetBundles))
 	UDA_AssetBase* AssetToLink;
 
 	virtual void OnDataTableChanged(const UDataTable* InDataTable, const FName InRowName) override;

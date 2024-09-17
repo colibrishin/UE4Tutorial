@@ -16,7 +16,7 @@ class MYPROJECT_API UC_Health : public UActorComponent
 	GENERATED_BODY()
 
 public:
-	friend class UC_Character;
+	friend class UC_CharacterAsset;
 
 	FOnHPChanged OnHPChanged;
 

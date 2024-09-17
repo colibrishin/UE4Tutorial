@@ -8,6 +8,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "MyProject/Actors/BaseClass/A_Character.h"
 #include "../../../../../UnrealEngine/Engine/Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
+
+#include "Kismet/GameplayStatics.h"
+
 #include "MyProject/Private/Utilities.hpp"
 
 #include "MyProject/Interfaces/AttackObject.h"
@@ -32,11 +35,6 @@ UC_Weapon::UC_Weapon()
 	OnAttackEnd.AddUniqueDynamic(this , &UC_Weapon::HandleAttackEnd);
 	OnReloadStart.AddUniqueDynamic(this , &UC_Weapon::HandleReloadStart);
 	OnReloadEnd.AddUniqueDynamic(this , &UC_Weapon::HandleReloadEnd);
-
-	static IAttackObject* AttackCast = Cast<IAttackObject>(GetOwner());
-	static IReloadObject* ReloadCast = Cast<IReloadObject>(GetOwner());
-	ensureAlwaysMsgf(AttackCast, TEXT("Weapon should inherits IAttackObject"));
-	ensureAlwaysMsgf(ReloadCast, TEXT("Weapon should inherits IReloadObject"));
 }
 
 

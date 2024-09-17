@@ -46,7 +46,7 @@ void UC_Buy::BuyWeapon(AA_Character* RequestCharacter, const int32 WeaponID) con
 
 void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) const
 {
-	const auto& WeaponData        = GetRowData<FBaseAssetRow>(this, WeaponID);
+	const auto& WeaponData        = GetWorld()->GetSubsystem<USS_World>()->GetRowData<FBaseAssetRow>(WeaponID);
 	const auto& WeaponAsset       = Cast<UDA_Weapon>(WeaponData->AssetToLink);
 	ensureAlwaysMsgf(WeaponAsset, TEXT("Asset is not link to weapon asset"));
 	const auto& CharacterLocation = RequestCharacter->GetActorLocation();

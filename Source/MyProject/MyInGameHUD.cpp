@@ -5,6 +5,9 @@
 
 #include "MyGameState.h"
 #include "Components/WidgetComponent.h"
+
+#include "Kismet/GameplayStatics.h"
+
 #include "MyProject/Widgets/MyBombProgressWidget.h"
 #include "MyProject/Widgets/MyBuyMenuWidget.h"
 #include "MyProject/Widgets/MyInGameStatWidget.h"

@@ -48,6 +48,8 @@ public:
 
 	virtual void Interaction() override;
 
+	virtual void StartInteraction() override;
+	
 	virtual void StopInteraction() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -55,7 +57,7 @@ public:
 protected:
 	UFUNCTION()
 	void OnRep_BombState(const EMyBombState InOldBombState) const;
-	
+
 private:
 	UPROPERTY(EditAnywhere)
 	float DetonationTime;

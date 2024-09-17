@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "C_Character.h"
+#include "C_CharacterAsset.h"
 
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Actors/BaseClass/A_Character.h"
@@ -10,7 +10,7 @@
 
 
 // Sets default values for this component's properties
-UC_Character::UC_Character()
+UC_CharacterAsset::UC_CharacterAsset()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -19,7 +19,7 @@ UC_Character::UC_Character()
 	// ...
 }
 
-void UC_Character::ApplyAsset()
+void UC_CharacterAsset::ApplyAsset()
 {
 	Super::ApplyAsset();
 
@@ -44,7 +44,7 @@ void UC_Character::ApplyAsset()
 
 
 // Called when the game starts
-void UC_Character::BeginPlay()
+void UC_CharacterAsset::BeginPlay()
 {
 	Super::BeginPlay();
 

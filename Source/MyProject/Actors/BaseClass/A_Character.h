@@ -9,7 +9,10 @@
 
 #include "A_Character.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN( LogCharacter , Log, All );
+class UCameraComponent;
+class UC_CharacterAsset;
+class UC_Asset;
+DECLARE_LOG_CATEGORY_EXTERN(LogCharacter , Log , All);
 
 // Non-dynamic delegate due to forwarding to player state;
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHandChanged, UC_PickUp*, UC_PickUp*);
@@ -61,11 +64,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bHandBusy;
 	
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	USkeletalMeshComponent* ArmMeshComponent;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	UCameraComponent* Camera1P;
+
+	UPROPERTY(EditAnywhere)
 	UInputMappingContext* InputMapping;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UC_CharacterAsset* AssetComponent;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Hand)
 	UC_PickUp* Hand;
