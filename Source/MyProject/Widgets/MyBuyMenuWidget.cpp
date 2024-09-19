@@ -138,9 +138,10 @@ void UMyBuyMenuWidget::Toggle()
 	}
 }
 
-void UMyBuyMenuWidget::BindPlayerState(AMyPlayerState* State)
+void UMyBuyMenuWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 {
-	State->OnMoneyChanged.AddUniqueDynamic(this, &UMyBuyMenuWidget::UpdateMoney);
+	check(InPlayerState);
+	InPlayerState->OnMoneyChanged.AddUniqueDynamic(this, &UMyBuyMenuWidget::UpdateMoney);
 }
 
 void UMyBuyMenuWidget::BuyTimeEnded(bool NewBuyTime)
@@ -158,7 +159,7 @@ void UMyBuyMenuWidget::NativeConstruct()
 
 	if (const auto& Controller = Cast<AMyPlayerController>(GetOwningLocalPlayer()->PlayerController))
 	{
-		BindPlayerState(Controller->GetPlayerState<AMyPlayerState>());
+		DispatchPlayerState(Controller->GetPlayerState<AMyPlayerState>());
 	}
 }
 

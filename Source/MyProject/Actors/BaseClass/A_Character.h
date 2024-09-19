@@ -73,10 +73,12 @@ protected:
 	UPROPERTY(EditAnywhere)
 	UInputMappingContext* InputMapping;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	UC_CharacterAsset* AssetComponent;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Hand)
 	UC_PickUp* Hand;
+
+	FDelegateHandle CharacterForwardHandle;
 	
 };

@@ -16,7 +16,6 @@ AA_Collectable::AA_Collectable()
 
 	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(TEXT("CollectableAsset"));
 	AssetComponent->SetNetAddressable();
-	AssetComponent->SetIsReplicated(true);
 }
 
 // Called when the game starts or when spawned

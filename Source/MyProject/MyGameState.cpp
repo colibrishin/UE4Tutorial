@@ -98,8 +98,6 @@ void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Vi
 	{
 		Killer->IncrementKills();
 		Victim->IncrementDeaths();
-
-		Multi_KillOccurred(Killer, Victim, Weapon);
 	}
 }
 
@@ -176,13 +174,6 @@ void AMyGameState::Multi_NotifyNewPlayer_Implementation(AMyPlayerState* State) c
 	OnNewPlayerJoined.Broadcast(State);
 }
 
-void AMyGameState::Multi_KillOccurred_Implementation(
-	AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon
-) const
-{
-	OnKillOccurred.Broadcast(Killer, Victim, Weapon);
-}
-
 void AMyGameState::HandlePlayerStateChanged(AMyPlayerState* PlayerState, const EMyCharacterState State)
 {
 	const auto& Team = PlayerState->GetTeam();
@@ -243,17 +234,20 @@ void AMyGameState::HandlePlayerStateChanged(AMyPlayerState* PlayerState, const E
 	LOG_FUNC_PRINTF(LogTemp, Warning, "AliveCT: %d, AliveT: %d", AliveCT, AliveT);
 
 	// Elimination
-	if (RoundC4->GetBombState() != EMyBombState::Planted)
+	if (RoundC4)
 	{
-		if (RoundProgress == EMyRoundProgress::Playing && AliveCT <= 0)
+		if (RoundC4->GetBombState() != EMyBombState::Planted)
 		{
-			SetWinner(EMyTeam::T);
-			GoToRoundEnd();
-		}
-		else if (RoundProgress == EMyRoundProgress::Playing && AliveT <= 0)
-		{
-			SetWinner(EMyTeam::CT);
-			GoToRoundEnd();
+			if (RoundProgress == EMyRoundProgress::Playing && AliveCT <= 0)
+			{
+				SetWinner(EMyTeam::T);
+				GoToRoundEnd();
+			}
+			else if (RoundProgress == EMyRoundProgress::Playing && AliveT <= 0)
+			{
+				SetWinner(EMyTeam::CT);
+				GoToRoundEnd();
+			}
 		}
 	}
 

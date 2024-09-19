@@ -10,6 +10,8 @@
 #include "Components/C_Buy.h"
 #include "Components/C_Health.h"
 #include "Components/C_PickUp.h"
+#include "Components/Asset/C_CharacterAsset.h"
+
 #include "GameFramework/GameStateBase.h"
 
 #include "Net/UnrealNetwork.h"
@@ -28,11 +30,31 @@ AMyPlayerState::AMyPlayerState()
 {
 	BuyComponent = CreateDefaultSubobject<UC_Buy>(TEXT("BuyComponent"));
 	HealthComponent = CreateDefaultSubobject<UC_Health>(TEXT("HealthComponent"));
+	CharacterAssetID = 4;
+
+	OnPawnSet.AddUniqueDynamic(this, &AMyPlayerState::UpdateCharacterAsset);
 }
 
 void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void AMyPlayerState::UpdateCharacterAsset(APlayerState* /*InPlayerState*/, APawn* InNewCharacter, APawn* /*InOldCharacter*/)
+{
+	AA_Character* NewCharacter = Cast<AA_Character>(InNewCharacter);
+	
+	if (HasAuthority())
+	{
+		if (NewCharacter)
+		{
+			if (UC_CharacterAsset* CharacterAsset = NewCharacter->GetComponentByClass<UC_CharacterAsset>())
+			{
+				CharacterAsset->SetID(CharacterAssetID);
+				NewCharacter->FetchAsset();
+			}
+		}
+	}
 }
 
 float AMyPlayerState::TakeDamage(
@@ -177,6 +199,11 @@ UC_Buy* AMyPlayerState::GetBuyComponent() const
 UC_Health* AMyPlayerState::GetHealthComponent() const
 {
 	return HealthComponent;
+}
+
+int32 AMyPlayerState::GetCharacterAssetID() const
+{
+	return CharacterAssetID;
 }
 
 void AMyPlayerState::AddMoney(const int32 Amount)

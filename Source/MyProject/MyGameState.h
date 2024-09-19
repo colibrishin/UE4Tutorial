@@ -129,6 +129,7 @@ private:
 
 	void SetWinner(const EMyTeam NewWinner);
 
+	UFUNCTION()
 	void BuyTimeEnded();
 
 	void HandleOnBombPicked(AA_Character* Character) const;
@@ -147,9 +148,6 @@ private:
 
 	UFUNCTION()
 	void OnRep_AliveT() const;
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_KillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon) const;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_NotifyNewPlayer(AMyPlayerState* State) const;

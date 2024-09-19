@@ -36,41 +36,44 @@ void UMyBombIndicatorWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 
 	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
 	{
-		const auto& BombState = GameState->GetC4()->GetBombState();
-
-		if (BombState == EMyBombState::Planted || BombState == EMyBombState::Defusing)
+		if (const AA_C4* RoundC4 = GameState->GetC4())
 		{
-			const float& BombElapsed = GameState->GetC4()->GetElapsedDetonationTime();
-			const float& BombTime = GameState->GetC4()->GetDetonationTime();
-
-			if (BombElapsed < BombTime - 10)
+			const EMyBombState BombState = RoundC4->GetBombState();
+			
+			if (BombState == EMyBombState::Planted || BombState == EMyBombState::Defusing)
 			{
-				ElapsedTime += InDeltaTime;
+				const float& BombElapsed = GameState->GetC4()->GetElapsedDetonationTime();
+				const float& BombTime = GameState->GetC4()->GetDetonationTime();
 
-				if (ElapsedTime > 1.f)
+				if (BombElapsed < BombTime - 10)
 				{
-					FlickerIndicator();
-					ElapsedTime = 0.f;
+					ElapsedTime += InDeltaTime;
+
+					if (ElapsedTime > 1.f)
+					{
+						FlickerIndicator();
+						ElapsedTime = 0.f;
+					}
 				}
-			}
-			else if (BombElapsed < BombTime - 5)
-			{
-				ElapsedTime += InDeltaTime;
-
-				if (ElapsedTime > 0.5f)
+				else if (BombElapsed < BombTime - 5)
 				{
-					FlickerIndicator();
-					ElapsedTime = 0.f;
+					ElapsedTime += InDeltaTime;
+
+					if (ElapsedTime > 0.5f)
+					{
+						FlickerIndicator();
+						ElapsedTime = 0.f;
+					}
 				}
-			}
-			else
-			{
-				ElapsedTime += InDeltaTime;
-
-				if (ElapsedTime > 0.2f)
+				else
 				{
-					FlickerIndicator();
-					ElapsedTime = 0.f;
+					ElapsedTime += InDeltaTime;
+
+					if (ElapsedTime > 0.2f)
+					{
+						FlickerIndicator();
+						ElapsedTime = 0.f;
+					}
 				}
 			}
 		}

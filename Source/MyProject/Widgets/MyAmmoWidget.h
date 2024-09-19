@@ -6,8 +6,10 @@
 #include "Blueprint/UserWidget.h"
 #include "../Interfaces/MyPlayerStateRequiredWidget.h"
 
+#include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Weapon/C_Weapon.h"
+#include "MyProject/Interfaces/CharacterRequiredWidget.h"
 
 #include "MyAmmoWidget.generated.h"
 
@@ -18,12 +20,12 @@ class AMyCollectable;
  * 
  */
 UCLASS()
-class MYPROJECT_API UMyAmmoWidget : public UUserWidget, public IMyPlayerStateRequiredWidget
+class MYPROJECT_API UMyAmmoWidget : public UUserWidget, public ICharacterRequiredWidget
 {
 	GENERATED_BODY()
 
 protected:
-	virtual void DispatchPlayerState(AMyPlayerState* InPlayerState) override;
+	virtual void DispatchCharacter(AA_Character* InCharacter) override;
 	
 private:
 	

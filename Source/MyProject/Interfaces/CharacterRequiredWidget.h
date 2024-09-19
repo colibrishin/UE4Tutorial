@@ -4,13 +4,12 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Interface.h"
+#include "CharacterRequiredWidget.generated.h"
 
-#include "MyPlayerStateRequiredWidget.generated.h"
-
-class AMyPlayerState;
+class AA_Character;
 // This class does not need to be modified.
-UINTERFACE(MinimalAPI)
-class UMyPlayerStateRequiredWidget : public UInterface
+UINTERFACE()
+class UCharacterRequiredWidget : public UInterface
 {
 	GENERATED_BODY()
 };
@@ -18,12 +17,12 @@ class UMyPlayerStateRequiredWidget : public UInterface
 /**
  * 
  */
-class MYPROJECT_API IMyPlayerStateRequiredWidget
+class MYPROJECT_API ICharacterRequiredWidget
 {
 	GENERATED_BODY()
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void DispatchPlayerState(AMyPlayerState* InCharacter) = 0;
-	
+	virtual void DispatchCharacter(AA_Character* InCharacter) = 0;
+
 };

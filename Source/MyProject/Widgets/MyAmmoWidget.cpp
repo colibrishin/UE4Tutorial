@@ -8,10 +8,10 @@
 
 #include "MyProject/Components/Weapon/C_Weapon.h"
 
-void UMyAmmoWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
+void UMyAmmoWidget::DispatchCharacter(AA_Character* InCharacter)
 {
-	check(InPlayerState);
-	InPlayerState->OnHandChanged.AddUniqueDynamic(this, &UMyAmmoWidget::HandleWeaponChanged);
+	check(InCharacter);
+	InCharacter->OnHandChanged.AddUObject(this, &UMyAmmoWidget::HandleWeaponChanged);
 }
 
 void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount, UC_Weapon* /*InWeapon*/)

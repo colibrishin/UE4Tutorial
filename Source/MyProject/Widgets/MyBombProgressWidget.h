@@ -30,6 +30,7 @@ protected:
 private:
 	void BindGameState(class AMyGameState* GameState);
 
+	UFUNCTION()
 	void OnBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character*
 	                        InDefuser);
 

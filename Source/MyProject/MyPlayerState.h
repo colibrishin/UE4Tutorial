@@ -27,7 +27,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged , AMyPlayerState* ,
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, const int32, InNewMoney);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, AMyPlayerState*, InPlayerState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, AMyPlayerState*, InKiller, AMyPlayerState*, InVictim, UC_PickUp*, InWeapon);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnHandChangedDynamic, UC_PickUp*, InOldHand, UC_PickUp*, InNewHand);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogPlayerState, Log, All);
 /**
@@ -44,19 +43,18 @@ public:
 	EMyTeam GetTeam() const { return Team; }
 	void AssignTeam();
 
-	void    SetState(const EMyCharacterState NewState);
-	void    AddMoney(const int32 Amount);
-	UC_Buy* GetBuyComponent() const;
-	UC_Health*  GetHealthComponent() const;
-	
+	void       SetState(const EMyCharacterState NewState);
+	void       AddMoney(const int32 Amount);
+	UC_Buy*    GetBuyComponent() const;
+	UC_Health* GetHealthComponent() const;
+	int32      GetCharacterAssetID() const;
+
 	FOnStateChanged OnStateChanged;
 
 	FOnKillOccurred OnKillOccurred;
 	
 	FOnMoneyChanged OnMoneyChanged;
-
-	FOnHandChangedDynamic OnHandChanged;
-
+	
 	FORCEINLINE int32 GetMoney() const { return Money; }
 
 	EMyCharacterState GetState() const { return State; }
@@ -66,13 +64,18 @@ public:
 	void         IncrementDeaths();
 
 	int32 GetKill() const { return Kill; }
+
 	int32 GetDeath() const { return Death; }
+
 	int32 GetAssist()const { return Assist; }
 
 	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
 	
 protected:
 	virtual void    BeginPlay() override;
+
+	UFUNCTION()
+	void UpdateCharacterAsset(APlayerState* InPlayerState, APawn* InOldCharacter, APawn* InNewCharacter);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -101,6 +104,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_MoneyChanged)
 	int32 Money;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess, ClampMin=0))
+	int32 CharacterAssetID;
 
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_Health* HealthComponent;

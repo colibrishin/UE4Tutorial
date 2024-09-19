@@ -3,6 +3,10 @@
 
 #include "C_CharacterAsset.h"
 
+#include "Camera/CameraComponent.h"
+
+#include "Components/CapsuleComponent.h"
+
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Components/C_Health.h"
@@ -29,8 +33,20 @@ void UC_CharacterAsset::ApplyAsset()
 		{
 			Character->GetMesh()->SetAnimInstanceClass(CharacterAsset->GetAnimInstance());
 			Character->GetArmMesh()->SetSkeletalMesh(CharacterAsset->GetArmMesh());
+			Character->GetArmMesh()->SetRelativeLocation(CharacterAsset->GetArmOffset());
 			Character->GetArmMesh()->SetAnimInstanceClass(CharacterAsset->GetArmAnimInstance());
 
+			if (!Character->GetComponentByClass<UCapsuleComponent>())
+			{
+				Character->GetArmMesh()->SetWorldScale3D(CharacterAsset->GetSize());
+			}
+
+			if (UCameraComponent* CameraComponent = Character->GetComponentByClass<UCameraComponent>())
+			{
+				CameraComponent->SetRelativeLocation(CharacterAsset->GetCameraOffset());
+				CameraComponent->SetRelativeRotation(CharacterAsset->GetCameraRotation());
+			}
+			
 			if (const AMyPlayerState* PlayerState = Character->GetPlayerState<AMyPlayerState>())
 			{
 				if (UC_Health* HealthComponent = PlayerState->GetHealthComponent())

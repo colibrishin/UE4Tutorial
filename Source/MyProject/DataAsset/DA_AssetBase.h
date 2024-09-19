@@ -20,10 +20,18 @@ public:
 	USkeletalMesh* GetSkeletalMesh() const { return SkeletalMesh; }
 	void        SetID(const int32 InID) { ID = InID; }
 	int32       GetID() const { return ID; }
+	FVector     GetMeshOffset() const { return MeshOffset; }
+	FVector     GetSize() const { return Size; }
 
 private:
 	UPROPERTY(VisibleAnywhere)
 	int32 ID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	FVector MeshOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	FVector Size;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	USkeletalMesh* SkeletalMesh;

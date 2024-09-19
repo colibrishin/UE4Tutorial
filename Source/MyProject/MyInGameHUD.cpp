@@ -6,9 +6,10 @@
 #include "MyGameState.h"
 #include "Components/WidgetComponent.h"
 
+#include "Interfaces/CharacterRequiredWidget.h"
+
 #include "Kismet/GameplayStatics.h"
 
-#include "MyProject/Widgets/MyBombProgressWidget.h"
 #include "MyProject/Widgets/MyBuyMenuWidget.h"
 #include "MyProject/Widgets/MyInGameStatWidget.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
@@ -104,6 +105,35 @@ void AMyInGameHUD::BeginPlay()
 		InputComponent->BindAction(TEXT("Score"), IE_Pressed, StatSubWidget, &UMyInGameStatWidget::Open);
 		InputComponent->BindAction(TEXT("Score"), IE_Released, StatSubWidget, &UMyInGameStatWidget::Close);
 	}
+	
+	AsyncTask
+		(
+		 ENamedThreads::GameThread_Local , [this, &Controller]()
+		 {
+		 	AA_Character*       NewCharacter = Cast<AA_Character>(Controller->GetCharacter());
+
+		 	while (!NewCharacter)
+		 	{
+		 		NewCharacter = Cast<AA_Character>(Controller->GetCharacter());
+		 	}
+
+			 // Iterate all widgets and pass the own player state to the widgets that require the player state. 
+			 for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
+				  Iterator;
+				  ++Iterator)
+			 {
+				 UUserWidget* Widget = Cast<UUserWidget>
+					 (
+					  Iterator->GetObjectPropertyValue
+					  (Iterator->ContainerPtrToValuePtr<void>(GetInGameWidget() , 0))
+					 );
+				 if (ICharacterRequiredWidget* Interface = Cast<ICharacterRequiredWidget>(Widget))
+				 {
+					 Interface->DispatchCharacter(NewCharacter);
+				 }
+			 }
+		 }
+		);
 }
 
 void AMyInGameHUD::DrawHUD()

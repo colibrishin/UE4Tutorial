@@ -19,6 +19,9 @@ public:
 	USkeletalMesh* GetArmMesh() const { return ArmMesh; }
 	TSubclassOf<UAnimInstance> GetAnimInstance() const { return AnimInstance; }
 	TSubclassOf<UAnimInstance> GetArmAnimInstance() const { return ArmAnimInstance; }
+	FVector GetArmOffset() const { return ArmOffset; }
+	FVector GetCameraOffset() const { return CameraOffset; }
+	FRotator GetCameraRotation() const { return CameraRotation; }
 
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
@@ -32,4 +35,13 @@ protected:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UAnimInstance> ArmAnimInstance;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector ArmOffset;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FVector CameraOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FRotator CameraRotation;
 };

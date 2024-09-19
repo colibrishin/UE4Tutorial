@@ -3,6 +3,8 @@
 
 #include "C_Asset.h"
 
+#include "Components/CapsuleComponent.h"
+
 #include "MyProject/DataAsset/DA_AssetBase.h"
 #include "MyProject/Frameworks/Subsystems/SS_World.h"
 #include "MyProject/Private/Data.h"
@@ -20,6 +22,7 @@ UC_Asset::UC_Asset()
 	PrimaryComponentTick.bCanEverTick = false;
 
 	// ...
+	SetIsReplicatedByDefault(true);
 }
 
 
@@ -27,9 +30,23 @@ void UC_Asset::ApplyAsset()
 {
 	if (const AActor* Actor = GetOwner())
 	{
+		bool bCapsule = false;
+
+		if (UCapsuleComponent* CapsuleComponent = Actor->GetComponentByClass<UCapsuleComponent>())
+		{
+			CapsuleComponent->SetWorldScale3D(AssetData->GetSize());
+			bCapsule = true;
+		}
+		
 		if (USkeletalMeshComponent* SkeletalMeshComponent = Actor->GetComponentByClass<USkeletalMeshComponent>())
 		{
 			SkeletalMeshComponent->SetSkeletalMesh(AssetData->GetSkeletalMesh());
+			SkeletalMeshComponent->SetRelativeLocation(AssetData->GetMeshOffset());
+
+			if (!bCapsule)
+			{
+				SkeletalMeshComponent->SetWorldScale3D(AssetData->GetSize());
+			}
 		}
 	}
 }
@@ -66,6 +83,7 @@ void UC_Asset::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 void UC_Asset::OnRep_ID()
 {
 	FetchAsset();
+	ApplyAsset();
 }
 
 void UC_Asset::FetchAsset()

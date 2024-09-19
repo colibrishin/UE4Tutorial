@@ -9,6 +9,9 @@
 
 #include "Camera/CameraComponent.h"
 
+#include "Components/CapsuleComponent.h"
+
+#include "MyProject/MyPlayerState.h"
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
 
 #include "Net/UnrealNetwork.h"
@@ -30,8 +33,19 @@ AA_Character::AA_Character()
 	AssetComponent = CreateDefaultSubobject<UC_CharacterAsset>(TEXT("AssetComponent"));
 	Camera1P = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 
+	ArmMeshComponent->SetupAttachment(GetCapsuleComponent());
+	Camera1P->SetupAttachment(GetCapsuleComponent());
+
 	GetMesh()->SetOwnerNoSee(true);
+	GetMesh()->SetCastShadow(true);
 	ArmMeshComponent->SetOnlyOwnerSee(true);
+	ArmMeshComponent->SetCastShadow(false);
+	
+	AssetComponent->SetNetAddressable();
+
+	bReplicates = true;
+	ACharacter::SetReplicateMovement(true);
+	bNetLoadOnClient = true;
 }
 
 // Called when the game starts or when spawned
@@ -106,6 +120,8 @@ void AA_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AA_Character, bHandBusy);
+	DOREPLIFETIME(AA_Character, Hand);
+	DOREPLIFETIME(AA_Character, AssetComponent);
 }
 
 void AA_Character::OnRep_Hand(UC_PickUp* InOldHand) const
