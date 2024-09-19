@@ -9,6 +9,9 @@
 
 #include "A_Character.generated.h"
 
+struct FInputActionValue;
+class UInputAction;
+class UInputMappingContext;
 class UCameraComponent;
 class UC_CharacterAsset;
 class UC_Asset;
@@ -16,8 +19,6 @@ DECLARE_LOG_CATEGORY_EXTERN(LogCharacter , Log , All);
 
 // Non-dynamic delegate due to forwarding to player state;
 DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHandChanged, UC_PickUp*, UC_PickUp*);
-
-class UInputMappingContext;
 
 UCLASS()
 class MYPROJECT_API AA_Character : public ACharacter, public IPickingUp, public IAssetFetchable
@@ -47,6 +48,9 @@ protected:
 
 	virtual void Drop(UC_PickUp* InPickUp) override;
 
+	UFUNCTION()
+	void Move(const FInputActionValue& Value);
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -72,6 +76,9 @@ protected:
 
 	UPROPERTY(EditAnywhere)
 	UInputMappingContext* InputMapping;
+
+	UPROPERTY(EditAnywhere)
+	UInputAction* MoveAction;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	UC_CharacterAsset* AssetComponent;

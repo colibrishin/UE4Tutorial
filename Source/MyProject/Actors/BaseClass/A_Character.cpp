@@ -3,9 +3,12 @@
 
 #include "A_Character.h"
 
+#include "EnhancedInputComponent.h"
+
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Private/Utilities.hpp"
 #include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
 
 #include "Camera/CameraComponent.h"
 
@@ -29,6 +32,20 @@ AA_Character::AA_Character()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
+	if (static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Movement(
+		TEXT("/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Inputs/InputContext/IMC_Movement.IMC_Movement'"));
+		IMC_Movement.Succeeded())
+	{
+		InputMapping = IMC_Movement.Object;
+	}
+
+	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Move(
+		TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Move.IA_Move'"));
+		IA_Move.Succeeded())
+	{
+		MoveAction = IA_Move.Object;
+	}
+	
 	ArmMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmMesh"));
 	AssetComponent = CreateDefaultSubobject<UC_CharacterAsset>(TEXT("AssetComponent"));
 	Camera1P = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
@@ -104,6 +121,15 @@ void AA_Character::Drop(UC_PickUp* InPickUp)
 	}
 }
 
+void AA_Character::Move(const FInputActionValue& Value)
+{
+	const FVector2D MovementVector = Value.Get<FVector2D>();
+	
+	// add movement 
+	AddMovementInput(GetActorForwardVector(), MovementVector.X);
+	AddMovementInput(GetActorRightVector(), MovementVector.Y);
+}
+
 // Called every frame
 void AA_Character::Tick(float DeltaTime)
 {
@@ -114,6 +140,11 @@ void AA_Character::Tick(float DeltaTime)
 void AA_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
+	{
+		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AA_Character::Move);
+	}
 }
 
 void AA_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
