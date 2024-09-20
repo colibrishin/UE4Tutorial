@@ -40,6 +40,7 @@ void AA_Weapon::BeginPlay()
 void AA_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AA_Weapon, WeaponComponent);
 }
 
 // Called every frame

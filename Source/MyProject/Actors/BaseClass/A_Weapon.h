@@ -37,7 +37,7 @@ public:
 
 private:
 
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_Weapon* WeaponComponent;
 	
 };
