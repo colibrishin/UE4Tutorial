@@ -29,7 +29,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadEnd , UC_Weapon* , InWeapon
 DECLARE_LOG_CATEGORY_EXTERN(LogWeaponComponent , Log , All);
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_Weapon : public UC_PickUp
+class MYPROJECT_API UC_Weapon : public UActorComponent
 {
 	GENERATED_BODY()
 

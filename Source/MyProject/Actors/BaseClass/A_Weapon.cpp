@@ -25,6 +25,11 @@ AA_Weapon::AA_Weapon()
 	WeaponComponent->SetIsReplicated(true);
 }
 
+UC_Weapon* AA_Weapon::GetWeaponComponent() const
+{
+	return WeaponComponent;
+}
+
 // Called when the game starts or when spawned
 void AA_Weapon::BeginPlay()
 {
@@ -35,7 +40,6 @@ void AA_Weapon::BeginPlay()
 void AA_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AA_Weapon, WeaponComponent);
 }
 
 // Called every frame

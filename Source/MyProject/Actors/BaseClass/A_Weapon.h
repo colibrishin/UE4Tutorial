@@ -19,16 +19,13 @@ public:
 	// Sets default values for this actor's properties
 	AA_Weapon();
 
-	UC_Weapon* GetWeaponComponent() const { return WeaponComponent; }
+	UC_Weapon* GetWeaponComponent() const;
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
-	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
-	UC_Weapon* WeaponComponent;
 	
 public:
 	// Called every frame
@@ -37,4 +34,10 @@ public:
 	virtual void Attack() override;
 
 	virtual void Reload() override;
+
+private:
+
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	UC_Weapon* WeaponComponent;
+	
 };

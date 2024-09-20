@@ -3,6 +3,7 @@
 
 #include "A_Character.h"
 
+#include "A_Collectable.h"
 #include "EnhancedInputComponent.h"
 
 #include "MyProject/Components/C_PickUp.h"
@@ -88,6 +89,8 @@ AA_Character::AA_Character()
 	bReplicates = true;
 	ACharacter::SetReplicateMovement(true);
 	bNetLoadOnClient = true;
+
+	OnHandChanged.AddUObject(this, &AA_Character::ClientDuplicateHand);
 }
 
 // Called when the game starts or when spawned
@@ -192,10 +195,41 @@ void AA_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AA_Character, bHandBusy);
 	DOREPLIFETIME(AA_Character, Hand);
 	DOREPLIFETIME(AA_Character, AssetComponent);
+	DOREPLIFETIME_CONDITION(AA_Character, HandArm, COND_OwnerOnly);
 }
 
 void AA_Character::OnRep_Hand(UC_PickUp* InOldHand) const
 {
 	OnHandChanged.Broadcast(InOldHand, Hand);
+}
+
+void AA_Character::ClientDuplicateHand(UC_PickUp* InOldHand, UC_PickUp* InNewHand)
+{
+	if (GetNetMode() != NM_Client)
+	{
+		if (InOldHand)
+		{
+			HandArm->Destroy();
+		}
+
+		if (InNewHand)
+		{
+			FActorSpawnParameters SpawnParameters;
+			SpawnParameters.Owner = GetController();
+			SpawnParameters.Template = InNewHand->GetOwner();
+		
+			HandArm = GetWorld()->SpawnActor<AA_Collectable>(InNewHand->GetOwner()->GetClass(), SpawnParameters);
+			USkeletalMeshComponent* MeshComponent = HandArm->GetComponentByClass<USkeletalMeshComponent>();
+			MeshComponent->SetOnlyOwnerSee(true);
+			
+			ensure
+			(
+			 MeshComponent->AttachToComponent(
+				 ArmMeshComponent,
+				 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+				 RightHandSocketName)
+			);
+		}
+	}
 }
 

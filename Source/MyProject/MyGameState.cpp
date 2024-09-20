@@ -401,19 +401,20 @@ void AMyGameState::RestartRound()
 		}
 		else
 		{
-			const auto& Spectator = Cast<AMySpectatorPawn>(PlayerController->GetPawn());
-			const auto& MainCharacter = Spectator->GetPreviousCharacter();
-
-			if (MainCharacter.IsValid())
+			if (AMySpectatorPawn* Spectator = Cast<AMySpectatorPawn>(PlayerController->GetPawn()))
 			{
-				MainCharacter->Destroy(true);
-			}
+				const auto& MainCharacter = Spectator->GetPreviousCharacter();
 
-			if (IsValid(Spectator))
-			{
-				Spectator->Destroy(true);
+				if (MainCharacter.IsValid())
+				{
+					MainCharacter->Destroy(true);
+				}
+
+				if (IsValid(Spectator))
+				{
+					Spectator->Destroy(true);
+				}
 			}
-			
 
 			if (PlayerController->HasAuthority())
 			{
@@ -450,7 +451,7 @@ void AMyGameState::RestartRound()
 
 	FActorSpawnParameters SpawnParameters;
 
-	SpawnParameters.Owner = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld());
+	SpawnParameters.Owner = GetWorld()->GetFirstPlayerController();
 
 	AA_C4* const& C4 = GetWorld()->SpawnActor<AA_C4>(
 		AA_C4::StaticClass(),

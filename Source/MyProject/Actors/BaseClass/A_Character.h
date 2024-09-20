@@ -11,6 +11,7 @@
 
 #include "A_Character.generated.h"
 
+class AA_Collectable;
 class USpringArmComponent;
 struct FInputActionValue;
 class UInputAction;
@@ -69,6 +70,9 @@ public:
 private:
 	UFUNCTION()
 	void OnRep_Hand(UC_PickUp* InOldHand) const;
+
+	UFUNCTION()
+	void ClientDuplicateHand(UC_PickUp* InOldHand, UC_PickUp* InNewHand);
 	
 protected:
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -100,6 +104,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Hand)
 	UC_PickUp* Hand;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	AA_Collectable* HandArm;
 
 	FDelegateHandle CharacterForwardHandle;
 	

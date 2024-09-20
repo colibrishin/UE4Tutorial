@@ -15,8 +15,6 @@ AA_C4::AA_C4()
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 	bUsePredicate = true;
-	bNetLoadOnClient = true;
-	bReplicates = true;
 
 	InteractiveComponent = CreateDefaultSubobject<UC_Interactive>(TEXT("InteractiveComponent"));
 	BombState = EMyBombState::Unknown;

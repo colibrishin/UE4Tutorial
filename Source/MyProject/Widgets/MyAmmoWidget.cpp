@@ -31,7 +31,7 @@ void UMyAmmoWidget::HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew)
 		PreviousWeapon->OnAmmoUpdated.RemoveAll(this);
 	}
 
-	if (UC_Weapon* NewWeapon = Cast<UC_Weapon>(InNew))
+	if (UC_Weapon* NewWeapon = Cast<UC_Weapon>(InNew->GetOwner()->GetComponentByClass<UC_Weapon>()))
 	{
 		NewWeapon->OnAmmoUpdated.AddUniqueDynamic(this, &UMyAmmoWidget::UpdateAmmo);
 		UpdateAmmo(

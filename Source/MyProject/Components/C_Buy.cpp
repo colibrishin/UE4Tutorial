@@ -4,6 +4,7 @@
 #include "C_Buy.h"
 
 #include "Asset/C_CollectableAsset.h"
+#include "Asset/C_WeaponAsset.h"
 
 #include "MyProject/Private/Utilities.hpp"
 #include "MyProject/Private/CommonBuy.hpp"
@@ -70,14 +71,18 @@ void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) co
 	LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponAsset->GetAssetName());
 
 	GeneratedWeapon->GetAssetComponent()->SetID(WeaponID);
-	GeneratedWeapon->FetchAsset();
+	GeneratedWeapon->FetchAsset<UC_WeaponAsset>();
 	
 	if (IsValid(GeneratedWeapon))
 	{
 		GeneratedWeapon->SetOwner(RequestCharacter);
 		GeneratedWeapon->SetReplicateMovement(true);
 		GeneratedWeapon->SetReplicates(true);
-		GeneratedWeapon->GetPickUpComponent()->OnObjectPickUp.Broadcast(RequestCharacter);
+
+		if (const UC_PickUp* PickUpComponent = GeneratedWeapon->GetPickUpComponent())
+		{
+			PickUpComponent->OnObjectPickUp.Broadcast(RequestCharacter);
+		}
 	}
 }
 

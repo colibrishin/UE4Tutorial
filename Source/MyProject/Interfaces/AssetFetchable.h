@@ -6,6 +6,7 @@
 #include "UObject/Interface.h"
 #include "AssetFetchable.generated.h"
 
+class UC_Asset;
 class UC_CollectableAsset;
 // This class does not need to be modified.
 UINTERFACE()
@@ -23,6 +24,15 @@ class MYPROJECT_API IAssetFetchable
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	void FetchAsset();
+	template <typename T> requires (std::is_base_of_v<UC_Asset, T>)
+	void FetchAsset()
+	{
+		const AActor* Object = Cast<AActor>(this);
+		ensureAlwaysMsgf(Object, TEXT("IAssetFetchable is considered AActor as base class"));
+	
+		T* AssetComponent = Object->GetComponentByClass<T>();
+		ensureAlwaysMsgf(AssetComponent, TEXT("AssetComponent is not found"));
+		AssetComponent->ApplyAsset();
+	}
 	
 };

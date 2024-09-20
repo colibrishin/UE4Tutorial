@@ -3,6 +3,7 @@
 
 #include "A_Collectable.h"
 
+#include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
 
 #include "Net/UnrealNetwork.h"
@@ -15,7 +16,14 @@ AA_Collectable::AA_Collectable()
 	PrimaryActorTick.bCanEverTick = true;
 
 	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(TEXT("CollectableAsset"));
+	PickUpComponent = CreateDefaultSubobject<UC_PickUp>(TEXT("PickUpComponent"));
+	
+	PickUpComponent->SetNetAddressable();
 	AssetComponent->SetNetAddressable();
+
+	bNetLoadOnClient = true;
+	bReplicates = true;
+	bAlwaysRelevant = true;
 }
 
 // Called when the game starts or when spawned
@@ -28,6 +36,7 @@ void AA_Collectable::BeginPlay()
 void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AA_Collectable, PickUpComponent);
 	DOREPLIFETIME(AA_Collectable, AssetComponent);
 }
 

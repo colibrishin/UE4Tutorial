@@ -336,12 +336,9 @@ void UC_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME(UC_Weapon , bFiring);
 	DOREPLIFETIME(UC_Weapon , bCanReload);
 	DOREPLIFETIME(UC_Weapon , bCanFire);
-	DOREPLIFETIME(UC_Weapon , bCanSpray);
 	DOREPLIFETIME(UC_Weapon , AmmoSpent);
 	DOREPLIFETIME(UC_Weapon , AmmoSpentInClip);
 	DOREPLIFETIME(UC_Weapon , LoadedAmmo);
-	DOREPLIFETIME(UC_Weapon , AmmoPerClip);
-	DOREPLIFETIME(UC_Weapon , TotalAmmo);
 }
 
 

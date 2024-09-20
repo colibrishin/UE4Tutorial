@@ -23,8 +23,4 @@ public:
 	UFUNCTION(Client, Reliable)
 	void Client_SetSpectator(AMySpectatorPawn* Spectator);
 	
-protected:
-
-	virtual void OnRep_PlayerState() override;
-	
 };
