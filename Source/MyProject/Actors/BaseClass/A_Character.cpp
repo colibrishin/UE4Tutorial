@@ -14,6 +14,8 @@
 
 #include "Components/CapsuleComponent.h"
 
+#include "GameFramework/SpringArmComponent.h"
+
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
 
@@ -45,21 +47,44 @@ AA_Character::AA_Character()
 	{
 		MoveAction = IA_Move.Object;
 	}
+
+	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Look(
+		TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Look.IA_Look'"));
+		IA_Look.Succeeded())
+	{
+		LookAction = IA_Look.Object;
+	}
+
+	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Jump(
+		TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Jump.IA_Jump'"));
+		IA_Jump.Succeeded())
+	{
+		JumpAction = IA_Jump.Object;
+	}
 	
 	ArmMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmMesh"));
 	AssetComponent = CreateDefaultSubobject<UC_CharacterAsset>(TEXT("AssetComponent"));
 	Camera1P = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
+	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 
 	ArmMeshComponent->SetupAttachment(GetCapsuleComponent());
-	Camera1P->SetupAttachment(GetCapsuleComponent());
+	SpringArmComponent->SetupAttachment(GetCapsuleComponent());
+	Camera1P->SetupAttachment(SpringArmComponent);
+
+	SpringArmComponent->bDoCollisionTest = true;
+	SpringArmComponent->ProbeSize = 100.f;
+	SpringArmComponent->TargetArmLength = 0.f;
+	SpringArmComponent->bUsePawnControlRotation = true;
 
 	GetMesh()->SetOwnerNoSee(true);
 	GetMesh()->SetCastShadow(true);
 	ArmMeshComponent->SetOnlyOwnerSee(true);
 	ArmMeshComponent->SetCastShadow(false);
-	
 	AssetComponent->SetNetAddressable();
 
+	GetCapsuleComponent()->SetCapsuleHalfHeight(88.f);
+	GetCapsuleComponent()->SetCapsuleRadius(88.f);
+	
 	bReplicates = true;
 	ACharacter::SetReplicateMovement(true);
 	bNetLoadOnClient = true;
@@ -126,8 +151,18 @@ void AA_Character::Move(const FInputActionValue& Value)
 	const FVector2D MovementVector = Value.Get<FVector2D>();
 	
 	// add movement 
-	AddMovementInput(GetActorForwardVector(), MovementVector.X);
-	AddMovementInput(GetActorRightVector(), MovementVector.Y);
+	AddMovementInput(GetActorForwardVector(), MovementVector.Y);
+	AddMovementInput(GetActorRightVector(), MovementVector.X);
+}
+
+void AA_Character::Look(const FInputActionValue& Value)
+{
+	// input is a Vector2D
+	const FVector2D LookAxisVector = Value.Get<FVector2D>();
+
+	// add yaw and pitch input to controller
+	AddControllerYawInput(LookAxisVector.X);
+	AddControllerPitchInput(-LookAxisVector.Y);
 }
 
 // Called every frame
@@ -144,6 +179,10 @@ void AA_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &AA_Character::Move);
+		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AA_Character::Look);
+		
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AA_Character::Jump);
+		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AA_Character::StopJumping);
 	}
 }
 

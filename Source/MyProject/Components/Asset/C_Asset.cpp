@@ -42,6 +42,7 @@ void UC_Asset::ApplyAsset()
 		{
 			SkeletalMeshComponent->SetSkeletalMesh(AssetData->GetSkeletalMesh());
 			SkeletalMeshComponent->SetRelativeLocation(AssetData->GetMeshOffset());
+			SkeletalMeshComponent->SetRelativeRotation(AssetData->GetMeshRotation());
 
 			if (!bCapsule)
 			{

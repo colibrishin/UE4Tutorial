@@ -1,6 +1,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "InputActionValue.h"
+
 #include "MyProject/Interfaces/PickingUp.h"
 #include "GameFramework/Character.h"
 
@@ -9,6 +11,7 @@
 
 #include "A_Character.generated.h"
 
+class USpringArmComponent;
 struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
@@ -51,6 +54,9 @@ protected:
 	UFUNCTION()
 	void Move(const FInputActionValue& Value);
 
+	UFUNCTION()
+	void Look(const FInputActionValue& Value);
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -67,18 +73,27 @@ private:
 protected:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bHandBusy;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
-	USkeletalMeshComponent* ArmMeshComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	UCameraComponent* Camera1P;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	USpringArmComponent* SpringArmComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	USkeletalMeshComponent* ArmMeshComponent;
+
 	UPROPERTY(EditAnywhere)
 	UInputMappingContext* InputMapping;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UInputAction* MoveAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UInputAction* LookAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UInputAction* JumpAction;
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	UC_CharacterAsset* AssetComponent;

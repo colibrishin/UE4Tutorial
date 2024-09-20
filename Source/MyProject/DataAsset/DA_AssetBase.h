@@ -21,6 +21,7 @@ public:
 	void        SetID(const int32 InID) { ID = InID; }
 	int32       GetID() const { return ID; }
 	FVector     GetMeshOffset() const { return MeshOffset; }
+	FRotator    GetMeshRotation() const { return MeshRotation; }
 	FVector     GetSize() const { return Size; }
 
 private:
@@ -29,6 +30,9 @@ private:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	FVector MeshOffset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	FRotator MeshRotation;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	FVector Size;

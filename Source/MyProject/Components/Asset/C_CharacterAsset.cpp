@@ -7,6 +7,8 @@
 
 #include "Components/CapsuleComponent.h"
 
+#include "GameFramework/SpringArmComponent.h"
+
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Components/C_Health.h"
@@ -34,6 +36,7 @@ void UC_CharacterAsset::ApplyAsset()
 			Character->GetMesh()->SetAnimInstanceClass(CharacterAsset->GetAnimInstance());
 			Character->GetArmMesh()->SetSkeletalMesh(CharacterAsset->GetArmMesh());
 			Character->GetArmMesh()->SetRelativeLocation(CharacterAsset->GetArmOffset());
+			Character->GetArmMesh()->SetRelativeRotation(CharacterAsset->GetArmRotation());
 			Character->GetArmMesh()->SetAnimInstanceClass(CharacterAsset->GetArmAnimInstance());
 
 			if (!Character->GetComponentByClass<UCapsuleComponent>())
@@ -41,10 +44,10 @@ void UC_CharacterAsset::ApplyAsset()
 				Character->GetArmMesh()->SetWorldScale3D(CharacterAsset->GetSize());
 			}
 
-			if (UCameraComponent* CameraComponent = Character->GetComponentByClass<UCameraComponent>())
+			if (USpringArmComponent* SpringArmComponent = Character->GetComponentByClass<USpringArmComponent>())
 			{
-				CameraComponent->SetRelativeLocation(CharacterAsset->GetCameraOffset());
-				CameraComponent->SetRelativeRotation(CharacterAsset->GetCameraRotation());
+				SpringArmComponent->SetRelativeLocation(CharacterAsset->GetCameraOffset());
+				SpringArmComponent->SetRelativeRotation(CharacterAsset->GetCameraRotation());
 			}
 			
 			if (const AMyPlayerState* PlayerState = Character->GetPlayerState<AMyPlayerState>())

@@ -20,6 +20,7 @@ public:
 	TSubclassOf<UAnimInstance> GetAnimInstance() const { return AnimInstance; }
 	TSubclassOf<UAnimInstance> GetArmAnimInstance() const { return ArmAnimInstance; }
 	FVector GetArmOffset() const { return ArmOffset; }
+	FRotator GetArmRotation() const { return ArmRotation; }
 	FVector GetCameraOffset() const { return CameraOffset; }
 	FRotator GetCameraRotation() const { return CameraRotation; }
 
@@ -38,6 +39,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector ArmOffset;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FRotator ArmRotation;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FVector CameraOffset;
