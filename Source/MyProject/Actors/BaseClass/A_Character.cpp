@@ -17,8 +17,11 @@
 
 #include "GameFramework/SpringArmComponent.h"
 
+#include "MyProject/MyInGameHUD.h"
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
+#include "MyProject/Interfaces/CharacterRequiredWidget.h"
+#include "MyProject/Widgets/MyInGameWidget.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -98,7 +101,8 @@ void AA_Character::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if ( const APlayerController* PlayerController = Cast<APlayerController>( Controller ) )
+	if ( const APlayerController* PlayerController = Cast<APlayerController>( Controller );
+		 PlayerController && PlayerController == GetWorld()->GetFirstPlayerController())
 	{
 		if ( UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>( PlayerController->GetLocalPlayer() ) )
 		{
@@ -110,6 +114,11 @@ void AA_Character::BeginPlay()
 void AA_Character::PickUp(UC_PickUp* InPickUp)
 {
 	IPickingUp::PickUp(InPickUp);
+
+	if (GetNetMode() == NM_Client)
+	{
+		return;
+	}
 
 	if (bHandBusy)
 	{
@@ -137,6 +146,11 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 void AA_Character::Drop(UC_PickUp* InPickUp)
 {
 	IPickingUp::Drop(InPickUp);
+	
+	if (GetNetMode() == NM_Client)
+	{
+		return;
+	}
 
 	// If Item is attached to character;
 	if (UC_PickUp* PickUp = InPickUp->GetOwner()->GetComponentByClass<UC_PickUp>();

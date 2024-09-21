@@ -5,8 +5,11 @@
 
 #include "../MyPlayerState.h"
 #include "Components/TextBlock.h"
+#include "MyProject/Private/Utilities.hpp"
 
 #include "MyProject/Components/Weapon/C_Weapon.h"
+
+DEFINE_LOG_CATEGORY(LogAmmoWidget);
 
 void UMyAmmoWidget::DispatchCharacter(AA_Character* InCharacter)
 {
@@ -25,19 +28,27 @@ void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 Remaini
 
 void UMyAmmoWidget::HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew)
 {
-	if (UC_Weapon* PreviousWeapon = Cast<UC_Weapon>(InPrevious))
+	LOG_FUNC(LogAmmoWidget, Log, "Caught weapon change");
+
+	if (InPrevious)
 	{
-		AmmoText->SetText(FText::GetEmpty());
-		PreviousWeapon->OnAmmoUpdated.RemoveAll(this);
+		if (UC_Weapon* PreviousWeapon = InPrevious->GetOwner()->GetComponentByClass<UC_Weapon>())
+		{
+			AmmoText->SetText(FText::GetEmpty());
+			PreviousWeapon->OnAmmoUpdated.RemoveAll(this);
+		}
 	}
 
-	if (UC_Weapon* NewWeapon = Cast<UC_Weapon>(InNew->GetOwner()->GetComponentByClass<UC_Weapon>()))
+	if (InNew)
 	{
-		NewWeapon->OnAmmoUpdated.AddUniqueDynamic(this, &UMyAmmoWidget::UpdateAmmo);
-		UpdateAmmo(
-			NewWeapon->GetRemainingAmmoInClip(),
-		           NewWeapon->GetRemainingAmmoWithoutCurrentClip(),
-		           NewWeapon);
+		if (UC_Weapon* NewWeapon = InNew->GetOwner()->GetComponentByClass<UC_Weapon>())
+		{
+			NewWeapon->OnAmmoUpdated.AddUniqueDynamic(this, &UMyAmmoWidget::UpdateAmmo);
+			UpdateAmmo(
+				NewWeapon->GetRemainingAmmoInClip(),
+			           NewWeapon->GetRemainingAmmoWithoutCurrentClip(),
+			           NewWeapon);
+		}
 	}
 }
 

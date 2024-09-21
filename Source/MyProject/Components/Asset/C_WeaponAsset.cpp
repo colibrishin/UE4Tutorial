@@ -3,6 +3,9 @@
 
 #include "C_WeaponAsset.h"
 
+#include "NiagaraComponent.h"
+
+#include "MyProject/Actors/BaseClass/A_Weapon.h"
 #include "MyProject/Components/Weapon/C_RangeWeapon.h"
 #include "MyProject/Components/Weapon/C_ThrowWeapon.h"
 #include "MyProject/Components/Weapon/C_Weapon.h"
@@ -31,6 +34,7 @@ void UC_WeaponAsset::ApplyAsset()
 	
 	if (UC_Weapon* WeaponComponent = GetOwner()->GetComponentByClass<UC_Weapon>())
 	{
+		WeaponComponent->WeaponType = WeaponAsset->GetWeaponType();
 		WeaponComponent->AttackSound = WeaponAsset->GetAttackSound();
 		WeaponComponent->ReloadSound = WeaponAsset->GetReloadSound();
 		WeaponComponent->AttackRate = WeaponAsset->GetAttackRate();
@@ -40,8 +44,11 @@ void UC_WeaponAsset::ApplyAsset()
 		WeaponComponent->TotalAmmo = WeaponAsset->GetMaxAmmo() * WeaponAsset->GetMagazine();
 		WeaponComponent->Range = WeaponAsset->GetRange();
 		WeaponComponent->Damage = WeaponAsset->GetDamage();
+		WeaponComponent->ReloadTime = WeaponAsset->GetReloadTime();
 
-		switch (WeaponAsset->GetType())
+		WeaponComponent->ReloadClip();
+
+		switch (WeaponAsset->GetWeaponType())
 		{
 		case EMyWeaponType::Range:
 			{
@@ -55,7 +62,12 @@ void UC_WeaponAsset::ApplyAsset()
 					RangeWeapon->HSpread = RangeAsset->GetHSpread();
 					RangeWeapon->bHitscan = RangeAsset->GetHitscan();
 				}
-				
+
+				if (const AA_Weapon* Weapon = Cast<AA_Weapon>(GetOwner()))
+				{
+					Weapon->BulletTrailComponent->SetAsset(RangeAsset->GetBulletTrail());
+				}
+
 				break;
 			}
 		case EMyWeaponType::Melee: break;

@@ -6,6 +6,7 @@
 #include "DA_Collectable.h"
 #include "DA_Weapon.generated.h"
 
+class UNiagaraSystem;
 enum class EMyWeaponType : uint8;
 /**
  * 
@@ -16,7 +17,7 @@ class MYPROJECT_API UDA_Weapon : public UDA_Collectable
 	GENERATED_BODY()
 
 public:
-	EMyWeaponType GetType() const { return Type; }
+	EMyWeaponType GetWeaponType() const { return Type; }
 	USoundBase* GetAttackSound() const { return WeaponFireSound; }
 	USoundBase* GetReloadSound() const { return WeaponReloadSound; }
 	UTexture2D* GetImage() const { return WeaponImage; }

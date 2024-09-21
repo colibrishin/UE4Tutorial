@@ -19,6 +19,7 @@ public:
 	bool GetHitscan() const { return bHitscan; }
 	UCurveFloat* GetVSpread() const { return VSpread; }
 	UCurveFloat* GetHSpread() const { return HSpread; }
+	UNiagaraSystem* GetBulletTrail() const { return BulletTrail; }
 	
 private:
 	UPROPERTY(EditAnywhere, Category="Range", BlueprintReadWrite, meta=(AllowPrivateAccess))
@@ -33,4 +34,8 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Range", BlueprintReadWrite, meta=(AllowPrivateAccess))
 	UCurveFloat* HSpread;
+
+	UPROPERTY(EditAnywhere, Category="Range", BlueprintReadWrite, meta=(AllowPrivateAccess))
+	UNiagaraSystem* BulletTrail;
+	
 };

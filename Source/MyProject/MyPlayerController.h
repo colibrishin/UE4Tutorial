@@ -18,9 +18,13 @@ class MYPROJECT_API AMyPlayerController : public APlayerController
 public:
 	AMyPlayerController();
 
+	virtual void BeginPlay() override;
+
 	void SetSpectator(class AMySpectatorPawn* Spectator);
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetSpectator(AMySpectatorPawn* Spectator);
-	
+
+	UFUNCTION()
+	void DispatchPlayerCharacter(APawn* InOldPawn, APawn* InNewPawn);
 };

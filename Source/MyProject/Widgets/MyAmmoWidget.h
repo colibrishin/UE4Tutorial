@@ -13,6 +13,8 @@
 
 #include "MyAmmoWidget.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogAmmoWidget, Log, All);
+
 class AA_Collectable;
 class AMyPlayerState;
 class AMyCollectable;

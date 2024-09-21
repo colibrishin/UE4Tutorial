@@ -106,6 +106,7 @@ void AMyInGameHUD::BeginPlay()
 		InputComponent->BindAction(TEXT("Score"), IE_Released, StatSubWidget, &UMyInGameStatWidget::Close);
 	}
 
+	// todo: move this to player state change delegation or replication;
 	AsyncTask(ENamedThreads::GameThread_Local, [this]()
 	{
 		AMyPlayerState* MyPlayerState = Cast<AMyPlayerState>(UGameplayStatics::GetPlayerState(GetWorld(), 0));
@@ -129,36 +130,6 @@ void AMyInGameHUD::BeginPlay()
 			}
 		} 
 	});
-	
-	AsyncTask
-		(
-		 ENamedThreads::GameThread_Local , [this, &Controller]()
-		 {
-		 	AA_Character*       NewCharacter = Cast<AA_Character>(Controller->GetCharacter());
-
-		 	while (!NewCharacter)
-		 	{
-		 		NewCharacter = Cast<AA_Character>(Controller->GetCharacter());
-		 		FPlatformProcess::YieldThread();
-		 	}
-
-			 // Iterate all widgets and pass the own player state to the widgets that require the player state. 
-			 for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
-				  Iterator;
-				  ++Iterator)
-			 {
-				 UUserWidget* Widget = Cast<UUserWidget>
-					 (
-					  Iterator->GetObjectPropertyValue
-					  (Iterator->ContainerPtrToValuePtr<void>(GetInGameWidget() , 0))
-					 );
-				 if (ICharacterRequiredWidget* Interface = Cast<ICharacterRequiredWidget>(Widget))
-				 {
-					 Interface->DispatchCharacter(NewCharacter);
-				 }
-			 }
-		 }
-		);
 }
 
 void AMyInGameHUD::DrawHUD()

@@ -4,9 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
+
+#include "MyProject/Actors/BaseClass/A_Character.h"
+
 #include "C_Buy.generated.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(LogBuyComponent, Log, All);
+class UC_PickUp;
+DECLARE_LOG_CATEGORY_EXTERN(LogBuyComponent , Log , All);
 
 class AA_Character;
 
@@ -28,7 +32,6 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void Server_BuyWeapon(AA_Character* RequestCharacter , int32 WeaponID) const;
-
 
 public:
 	// Called every frame

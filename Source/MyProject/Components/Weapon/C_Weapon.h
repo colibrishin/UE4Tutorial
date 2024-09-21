@@ -16,7 +16,7 @@ enum class EMyWeaponType : uint8;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams
 (
- FOnAmmoConsumed , const int32 , InOld , const int32 , InNew ,
+ FOnAmmoConsumed , const int32 , InCurrentClip , const int32 , InRemainingAmmo ,
  UC_Weapon* , InWeapon
 );
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSprayStarted , UC_Weapon* , InWeapon);
@@ -49,6 +49,8 @@ public:
 
 	FOnReloadEnd OnReloadEnd;
 
+	EMyWeaponType GetWeaponType() const { return WeaponType; }
+	
 	uint32 GetRemainingAmmo() const;
 
 	uint32 GetRemainingAmmoInClip() const;
@@ -72,18 +74,32 @@ protected:
 	UFUNCTION(Server , Reliable)
 	void Server_StopAttack();
 
+	void StopAttackImplementation();
+
 	UFUNCTION(Server , Reliable)
 	void Server_Attack();
 
+	void AttackImplementation();
+
 	UFUNCTION(Server , Reliable)
 	void Server_Reload();
+
+	void ReloadImplementation();
+
+	void ReloadClip();
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetupPickupInput(const AA_Character* InCharacter);
+
+	UFUNCTION(Client, Reliable)
+	void Client_SetupDropInput(const AA_Character* InCharacter);
 
 	bool ValidateAttack();
 
 	bool ValidateReload();
 
 	UFUNCTION()
-	void OnRep_OnAmmoUpdated(const int32 InOld);
+	void OnRep_OnAmmoUpdated();
 
 	UFUNCTION()
 	void HandleAttackStart(UC_Weapon* InWeapon);
@@ -112,6 +128,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
+	UPROPERTY(VisibleAnywhere)
+	EMyWeaponType WeaponType;
+	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bFiring;
 
@@ -124,7 +143,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category=Stats, ReplicatedUsing=OnRep_OnAmmoUpdated)
 	int32 AmmoSpent;
 
-	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
+	UPROPERTY(VisibleAnywhere, Category=Stats, ReplicatedUsing=OnRep_OnAmmoUpdated)
 	int32 AmmoSpentInClip;
 
 	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
@@ -144,6 +163,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	float AttackRate;
+
+	UPROPERTY(VisibleAnywhere)
+	float ReloadTime;
 
 	UPROPERTY(VisibleAnywhere)
 	float Range;
@@ -173,6 +195,8 @@ protected:
 	FEnhancedInputActionEventBinding* ReloadBinding;
 
 	FTimerHandle SprayTimerHandle;
+
+	FTimerHandle ReloadTimerHandle;
 
 public:
 	// Called every frame

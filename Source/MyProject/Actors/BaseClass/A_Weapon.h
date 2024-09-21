@@ -10,12 +10,16 @@
 
 #include "A_Weapon.generated.h"
 
+class UNiagaraComponent;
+
 UCLASS()
 class MYPROJECT_API AA_Weapon : public AA_Collectable, public IAttackObject, public IReloadObject
 {
 	GENERATED_BODY()
 
 public:
+	friend class UC_WeaponAsset;
+	
 	// Sets default values for this actor's properties
 	AA_Weapon();
 
@@ -24,6 +28,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UFUNCTION(NetMulticast, Reliable)
+	void Multi_StartBulletTrail();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 	
@@ -39,5 +46,8 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_Weapon* WeaponComponent;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	UNiagaraComponent* BulletTrailComponent;
 	
 };
