@@ -5,6 +5,7 @@
 
 #include "NiagaraComponent.h"
 
+#include "MyProject/Actors/BaseClass/A_RangeWeapon.h"
 #include "MyProject/Actors/BaseClass/A_Weapon.h"
 #include "MyProject/Components/Weapon/C_RangeWeapon.h"
 #include "MyProject/Components/Weapon/C_ThrowWeapon.h"
@@ -63,7 +64,7 @@ void UC_WeaponAsset::ApplyAsset()
 					RangeWeapon->bHitscan = RangeAsset->GetHitscan();
 				}
 
-				if (const AA_Weapon* Weapon = Cast<AA_Weapon>(GetOwner()))
+				if (const AA_RangeWeapon* Weapon = Cast<AA_RangeWeapon>(GetOwner()))
 				{
 					Weapon->BulletTrailComponent->SetAsset(RangeAsset->GetBulletTrail());
 				}

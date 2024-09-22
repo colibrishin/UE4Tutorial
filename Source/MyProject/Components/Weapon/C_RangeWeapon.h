@@ -18,21 +18,25 @@ public:
 	// Sets default values for this component's properties
 	UC_RangeWeapon();
 
+	FVector GetRecoiledNormal() const { return RecoiledNormal; }
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	virtual void Server_Attack_Implementation() override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void Server_StopAttack_Implementation() override;
+	virtual void AttackImplementation() override;
+
+	virtual void StopAttackImplementation() override;
 
 	FVector ApplyRecoil(const FVector& InNormal) const;
 	
 	void DoHitscan(const FVector& InRecoiledNormal);
 	
 private:
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
-	FVector Normal;
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
+	FVector_NetQuantize RecoiledNormal;
 	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	bool bAimable;

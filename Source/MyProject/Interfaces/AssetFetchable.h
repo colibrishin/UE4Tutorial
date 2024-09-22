@@ -33,6 +33,10 @@ public:
 		T* AssetComponent = Object->GetComponentByClass<T>();
 		ensureAlwaysMsgf(AssetComponent, TEXT("AssetComponent is not found"));
 		AssetComponent->ApplyAsset();
+		PostFetchAsset();
 	}
+
+protected:
+	virtual void PostFetchAsset();
 	
 };

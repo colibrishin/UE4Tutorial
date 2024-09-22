@@ -9,6 +9,8 @@
 
 #include "MyProject/Actors/BaseClass/A_Character.h"
 
+#include "Net/UnrealNetwork.h"
+
 
 // Sets default values for this component's properties
 UC_RangeWeapon::UC_RangeWeapon()
@@ -30,38 +32,48 @@ void UC_RangeWeapon::BeginPlay()
 	
 }
 
-void UC_RangeWeapon::Server_Attack_Implementation()
+void UC_RangeWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(UC_RangeWeapon, RecoiledNormal);
+}
+
+void UC_RangeWeapon::AttackImplementation()
 {
 	if (!bFiring)
 	{
 		// Weapon -> Character -> Character Camera component;
-		Normal = GetOwner()->GetOwner()->GetComponentByClass<UCameraComponent>()->GetForwardVector();
+		if (const UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
+		{
+			RecoiledNormal = PickUpComponent->GetAttachParentActor()->GetComponentByClass<UCameraComponent>()->GetForwardVector();
+		}
 	}
-	
-	Super::Server_Attack_Implementation();
+
+	Super::AttackImplementation();
 
 	if (bHitscan)
 	{
-		DoHitscan(ApplyRecoil(Normal));
+		RecoiledNormal = ApplyRecoil(RecoiledNormal);
+		DoHitscan(RecoiledNormal);
 	}
 }
 
-void UC_RangeWeapon::Server_StopAttack_Implementation()
+void UC_RangeWeapon::StopAttackImplementation()
 {
-	Super::Server_StopAttack_Implementation();
+	Super::StopAttackImplementation();
 }
 
 FVector UC_RangeWeapon::ApplyRecoil(const FVector& InNormal) const
 {
-	FVector     RecoiledNormal = InNormal;
+	FVector     Normal = InNormal;
 	constexpr float North          = PI / 2;
 	const float HModifier      = HSpread->GetFloatValue(GetConsecutiveShot() / GetAmmoPerClip()) + North;
 	const float VModifier      = VSpread->GetFloatValue(GetConsecutiveShot() / GetAmmoPerClip()) + North;
 	
-	RecoiledNormal = RecoiledNormal.RotateAngleAxis(FMath::RadiansToDegrees(HModifier), FVector::RightVector);
-	RecoiledNormal = RecoiledNormal.RotateAngleAxis(FMath::RadiansToDegrees(VModifier), FVector::UpVector);
+	Normal = Normal.RotateAngleAxis(FMath::RadiansToDegrees(HModifier), FVector::RightVector);
+	Normal = Normal.RotateAngleAxis(FMath::RadiansToDegrees(VModifier), FVector::UpVector);
 
-	return RecoiledNormal;
+	return Normal;
 }
 
 void UC_RangeWeapon::DoHitscan(const FVector& InRecoiledNormal)

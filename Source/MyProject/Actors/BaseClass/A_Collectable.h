@@ -6,8 +6,9 @@
 #include "GameFramework/Actor.h"
 
 #include "MyProject/Interfaces/AssetFetchable.h"
-
 #include "A_Collectable.generated.h"
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDummyFlagSet);
 
 class UC_PickUp;
 class UC_Weapon;
@@ -22,8 +23,26 @@ public:
 	// Sets default values for this actor's properties
 	AA_Collectable();
 
+	FOnDummyFlagSet OnDummyFlagSet;
+
 	UC_CollectableAsset* GetAssetComponent() const { return AssetComponent; }
-	UC_PickUp* GetPickUpComponent() const { return PickUpComponent; }
+	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
+	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling)
+	{
+		if (GetNetMode() != NM_Client)
+		{
+			bDummy = InFlag;
+			if (InFlag)
+			{
+				ensure(InSibling);
+			}
+			Sibling = InSibling;
+			OnDummyFlagSet.Broadcast();
+		}
+	}
+	
+	bool                 IsDummy() const { return bDummy; }
+	AA_Collectable*      GetSibling() const { return Sibling; }
 	
 protected:
 	// Called when the game starts or when spawned
@@ -31,11 +50,20 @@ protected:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION()
+	void OnRep_Dummy() const;
+	
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_CollectableAsset* AssetComponent;
 
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_PickUp* PickUpComponent;
+	
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Dummy, meta=(AllowPrivateAccess))
+	bool bDummy;
+
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
+	AA_Collectable* Sibling;
 	
 public:
 	// Called every frame

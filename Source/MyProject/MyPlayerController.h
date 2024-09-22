@@ -20,6 +20,8 @@ public:
 
 	virtual void BeginPlay() override;
 
+	virtual void OnRep_PlayerState() override;
+	
 	void SetSpectator(class AMySpectatorPawn* Spectator);
 
 	UFUNCTION(Client, Reliable)

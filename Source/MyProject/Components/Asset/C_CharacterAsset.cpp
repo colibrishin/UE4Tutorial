@@ -33,11 +33,16 @@ void UC_CharacterAsset::ApplyAsset()
 	{
 		if (const AA_Character* Character = Cast<AA_Character>(GetOwner()))
 		{
+			Character->GetMesh()->SetSkeletalMesh(CharacterAsset->GetSkeletalMesh());
+			Character->GetMesh()->SetRelativeLocation(CharacterAsset->GetMeshOffset());
+			Character->GetMesh()->SetRelativeRotation(CharacterAsset->GetMeshRotation());
+
 			Character->GetMesh()->SetAnimInstanceClass(CharacterAsset->GetAnimInstance());
 			Character->GetArmMesh()->SetSkeletalMesh(CharacterAsset->GetArmMesh());
+			Character->GetArmMesh()->SetAnimInstanceClass(CharacterAsset->GetArmAnimInstance());
+
 			Character->GetArmMesh()->SetRelativeLocation(CharacterAsset->GetArmOffset());
 			Character->GetArmMesh()->SetRelativeRotation(CharacterAsset->GetArmRotation());
-			Character->GetArmMesh()->SetAnimInstanceClass(CharacterAsset->GetArmAnimInstance());
 
 			if (!Character->GetComponentByClass<UCapsuleComponent>())
 			{

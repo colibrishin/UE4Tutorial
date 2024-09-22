@@ -15,6 +15,8 @@
 #include "Interfaces/CharacterRequiredWidget.h"
 #include "Interfaces/MyPlayerStateRequiredWidget.h"
 
+#include "Kismet/GameplayStatics.h"
+
 AMyPlayerController::AMyPlayerController()
 {
 	PlayerCameraManagerClass = AMyCameraManager::StaticClass();
@@ -28,6 +30,43 @@ void AMyPlayerController::BeginPlay()
 	{
 		OnPossessedPawnChanged.AddUniqueDynamic(this, &AMyPlayerController::DispatchPlayerCharacter);
 	}
+}
+
+void AMyPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	AsyncTask
+		(
+		 ENamedThreads::AnyHiPriThreadHiPriTask , [this]()
+		 {
+			 const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD());
+
+			 while (HUD == nullptr || !HUD->GetInGameWidget()->IsValidLowLevelFast())
+			 {
+				 HUD = Cast<AMyInGameHUD>(GetHUD());
+				 FPlatformProcess::YieldThread();
+			 }
+
+			 // Iterate all widgets and pass the own player state to the widgets that require the player state. 
+			 for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
+			      Iterator;
+			      ++Iterator)
+			 {
+				 UUserWidget* Widget = Cast<UUserWidget>
+					 (
+					  Iterator->GetObjectPropertyValue
+					  (
+					   Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget() , 0)
+					  )
+					 );
+				 if (IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>(Widget))
+				 {
+					 Interface->DispatchPlayerState(Cast<AMyPlayerState>(PlayerState));
+				 }
+			 }
+		 }
+		);
 }
 
 void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)

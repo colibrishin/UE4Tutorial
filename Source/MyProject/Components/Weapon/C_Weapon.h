@@ -8,6 +8,7 @@
 
 #include "C_Weapon.generated.h"
 
+class AA_Character;
 class IPickingUp;
 struct FEnhancedInputActionEventBinding;
 class UInputAction;
@@ -23,6 +24,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSprayStarted , UC_Weapon* , InWea
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSprayEnded , UC_Weapon* , InWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackStart , UC_Weapon* , InWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackEnd , UC_Weapon* , InWeapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStopAttack, UC_Weapon*, InWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadStart , UC_Weapon* , InWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadEnd , UC_Weapon* , InWeapon);
 
@@ -35,6 +37,7 @@ class MYPROJECT_API UC_Weapon : public UActorComponent
 
 public:
 	friend class UC_WeaponAsset;
+	friend struct FWeaponInputComponentControl;
 	
 	// Sets default values for this component's properties
 	UC_Weapon();
@@ -44,6 +47,8 @@ public:
 	FOnAttackStart OnAttackStart;
 
 	FOnAttackEnd OnAttackEnd;
+
+	FOnStopAttack OnStopAttack;
 
 	FOnReloadStart OnReloadStart;
 
@@ -67,26 +72,23 @@ public:
 
 	void Reload();
 
+	bool IsDummy() const;
+
+	UC_Weapon* GetSiblingComponent() const;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+protected:
 	UFUNCTION(Server , Reliable)
 	void Server_StopAttack();
 
-	void StopAttackImplementation();
-
 	UFUNCTION(Server , Reliable)
 	void Server_Attack();
-
-	void AttackImplementation();
-
+	
 	UFUNCTION(Server , Reliable)
 	void Server_Reload();
-
-	void ReloadImplementation();
-
-	void ReloadClip();
 
 	UFUNCTION(Client, Reliable)
 	void Client_SetupPickupInput(const AA_Character* InCharacter);
@@ -94,18 +96,36 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void Client_SetupDropInput(const AA_Character* InCharacter);
 
+	UFUNCTION()
+	void OnRep_OnAmmoUpdated();
+
+	UFUNCTION(NetMulticast , Unreliable)
+	void Multi_PlayAttackSound();
+
+	UFUNCTION(NetMulticast , Unreliable)
+	void Multi_PlayReloadSound();
+
+protected:
+	virtual void StopAttackImplementation();
+
+	virtual void AttackImplementation();
+
+	virtual void ReloadImplementation();
+
+protected:
 	bool ValidateAttack();
 
 	bool ValidateReload();
 
-	UFUNCTION()
-	void OnRep_OnAmmoUpdated();
-
+protected:
 	UFUNCTION()
 	void HandleAttackStart(UC_Weapon* InWeapon);
 
 	UFUNCTION()
 	void HandleAttackEnd(UC_Weapon* InWeapon);
+	
+	UFUNCTION()
+	void HandleStopAttack(UC_Weapon* InWeapon);
 
 	UFUNCTION()
 	void HandleReloadStart(UC_Weapon* InWeapon);
@@ -119,20 +139,24 @@ protected:
 	UFUNCTION()
 	virtual void HandleDrop(TScriptInterface<IPickingUp> InPickUpObject);
 
-	UFUNCTION(NetMulticast , Unreliable)
-	void Multi_PlayAttackSound();
+	UFUNCTION()
+	void ConsumeAmmo();
 
-	UFUNCTION(NetMulticast , Unreliable)
-	void Multi_PlayReloadSound();
+	UFUNCTION()
+	void ReloadClip();
+
+	UFUNCTION()
+	void HandleDummy();
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
-	UPROPERTY(VisibleAnywhere)
-	EMyWeaponType WeaponType;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bFiring;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool bReloading;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bCanReload;
@@ -148,6 +172,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
 	int32 LoadedAmmo;
+	
+	UPROPERTY(VisibleAnywhere)
+	EMyWeaponType WeaponType;
 	
 	UPROPERTY(VisibleAnywhere)
 	int32 AmmoPerClip;

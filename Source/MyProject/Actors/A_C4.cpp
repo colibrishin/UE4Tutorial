@@ -148,4 +148,3 @@ void AA_C4::OnRep_BombState(const EMyBombState InOldBombState) const
 {
 	OnBombStateChanged.Broadcast(InOldBombState, BombState, Planter, Defuser);
 }
-

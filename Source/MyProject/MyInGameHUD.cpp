@@ -105,31 +105,6 @@ void AMyInGameHUD::BeginPlay()
 		InputComponent->BindAction(TEXT("Score"), IE_Pressed, StatSubWidget, &UMyInGameStatWidget::Open);
 		InputComponent->BindAction(TEXT("Score"), IE_Released, StatSubWidget, &UMyInGameStatWidget::Close);
 	}
-
-	// todo: move this to player state change delegation or replication;
-	AsyncTask(ENamedThreads::GameThread_Local, [this]()
-	{
-		AMyPlayerState* MyPlayerState = Cast<AMyPlayerState>(UGameplayStatics::GetPlayerState(GetWorld(), 0));
-
-		while (!MyPlayerState)
-		{
-			MyPlayerState = Cast<AMyPlayerState>(UGameplayStatics::GetPlayerState(GetWorld(), 0));
-			FPlatformProcess::YieldThread();
-		}
-		
-		// Iterate all widgets and pass the own player state to the widgets that require the player state. 
-		for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
-			Iterator;
-			++Iterator)
-		{
-			UUserWidget* Widget = Cast<UUserWidget>(Iterator->GetObjectPropertyValue(
-				Iterator->ContainerPtrToValuePtr<void>(GetInGameWidget(), 0)));
-			if (IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>(Widget))
-			{
-				Interface->DispatchPlayerState(MyPlayerState);
-			}
-		} 
-	});
 }
 
 void AMyInGameHUD::DrawHUD()

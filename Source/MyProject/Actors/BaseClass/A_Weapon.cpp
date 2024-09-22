@@ -3,8 +3,6 @@
 
 #include "A_Weapon.h"
 
-#include "NiagaraComponent.h"
-
 #include "MyProject/Components/Asset/C_WeaponAsset.h"
 #include "MyProject/Components/Weapon/C_Weapon.h"
 
@@ -19,7 +17,6 @@ AA_Weapon::AA_Weapon()
 
 	AssetComponent = CreateDefaultSubobject<UC_WeaponAsset>(TEXT("WeaponAsset"));
 	WeaponComponent = CreateDefaultSubobject<UC_Weapon>(TEXT("WeaponCompoent"));
-	BulletTrailComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BulletTrailComponent"));
 
 	AssetComponent->SetNetAddressable();
 	WeaponComponent->SetNetAddressable();
@@ -27,8 +24,6 @@ AA_Weapon::AA_Weapon()
 	AssetComponent->SetIsReplicated(true);
 	WeaponComponent->SetIsReplicated(true);
 
-	BulletTrailComponent->SetAutoDestroy(false);
-	BulletTrailComponent->SetAutoActivate(false);
 }
 
 UC_Weapon* AA_Weapon::GetWeaponComponent() const
@@ -43,15 +38,6 @@ void AA_Weapon::BeginPlay()
 	
 }
 
-void AA_Weapon::Multi_StartBulletTrail_Implementation()
-{
-	if (WeaponComponent->GetWeaponType() == EMyWeaponType::Range &&
-		BulletTrailComponent->GetAsset())
-	{
-		BulletTrailComponent->Activate(true);
-	}
-}
-
 void AA_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
@@ -64,13 +50,7 @@ void AA_Weapon::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void AA_Weapon::Attack()
-{
-	Multi_StartBulletTrail();	
-}
+void AA_Weapon::Attack() {}
 
-void AA_Weapon::Reload()
-{
-	
-}
+void AA_Weapon::Reload() {}
 

@@ -29,11 +29,11 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_StartBulletTrail();
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	
+
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
+	UC_Weapon* WeaponComponent;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -41,13 +41,5 @@ public:
 	virtual void Attack() override;
 
 	virtual void Reload() override;
-
-private:
-
-	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
-	UC_Weapon* WeaponComponent;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
-	UNiagaraComponent* BulletTrailComponent;
 	
 };

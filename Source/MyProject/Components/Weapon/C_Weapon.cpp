@@ -3,15 +3,17 @@
 
 #include "C_Weapon.h"
 
-#include "MyProject/Components/C_PickUp.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
-#include "MyProject/Actors/BaseClass/A_Character.h"
+#include "MyProject/Components/C_PickUp.h"
+
 #include "../../../../../UnrealEngine/Engine/Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
+#include "MyProject/Actors/BaseClass/A_Character.h"
 
 #include "Kismet/GameplayStatics.h"
 
-#include "MyProject/MyPlayerController.h"
+#include "MyProject/Actors/BaseClass/A_Collectable.h"
+#include "MyProject/Actors/BaseClass/A_Weapon.h"
 #include "MyProject/Private/Utilities.hpp"
 
 #include "MyProject/Interfaces/AttackObject.h"
@@ -22,6 +24,7 @@ DEFINE_LOG_CATEGORY(LogWeaponComponent);
 // Sets default values for this component's properties
 UC_Weapon::UC_Weapon()
 	: bFiring(false),
+	  bReloading(false),
 	  bCanReload(false),
 	  bCanFire(false),
 	  bCanSpray(false),
@@ -36,7 +39,8 @@ UC_Weapon::UC_Weapon()
 	OnAttackEnd.AddUniqueDynamic(this , &UC_Weapon::HandleAttackEnd);
 	OnReloadStart.AddUniqueDynamic(this , &UC_Weapon::HandleReloadStart);
 	OnReloadEnd.AddUniqueDynamic(this , &UC_Weapon::HandleReloadEnd);
-
+	OnStopAttack.AddUniqueDynamic(this, &UC_Weapon::HandleStopAttack);
+	
 	if (static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Weapon
 		(TEXT("/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Inputs/InputContext/IMC_Weapon.IMC_Weapon'"));
 		IMC_Weapon.Succeeded())
@@ -87,27 +91,68 @@ uint32 UC_Weapon::GetConsecutiveShot() const
 
 void UC_Weapon::Attack()
 {
-	if (ValidateAttack())
+	UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
+	if (TargetComponent->ValidateAttack())
 	{
+		if (IsDummy())
+		{
+			AttackImplementation();
+			return;
+		}
+
 		Server_Attack();
 	}
 }
 
 void UC_Weapon::StopAttack()
 {
-	if (bFiring)
+	const UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
+	if (TargetComponent->bFiring)
 	{
+		if (IsDummy())
+		{
+			StopAttackImplementation();
+			return;
+		}
+
 		Server_StopAttack();
 	}
 }
 
 void UC_Weapon::Reload()
 {
-	if (ValidateReload())
+	UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
+	if (TargetComponent->ValidateReload())
 	{
-		OnReloadStart.Broadcast(this);
+		if (IsDummy())
+		{
+			ReloadImplementation();
+			return;
+		}
+
 		Server_Reload();
 	}
+}
+
+bool UC_Weapon::IsDummy() const
+{
+	const AA_Collectable* Collectable = Cast<AA_Collectable>(GetOwner());
+	ensure(Collectable);
+	return Collectable->IsDummy();
+}
+
+UC_Weapon* UC_Weapon::GetSiblingComponent() const
+{
+	const AA_Weapon* Collectable = Cast<AA_Weapon>(GetOwner());
+	ensure(Collectable);
+	const AA_Weapon* Sibling = Cast<AA_Weapon>(Collectable->GetSibling());
+
+	if (!Sibling)
+	{
+		return nullptr;
+	}
+	
+	return Sibling->GetWeaponComponent();
 }
 
 // Called when the game starts
@@ -121,47 +166,22 @@ void UC_Weapon::BeginPlay()
 		LOG_FUNC(LogWeaponComponent, Log, "Attach pick up delegate for weapon");
 		PickUpComponent->OnObjectPickUp.AddUniqueDynamic(this , &UC_Weapon::HandlePickUp);
 	}
+
+	if (AA_Collectable* Collectable = Cast<AA_Collectable>(GetOwner()))
+	{
+		Collectable->OnDummyFlagSet.AddUniqueDynamic(this, &UC_Weapon::HandleDummy);
+		HandleDummy();
+	}
+
+	TScriptDelegate<FNotThreadSafeDelegateMode> AttackDelegate;
+	AttackDelegate.BindUFunction(GetOwner(), "Attack");
+	OnAttackStart.Add(AttackDelegate);
 }
 
-void UC_Weapon::AttackImplementation()
-{
-	if (ValidateAttack())
-	{
-		bFiring = true;
-
-		AmmoSpentInClip++;
-		ConsecutiveShot++;
-
-		LOG_FUNC_PRINTF(LogWeaponComponent, Log, "Weapon attack Server RPC, AmmoSpentInClip: %d, ConsecutiveShot: %d", AmmoSpentInClip, ConsecutiveShot);
-
-		OnAttackStart.Broadcast(this);
-		Multi_PlayAttackSound();
-		Cast<IAttackObject>(GetOwner())->Attack();
-	}
-	else
-	{
-		Server_StopAttack();
-	}
-}
-
+#pragma region Network
 void UC_Weapon::Server_StopAttack_Implementation()
 {
 	StopAttackImplementation();
-}
-
-void UC_Weapon::StopAttackImplementation()
-{
-	if (bFiring)
-	{
-		bFiring = false;
-		ConsecutiveShot = 0;
-		OnAttackEnd.Broadcast(this);
-
-		if (SprayTimerHandle.IsValid())
-		{
-			GetWorld()->GetTimerManager().ClearTimer(SprayTimerHandle);
-		}
-	}
 }
 
 void UC_Weapon::Server_Attack_Implementation()
@@ -172,16 +192,6 @@ void UC_Weapon::Server_Attack_Implementation()
 void UC_Weapon::Server_Reload_Implementation()
 {
 	ReloadImplementation();
-}
-
-void UC_Weapon::ReloadImplementation()
-{
-	if (ValidateReload())
-	{
-		OnReloadStart.Broadcast(this);
-		Multi_PlayReloadSound();
-		Cast<IReloadObject>(GetOwner())->Reload();
-	}
 }
 
 void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCharacter)
@@ -208,7 +218,7 @@ void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCha
 		{
 			LOG_FUNC(LogWeaponComponent , Error , "Unable to bind the key binding");
 		}
-	}
+	}	
 }
 
 void UC_Weapon::Client_SetupDropInput_Implementation(const AA_Character* InCharacter)
@@ -231,13 +241,59 @@ void UC_Weapon::Client_SetupDropInput_Implementation(const AA_Character* InChara
 	}
 }
 
-void UC_Weapon::ReloadClip()
+void UC_Weapon::Multi_PlayAttackSound_Implementation()
 {
-	if (GetRemainingAmmo() > 0)
+	if (AttackSound)
 	{
-		AmmoSpent       += AmmoSpentInClip;
-		LoadedAmmo = FMath::Clamp(GetRemainingAmmo(), 0, AmmoPerClip);
-		AmmoSpentInClip = 0;
+		UGameplayStatics::PlaySoundAtLocation(GetWorld() , AttackSound , GetOwner()->GetActorLocation());
+	}
+}
+
+void UC_Weapon::Multi_PlayReloadSound_Implementation()
+{
+	if (ReloadSound)
+	{
+		UGameplayStatics::PlaySoundAtLocation(GetWorld() , ReloadSound , GetOwner()->GetActorLocation());
+	}
+}
+
+void UC_Weapon::OnRep_OnAmmoUpdated()
+{
+	OnAmmoUpdated.Broadcast(GetRemainingAmmoInClip() , GetRemainingAmmoWithoutCurrentClip(), this);
+}
+#pragma endregion 
+
+void UC_Weapon::AttackImplementation()
+{
+	UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
+	if (TargetComponent->ValidateAttack())
+	{
+		bFiring = true;
+		OnAttackStart.Broadcast(this);
+	}
+	else
+	{
+		StopAttackImplementation();
+	}
+}
+
+void UC_Weapon::StopAttackImplementation()
+{
+	const UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
+	if (TargetComponent->bFiring)
+	{
+		bFiring = false;
+		OnStopAttack.Broadcast(this);
+	}
+}
+
+void UC_Weapon::ReloadImplementation()
+{
+	UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
+	if (TargetComponent->ValidateReload())
+	{
+		bReloading = true;
+		OnReloadStart.Broadcast(this);
 	}
 }
 
@@ -247,19 +303,11 @@ bool UC_Weapon::ValidateAttack()
 	if (!bCanFire || !bCanReload)
 	{
 		LOG_FUNC_PRINTF
-		(LogWeaponComponent , Log , "Cannot fire; bCanFire: %d; bCanReload: %d;" , bCanFire , bCanReload);
+		(LogWeaponComponent , Log , "Cannot fire; bCanFire: %d; bCanReload: %d; Dummy: %d;" , bCanFire , bCanReload, IsDummy());
 		return false;
 	}
 
-	IAttackObject* AttackObject = Cast<IAttackObject>(GetOwner());
-
-	if (!AttackObject)
-	{
-		LOG_FUNC_PRINTF
-		(LogWeaponComponent , Error , "Trying to attack with no attack object %s;" , *GetOwner()->GetName());
-		return false;
-	}
-
+	ensure(Cast<IAttackObject>(GetOwner()));
 	return true;
 }
 
@@ -269,32 +317,20 @@ bool UC_Weapon::ValidateReload()
 	if (!bCanReload)
 	{
 		LOG_FUNC_PRINTF
-		(LogWeaponComponent , Log , "Cannot reload; Ammo spent: %d; Total ammo: %d" , AmmoSpent , TotalAmmo);
+		(LogWeaponComponent , Log , "Cannot reload; Ammo spent: %d; Total ammo: %d Dummy: %d;" , AmmoSpent , TotalAmmo, IsDummy());
 		return false;
 	}
 
-	IReloadObject* ReloadObject = Cast<IReloadObject>(GetOwner());
-
-	if (!ReloadObject)
-	{
-		LOG_FUNC_PRINTF
-		(LogWeaponComponent , Error , "Attempt to reload with not reload object %s;" , *GetOwner()->GetName())
-		return false;
-	}
+	ensure(Cast<IReloadObject>(GetOwner()));
 
 	if (!GetRemainingAmmo())
 	{
 		LOG_FUNC_PRINTF
-		(LogWeaponComponent , Log , "No ammo left; Ammo spent: %d; Total ammo: %d" , AmmoSpent , TotalAmmo);
+		(LogWeaponComponent , Log , "No ammo left; Ammo spent: %d; Total ammo: %d Dummy: %d;" , AmmoSpent , TotalAmmo, IsDummy());
 		return false;
 	}
 
 	return true;
-}
-
-void UC_Weapon::OnRep_OnAmmoUpdated()
-{
-	OnAmmoUpdated.Broadcast(GetRemainingAmmoInClip() , GetRemainingAmmoWithoutCurrentClip(), this);
 }
 
 void UC_Weapon::HandleAttackStart(UC_Weapon* /*InWeapon*/)
@@ -323,21 +359,40 @@ void UC_Weapon::HandleAttackEnd(UC_Weapon* /*InWeapon*/)
 	bCanFire   = GetRemainingAmmoInClip() > 0;
 	bCanReload = GetRemainingAmmo() > 0;
 
-	if (SprayTimerHandle.IsValid())
-	{
-		GetWorld()->GetTimerManager().ClearTimer(SprayTimerHandle);
-	}
-
-	if (!bCanFire || !bFiring)
+	if (!bCanFire)
 	{
 		StopAttackImplementation();
+		return;
 	}
-	else if (bCanFire)
+	
+	if (bFiring)
 	{
 		if (bCanSpray)
 		{
+			if (SprayTimerHandle.IsValid())
+			{
+				GetWorld()->GetTimerManager().ClearTimer(SprayTimerHandle);
+			}
+			
 			AttackImplementation();
 		}
+		else
+		{
+			StopAttackImplementation();
+		}
+	}
+}
+
+void UC_Weapon::HandleStopAttack(UC_Weapon* /*InWeapon*/)
+{
+	bCanFire   = GetRemainingAmmoInClip() > 0;
+	bCanReload = GetRemainingAmmo() > 0;
+
+	ConsecutiveShot = 0;
+	
+	if (SprayTimerHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(SprayTimerHandle);
 	}
 }
 
@@ -366,9 +421,10 @@ void UC_Weapon::HandleReloadEnd(UC_Weapon* /*InWeapon*/)
 	{
 		GetWorld()->GetTimerManager().ClearTimer(ReloadTimerHandle);
 	}
-
+	
 	ReloadClip();
-
+	bReloading = false;
+	
 	const bool AmmoLeft     = GetRemainingAmmoInClip() > 0;
 	const bool MagazineLeft = GetRemainingAmmo() > 0;
 
@@ -417,31 +473,90 @@ void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject)
 	}
 }
 
-void UC_Weapon::Multi_PlayAttackSound_Implementation()
+void UC_Weapon::ConsumeAmmo()
 {
-	if (AttackSound)
+	bFiring = true;
+	AmmoSpentInClip++;
+	ConsecutiveShot++;
+	LOG_FUNC_PRINTF(LogWeaponComponent, Log, "AmmoSpentInClip: %d, ConsecutiveShot: %d", AmmoSpentInClip, ConsecutiveShot);
+}
+
+void UC_Weapon::ReloadClip()
+{
+	if (GetRemainingAmmo() > 0)
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld() , AttackSound , GetOwner()->GetActorLocation());
+		AmmoSpent       += AmmoSpentInClip;
+		LoadedAmmo = FMath::Clamp(GetRemainingAmmo(), 0, AmmoPerClip);
+		AmmoSpentInClip = 0;
 	}
 }
 
-void UC_Weapon::Multi_PlayReloadSound_Implementation()
+void UC_Weapon::HandleDummy()
 {
-	if (ReloadSound)
+	SetIsReplicated(!IsDummy());
+
+	TScriptDelegate<FNotThreadSafeDelegateMode> AttackImplDelegate;
+	AttackImplDelegate.BindUFunction(this, "AttackImplementation");
+	TScriptDelegate<FNotThreadSafeDelegateMode> StopAttackImplDelegate;
+	StopAttackImplDelegate.BindUFunction(this, "StopAttackImplementation");
+	TScriptDelegate<FNotThreadSafeDelegateMode> ReloadImplDelegate;
+	ReloadImplDelegate.BindUFunction(this, "ReloadImplementation");
+	
+	if (UC_Weapon* Sibling = GetSiblingComponent();
+		Sibling && IsDummy())
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld() , ReloadSound , GetOwner()->GetActorLocation());
+		Sibling->OnAttackStart.Add(AttackImplDelegate);
+		Sibling->OnStopAttack.Add(StopAttackImplDelegate);
+		Sibling->OnReloadStart.Add(ReloadImplDelegate);
+	}
+	
+	{
+		TScriptDelegate<FNotThreadSafeDelegateMode> SoundDelegate;
+		SoundDelegate.BindUFunction(this, "Multi_PlayAttackSound");
+		TScriptDelegate<FNotThreadSafeDelegateMode> AmmoDelegate;
+		AmmoDelegate.BindUFunction(this, "ConsumeAmmo");
+
+		if (!IsDummy())
+		{
+			OnAttackStart.Add(SoundDelegate);
+			OnAttackStart.Add(AmmoDelegate);
+		}
+		else
+		{
+			OnAttackStart.Remove(SoundDelegate);
+			OnAttackStart.Remove(AmmoDelegate);
+		}
+	}
+
+	{
+		TScriptDelegate<FNotThreadSafeDelegateMode> SoundDelegate;
+		SoundDelegate.BindUFunction(this, "Multi_PlayReloadSound");
+		TScriptDelegate<FNotThreadSafeDelegateMode> ReloadDelegate;
+		ReloadDelegate.BindUFunction(this, "Reload");
+
+		if (!IsDummy())
+		{
+			OnReloadStart.Add(SoundDelegate);
+			OnReloadStart.Add(ReloadDelegate);
+		}
+		else
+		{
+			OnReloadStart.Remove(SoundDelegate);
+			OnReloadStart.Remove(ReloadDelegate);
+		}
 	}
 }
 
 void UC_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UC_Weapon , bFiring);
-	DOREPLIFETIME(UC_Weapon , bCanReload);
-	DOREPLIFETIME(UC_Weapon , bCanFire);
-	DOREPLIFETIME(UC_Weapon , AmmoSpent);
-	DOREPLIFETIME(UC_Weapon , AmmoSpentInClip);
-	DOREPLIFETIME(UC_Weapon , LoadedAmmo);
+	DOREPLIFETIME_CONDITION(UC_Weapon , bFiring , COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UC_Weapon , bReloading , COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UC_Weapon , bCanReload , COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UC_Weapon , bCanFire , COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UC_Weapon , AmmoSpent , COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UC_Weapon , AmmoSpentInClip , COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(UC_Weapon , LoadedAmmo , COND_OwnerOnly);
 }
 
 
@@ -452,3 +567,4 @@ void UC_Weapon::TickComponent(float DeltaTime , ELevelTick TickType , FActorComp
 
 	// ...
 }
+

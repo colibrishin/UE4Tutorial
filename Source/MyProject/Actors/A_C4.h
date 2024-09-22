@@ -56,7 +56,7 @@ public:
 
 protected:
 	UFUNCTION()
-	void OnRep_BombState(const EMyBombState InOldBombState) const;
+	void         OnRep_BombState(const EMyBombState InOldBombState) const;
 
 private:
 	UPROPERTY(EditAnywhere)

@@ -38,6 +38,7 @@ void UC_Asset::ApplyAsset()
 			bCapsule = true;
 		}
 		
+
 		if (USkeletalMeshComponent* SkeletalMeshComponent = Actor->GetComponentByClass<USkeletalMeshComponent>())
 		{
 			SkeletalMeshComponent->SetSkeletalMesh(AssetData->GetSkeletalMesh());

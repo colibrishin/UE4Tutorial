@@ -17,11 +17,8 @@
 
 #include "GameFramework/SpringArmComponent.h"
 
-#include "MyProject/MyInGameHUD.h"
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
-#include "MyProject/Interfaces/CharacterRequiredWidget.h"
-#include "MyProject/Widgets/MyInGameWidget.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -71,6 +68,7 @@ AA_Character::AA_Character()
 	Camera1P = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComponent"));
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 
+	GetMesh()->SetupAttachment(GetCapsuleComponent());
 	ArmMeshComponent->SetupAttachment(GetCapsuleComponent());
 	SpringArmComponent->SetupAttachment(GetCapsuleComponent());
 	Camera1P->SetupAttachment(SpringArmComponent);
@@ -86,8 +84,7 @@ AA_Character::AA_Character()
 	ArmMeshComponent->SetCastShadow(false);
 	AssetComponent->SetNetAddressable();
 
-	GetCapsuleComponent()->SetCapsuleHalfHeight(88.f);
-	GetCapsuleComponent()->SetCapsuleRadius(88.f);
+	GetCapsuleComponent()->InitCapsuleSize(88.f, 88.f);
 	
 	bReplicates = true;
 	ACharacter::SetReplicateMovement(true);
@@ -120,26 +117,40 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 		return;
 	}
 
-	if (bHandBusy)
+	if (!Cast<AA_Collectable>(InPickUp->GetOwner())->IsDummy())
 	{
-		LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, drop item %s back", *InPickUp->GetOwner()->GetName());
-		InPickUp->OnObjectDrop.Broadcast( this );
-		return;
-	}
-
-	if (InPickUp->GetOwner()->GetComponentByClass<USkeletalMeshComponent>()->AttachToComponent(
+		if (bHandBusy)
+		{
+			LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, drop item %s back", *InPickUp->GetOwner()->GetName());
+			InPickUp->OnObjectDrop.Broadcast( this );
+			return;
+		}
+		
+		if (InPickUp->GetOwner()->GetComponentByClass<USkeletalMeshComponent>()->AttachToComponent(
 		GetMesh(),
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		RightHandSocketName
-	) )
-	{
-		bHandBusy = true;
-		OnHandChanged.Broadcast(nullptr, InPickUp);
-		Hand = InPickUp;
+		) )
+		{
+			bHandBusy = true;
+			OnHandChanged.Broadcast(nullptr, InPickUp);
+			Hand = InPickUp;
+		}
+		else
+		{
+			ensureAlwaysMsgf( false, TEXT("%s; Unable to attach item %s to the hand;") , *GetName() , *InPickUp->GetOwner()->GetName());
+		}
 	}
 	else
 	{
-		ensureAlwaysMsgf( false, TEXT("%s; Unable to attach item %s to the hand;") , *GetName() , *InPickUp->GetOwner()->GetName());
+		if (!InPickUp->GetOwner()->GetComponentByClass<USkeletalMeshComponent>()->AttachToComponent(
+			ArmMeshComponent,
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
+			RightHandSocketName
+		))
+		{
+			ensureAlwaysMsgf( false, TEXT("%s; Unable to attach dummy item %s to the arm;") , *GetName() , *InPickUp->GetOwner()->GetName());
+		}
 	}
 }
 
@@ -156,10 +167,20 @@ void AA_Character::Drop(UC_PickUp* InPickUp)
 	if (UC_PickUp* PickUp = InPickUp->GetOwner()->GetComponentByClass<UC_PickUp>();
 		 PickUp && PickUp->GetAttachParentActor() == this)
 	{
-		PickUp->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
-		bHandBusy = false;
-		OnHandChanged.Broadcast(PickUp, nullptr);
-		Hand = nullptr;
+		const AA_Collectable* Collectable = Cast<AA_Collectable>(InPickUp->GetOwner());
+		ensure(Collectable);
+
+		if (!Collectable->IsDummy())
+		{
+			PickUp->DetachFromComponent( FDetachmentTransformRules::KeepWorldTransform );
+			bHandBusy = false;
+			OnHandChanged.Broadcast(PickUp, nullptr);
+			Hand = nullptr;
+		}
+		else
+		{
+			HandArm->Destroy(true);
+		}
 	}
 }
 
@@ -223,7 +244,7 @@ void AA_Character::ClientDuplicateHand(UC_PickUp* InOldHand, UC_PickUp* InNewHan
 	{
 		if (InOldHand)
 		{
-			HandArm->Destroy();
+			HandArm->GetPickUpComponent()->OnObjectDrop.Broadcast(this);
 		}
 
 		if (InNewHand)
@@ -233,16 +254,14 @@ void AA_Character::ClientDuplicateHand(UC_PickUp* InOldHand, UC_PickUp* InNewHan
 			SpawnParameters.Template = InNewHand->GetOwner();
 		
 			HandArm = GetWorld()->SpawnActor<AA_Collectable>(InNewHand->GetOwner()->GetClass(), SpawnParameters);
-			USkeletalMeshComponent* MeshComponent = HandArm->GetComponentByClass<USkeletalMeshComponent>();
-			MeshComponent->SetOnlyOwnerSee(true);
-			
-			ensure
-			(
-			 MeshComponent->AttachToComponent(
-				 ArmMeshComponent,
-				 FAttachmentTransformRules::SnapToTargetNotIncludingScale,
-				 RightHandSocketName)
-			);
+			HandArm->SetReplicates(true);
+			HandArm->bOnlyRelevantToOwner = true;
+			HandArm->GetPickUpComponent()->SetOnlyOwnerSee(true);
+			HandArm->GetPickUpComponent()->SetCastShadow(false);
+			AA_Collectable* Collectable = Cast<AA_Collectable>(InNewHand->GetOwner());
+			ensure(Collectable);
+			HandArm->SetDummy(true, Collectable);
+			HandArm->GetPickUpComponent()->OnObjectPickUp.Broadcast(this);
 		}
 	}
 }

@@ -23,7 +23,7 @@ AA_Collectable::AA_Collectable()
 
 	bNetLoadOnClient = true;
 	bReplicates = true;
-	bAlwaysRelevant = true;
+	bDummy = false;
 }
 
 // Called when the game starts or when spawned
@@ -38,6 +38,13 @@ void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AA_Collectable, PickUpComponent);
 	DOREPLIFETIME(AA_Collectable, AssetComponent);
+	DOREPLIFETIME_CONDITION(AA_Collectable, bDummy, COND_OwnerOnly);
+	DOREPLIFETIME_CONDITION(AA_Collectable, Sibling, COND_OwnerOnly);
+}
+
+void AA_Collectable::OnRep_Dummy() const
+{
+	OnDummyFlagSet.Broadcast();
 }
 
 // Called every frame

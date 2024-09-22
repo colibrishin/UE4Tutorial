@@ -6,6 +6,7 @@
 #include "Asset/C_CollectableAsset.h"
 #include "Asset/C_WeaponAsset.h"
 
+#include "MyProject/Actors/BaseClass/A_RangeWeapon.h"
 #include "MyProject/Private/Utilities.hpp"
 #include "MyProject/Private/CommonBuy.hpp"
 #include "MyProject/Actors/BaseClass/A_Character.h"
@@ -57,12 +58,24 @@ void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) co
 		 -WeaponAsset->GetPrice()
 		);
 
+	static TMap<EMyWeaponType, TSubclassOf<AA_Weapon>> WeaponClassMap
+	{
+		{EMyWeaponType::Range, AA_RangeWeapon::StaticClass()}
+	};
+
+	TSubclassOf<AA_Weapon> WeaponType = AA_Weapon::StaticClass();
+
+	if (WeaponClassMap.Contains(WeaponAsset->GetWeaponType()))
+	{
+		WeaponType = WeaponClassMap[WeaponAsset->GetWeaponType()]; 
+	}
+	
 	static FActorSpawnParameters ActorSpawnParameters;
 	ActorSpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	
 	AA_Weapon* GeneratedWeapon = GetWorld()->SpawnActor<AA_Weapon>
 		(
-		 AA_Weapon::StaticClass(),
+		 WeaponType,
 		 CharacterLocation,
 		 FRotator::ZeroRotator,
 		 ActorSpawnParameters
