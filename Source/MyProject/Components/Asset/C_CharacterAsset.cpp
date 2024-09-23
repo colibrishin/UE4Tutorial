@@ -31,7 +31,7 @@ void UC_CharacterAsset::ApplyAsset()
 
 	if (const UDA_Character* CharacterAsset = GetAsset<UDA_Character>())
 	{
-		if (const AA_Character* Character = Cast<AA_Character>(GetOwner()))
+		if (AA_Character* Character = Cast<AA_Character>(GetOwner()))
 		{
 			Character->GetMesh()->SetSkeletalMesh(CharacterAsset->GetSkeletalMesh());
 			Character->GetMesh()->SetRelativeLocation(CharacterAsset->GetMeshOffset());
@@ -62,6 +62,10 @@ void UC_CharacterAsset::ApplyAsset()
 					HealthComponent->MaxHealth = CharacterAsset->GetMaxHealth();
 				}
 			}
+
+			// note: Replication Mesh offset setup
+			Character->CacheInitialMeshOffset(
+				CharacterAsset->GetMeshOffset(), CharacterAsset->GetMeshRotation());
 		}
 	}
 }
