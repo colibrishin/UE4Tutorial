@@ -4,15 +4,11 @@
 #include "MyBuyMenuWidget.h"
 
 #include "../Private/CommonBuy.hpp"
-#include "../Private/Data.h"
 #include "MyBuyMenuWeaponWidget.h"
-#include "../MyCharacter.h"
-#include "../MyGameInstance.h"
 #include "../MyGameState.h"
 
 #include "../MyPlayerController.h"
 #include "../MyPlayerState.h"
-#include "../MyWeaponDataAsset.h"
 #include "../Private/Utilities.hpp"
 #include "GameFramework/PlayerController.h"
 #include "Runtime/Engine/Classes/Engine/Player.h"
@@ -20,31 +16,37 @@
 #include "Components/UniformGridPanel.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "MyProject/Components/C_Buy.h"
 
 void UMyBuyMenuWidget::Populate()
 {
-	const auto& Instance = Cast<UMyGameInstance>(GetGameInstance());
+	const auto& Subsystem = GetWorld()->GetSubsystem<USS_World>();
 
-	if (IsValid(Instance))
+	if (IsValid(Subsystem))
 	{
-		for (int i = 1; i < Instance->GetWeaponCount(); ++i)
+		for (int i = 1; i < Subsystem->GetAssetCount(); ++i)
 		{
-			const auto& WeaponData = GetRowData<FMyWeaponData>(this, i);
-
+			const auto& WeaponData = Subsystem->GetRowData<FBaseAssetRow>(i);
+			
 			if (WeaponData == nullptr)
 			{
 				continue;
 			}
 
-			const auto& WeaponStat = WeaponData->WeaponDataAsset->GetWeaponStat();
+			const UDA_Weapon* WeaponAsset = Cast<UDA_Weapon>(WeaponData->AssetToLink);
 
+			if (!WeaponAsset)
+			{
+				continue;
+			}
+			
 			const auto  Name      = FName(*FString::Printf(TEXT("WeaponMenu%d"), i));
 			const auto  RawWidget = CreateWidget(GetRootWidget(), ItemWidgetClass);
 			const auto  Widget    = Cast<UMyBuyMenuWeaponWidget>(RawWidget);
 
-			Widget->SetName(WeaponStat.Name);
-			Widget->SetPrice(WeaponStat.Price);
-			Widget->SetID(i);
+			Widget->SetName(WeaponAsset->GetName());
+			Widget->SetPrice(WeaponAsset->GetPrice());
+			Widget->SetID(WeaponAsset->GetID());
 			Widget->BindOnItemClicked(this, &UMyBuyMenuWidget::ProcessBuy);
 			WeaponGridPanel->AddChildToUniformGrid(Widget, i / 4, i % 4);
 		}
@@ -61,7 +63,7 @@ void UMyBuyMenuWidget::Open()
 
 	const auto BuyTime = Cast<AMyGameState>(UGameplayStatics::GetGameState(this));
 	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
-	const auto& Character = Cast<AMyCharacter>(Controller->GetPawn());
+	const auto& Character = Cast<AA_Character>(Controller->GetPawn());
 
 	if (!BuyTime->CanBuy())
 	{
@@ -111,7 +113,7 @@ void UMyBuyMenuWidget::Close()
 
 	if (IsInViewport())
 	{
-		RemoveFromViewport();
+		RemoveFromParent();
 	}
 
 	const auto& Controller = GetOwningLocalPlayer()->PlayerController;
@@ -136,9 +138,10 @@ void UMyBuyMenuWidget::Toggle()
 	}
 }
 
-void UMyBuyMenuWidget::BindPlayerState(AMyPlayerState* State)
+void UMyBuyMenuWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 {
-	State->BindOnMoneyChanged(this, &UMyBuyMenuWidget::UpdateMoney);
+	check(InPlayerState);
+	InPlayerState->OnMoneyChanged.AddUniqueDynamic(this, &UMyBuyMenuWidget::UpdateMoney);
 }
 
 void UMyBuyMenuWidget::BuyTimeEnded(bool NewBuyTime)
@@ -156,7 +159,7 @@ void UMyBuyMenuWidget::NativeConstruct()
 
 	if (const auto& Controller = Cast<AMyPlayerController>(GetOwningLocalPlayer()->PlayerController))
 	{
-		BindPlayerState(Controller->GetPlayerState<AMyPlayerState>());
+		DispatchPlayerState(Controller->GetPlayerState<AMyPlayerState>());
 	}
 }
 
@@ -168,7 +171,7 @@ void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 	}
 
 	const auto& Controller =  Cast<AMyPlayerController>(GetOwningLocalPlayer()->PlayerController);
-	const auto& Character = Cast<AMyCharacter>(Controller->GetPawn());
+	const auto& Character = Cast<AA_Character>(Controller->GetPawn());
 
 	if (IsValid(Character))
 	{
@@ -177,12 +180,18 @@ void UMyBuyMenuWidget::ProcessBuy(const int32 ID) const
 			return;
 		}
 
-		Controller->BuyWeapon(ID);
+		if (const AMyPlayerState* MyPlayerState = GetPlayerContext().GetPlayerState<AMyPlayerState>())
+		{
+			if (const UC_Buy* BuyComponent = MyPlayerState->GetBuyComponent())
+			{
+				BuyComponent->BuyWeapon(Character, ID);
+			}
+		}
 	}
 
 }
 
-void UMyBuyMenuWidget::UpdateMoney(const int32 Money) const
+void UMyBuyMenuWidget::UpdateMoney(const int32 Money)
 {
 	CurrentMoney->SetText(FText::FromString(FString::Printf(TEXT("Money: %d"), Money)));
 }

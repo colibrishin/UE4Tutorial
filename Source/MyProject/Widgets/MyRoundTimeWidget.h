@@ -6,6 +6,9 @@
 #include "MyProject/Private/Enum.h"
 
 #include "Blueprint/UserWidget.h"
+
+#include "MyProject/Actors/BaseClass/A_Character.h"
+
 #include "MyRoundTimeWidget.generated.h"
 
 /**
@@ -24,7 +27,9 @@ public:
 	virtual void NativeConstruct() override;
 
 private:
-	void HandleBombProgressChanged(const EMyBombState State) const;
+	UFUNCTION()
+	void HandleBombProgressChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character*
+	                               InDefuser);
 
 	UPROPERTY(Meta = (BindWidget))
 	class UTextBlock* RoundTimeText;

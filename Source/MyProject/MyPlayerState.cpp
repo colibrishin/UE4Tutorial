@@ -3,19 +3,20 @@
 
 #include "MyProject/MyPlayerState.h"
 
-#include "MyAIController.h"
+#include "AIController.h"
+
+#include "MyGameState.h"
+#include "MyPlayerController.h"
+#include "Components/C_Buy.h"
+#include "Components/C_Health.h"
+#include "Components/C_PickUp.h"
+#include "Components/Asset/C_CharacterAsset.h"
 
 #include "GameFramework/GameStateBase.h"
-#include "MyCharacter.h"
-#include "MyGameState.h"
-#include "MyProject/Components/MyInventoryComponent.h"
-#include "MyPlayerController.h"
-#include "MyProject/Components/MyStatComponent.h"
-#include "MyWeapon.h"
-
-#include "GameFramework/CharacterMovementComponent.h"
 
 #include "Net/UnrealNetwork.h"
+
+DEFINE_LOG_CATEGORY(LogPlayerState);
 
 std::mutex AMyPlayerState::TeamAssignMutex;
 
@@ -25,12 +26,13 @@ AMyPlayerState::AMyPlayerState()
 	  Kill(0),
 	  Death(0),
 	  Assist(0),
-	  Health(0),
-	  Money(0),
-      CurrentHand(nullptr)
+	  Money(0)
 {
-	StatComponent = CreateDefaultSubobject<UMyStatComponent>(TEXT("StatComponent"));
-	InventoryComponent = CreateDefaultSubobject<UMyInventoryComponent>(TEXT("InventoryComponent"));
+	BuyComponent = CreateDefaultSubobject<UC_Buy>(TEXT("BuyComponent"));
+	HealthComponent = CreateDefaultSubobject<UC_Health>(TEXT("HealthComponent"));
+	CharacterAssetID = 4;
+
+	OnPawnSet.AddUniqueDynamic(this, &AMyPlayerState::UpdateCharacterAsset);
 }
 
 void AMyPlayerState::BeginPlay()
@@ -38,12 +40,27 @@ void AMyPlayerState::BeginPlay()
 	Super::BeginPlay();
 }
 
+void AMyPlayerState::UpdateCharacterAsset(APlayerState* /*InPlayerState*/, APawn* InNewCharacter, APawn* /*InOldCharacter*/)
+{
+	AA_Character* NewCharacter = Cast<AA_Character>(InNewCharacter);
+	
+	if (HasAuthority())
+	{
+		if (NewCharacter)
+		{
+			if (UC_CharacterAsset* CharacterAsset = NewCharacter->GetComponentByClass<UC_CharacterAsset>())
+			{
+				CharacterAsset->SetID(CharacterAssetID);
+				NewCharacter->FetchAsset<UC_CharacterAsset>();
+			}
+		}
+	}
+}
+
 float AMyPlayerState::TakeDamage(
 	float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser
 )
 {
-	SetHP(Health - DamageAmount);
-
 	if (HasAuthority())
 	{
 		// todo: AIController + Player State?
@@ -54,50 +71,29 @@ float AMyPlayerState::TakeDamage(
 
 		const auto& DamageGiver = Cast<AMyPlayerController>(EventInstigator)->GetPlayerState<AMyPlayerState>();
 		const auto& Victim = Cast<AMyPlayerController>(GetOwner())->GetPlayerState<AMyPlayerState>();
-		const auto& KillerWeapon = Cast<AMyWeapon>(DamageCauser);
+		const auto& KillerWeapon = DamageCauser->GetComponentByClass<UC_PickUp>();
 
-		if (GetHP() <= 0)
+		if (HealthComponent->GetHealth() <= 0)
 		{
 			OnKillOccurred.Broadcast(DamageGiver, Victim, KillerWeapon);
-		}
-		else
-		{
-			if (HasAuthority())
-			{
-				OnDamageTaken.Broadcast(DamageGiver);
-				Client_OnDamageTaken(DamageGiver);
-			}
 		}
 	}
 
 	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 }
 
-int32 AMyPlayerState::GetDamage() const
-{
-	return StatComponent->GetDamage();
-}
-
 void AMyPlayerState::Reset()
 {
 	Super::Reset();
 
-	LOG_FUNC(LogTemp, Warning, "Reset PlayerState");
-
-	if (State != EMyCharacterState::Alive)
+	if (HasAuthority())
 	{
-		if (CurrentHand && !CurrentHand->GetItemOwner())
-		{
-			CurrentHand->Destroy();
-			CurrentHand = nullptr;
-		}
+		LOG_FUNC(LogPlayerState, Log, "Reset PlayerState");
 
-		InventoryComponent->Clear();
+		SetState(EMyCharacterState::Alive);
+		HealthComponent->Reset();
+		// todo: Add money by winning or losing
 	}
-
-	SetState(EMyCharacterState::Alive);
-	SetHP(StatComponent->GetMaxHealth());
-	// todo: Add money by winning or losing
 }
 
 void AMyPlayerState::IncrementKills()
@@ -124,26 +120,9 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, Death);
 	DOREPLIFETIME(AMyPlayerState, Assist);
 	DOREPLIFETIME(AMyPlayerState, State);
-	DOREPLIFETIME(AMyPlayerState, Health);
 	DOREPLIFETIME(AMyPlayerState, Money);
-	DOREPLIFETIME(AMyPlayerState, InventoryComponent);
-	DOREPLIFETIME(AMyPlayerState, StatComponent);
-	DOREPLIFETIME(AMyPlayerState, CurrentHand);
-}
-
-void AMyPlayerState::OnRep_HealthChanged() const
-{
-	OnHPChanged.Broadcast(GetHPRatio());
-}
-
-void AMyPlayerState::OnRep_HandChanged(class AMyCollectable* PreviousHand)
-{
-	OnHandChanged.Broadcast(PreviousHand, CurrentHand, this);
-}
-
-void AMyPlayerState::Client_OnDamageTaken_Implementation(AMyPlayerState* DamageGiver)
-{
-	OnDamageTaken.Broadcast(DamageGiver);
+	DOREPLIFETIME(AMyPlayerState, HealthComponent);
+	DOREPLIFETIME(AMyPlayerState, BuyComponent);
 }
 
 void AMyPlayerState::OnRep_MoneyChanged() const
@@ -202,11 +181,6 @@ void AMyPlayerState::AssignTeam()
 	SetTeam(NewTeam);
 }
 
-void AMyPlayerState::Use(const int32 Index)
-{
-	SetCurrentItem(InventoryComponent->Get(Index));
-}
-
 void AMyPlayerState::SetState(const EMyCharacterState NewState)
 {
 	State = NewState;
@@ -217,26 +191,19 @@ void AMyPlayerState::SetState(const EMyCharacterState NewState)
 	}
 }
 
-float AMyPlayerState::GetHPRatio() const
+UC_Buy* AMyPlayerState::GetBuyComponent() const
 {
-	return FMath::Clamp((float)Health / (float)StatComponent->GetMaxHealth(), 0.f, 1.f);
+	return BuyComponent;
 }
 
-void AMyPlayerState::SetHP(const int32 NewHP)
+UC_Health* AMyPlayerState::GetHealthComponent() const
 {
-	LOG_FUNC_PRINTF(LogTemp, Warning, "SetHP: %d", NewHP);
-	Health = FMath::Clamp(NewHP, 0, StatComponent->GetMaxHealth());
+	return HealthComponent;
+}
 
-	if (HasAuthority())
-	{
-		if (Health <= 0 && State != EMyCharacterState::Dead)
-		{
-			SetState(EMyCharacterState::Dead);
-		}
-
-		OnHPChanged.Broadcast(GetHPRatio());
-	}
-	
+int32 AMyPlayerState::GetCharacterAssetID() const
+{
+	return CharacterAssetID;
 }
 
 void AMyPlayerState::AddMoney(const int32 Amount)
@@ -248,40 +215,3 @@ void AMyPlayerState::AddMoney(const int32 Amount)
 		OnMoneyChanged.Broadcast(Money);
 	}
 }
-
-void AMyPlayerState::SetCurrentWeapon(AMyWeapon* NewWeapon)
-{
-	if (HasAuthority())
-	{
-		if (NewWeapon)
-		{
-			LOG_FUNC_PRINTF(LogTemp, Warning, "SetCurrentWeapon: %s", *NewWeapon->GetName());
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Warning, "SetCurrentWeapon: nullptr");
-		}
-
-		OnHandChanged.Broadcast(CurrentHand, NewWeapon, this);
-		CurrentHand = NewWeapon;
-	}
-}
-
-void AMyPlayerState::SetCurrentItem(AMyCollectable* NewItem)
-{
-	if (HasAuthority())
-	{
-		if (NewItem)
-		{
-			LOG_FUNC_PRINTF(LogTemp, Warning, "SetCurrentItem: %s", *NewItem->GetName());
-		}
-		else
-		{
-			LOG_FUNC(LogTemp, Warning, "SetCurrentItem: nullptr");
-		}
-
-		OnHandChanged.Broadcast(CurrentHand, NewItem, this);
-		CurrentHand = NewItem;
-	}
-}
-	

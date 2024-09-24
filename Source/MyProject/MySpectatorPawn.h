@@ -6,6 +6,7 @@
 #include "GameFramework/SpectatorPawn.h"
 #include "MySpectatorPawn.generated.h"
 
+class AA_Character;
 /**
  * 
  */
@@ -18,10 +19,10 @@ class MYPROJECT_API AMySpectatorPawn : public ASpectatorPawn
 public:
 	AMySpectatorPawn();
 
-	void SetPreviousCharacter(class AMyCharacter* NewPreviousCharacter);
-	TWeakObjectPtr<class AMyCharacter> GetPreviousCharacter() const;
+	void SetPreviousCharacter(AA_Character* NewPreviousCharacter);
+	TWeakObjectPtr<AA_Character> GetPreviousCharacter() const;
 
 private:
-	TWeakObjectPtr<class AMyCharacter> PreviousCharacter;
+	TWeakObjectPtr<AA_Character> PreviousCharacter;
 
 };

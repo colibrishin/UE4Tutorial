@@ -22,11 +22,11 @@ void UMyRemainingTeamWidget::BindGameState(AMyGameState* State) const
 	if (IsValid(State))
 	{
 		LOG_FUNC(LogTemp, Warning, "Bind game state");
-		State->BindOnAliveCountChanged(this, &UMyRemainingTeamWidget::HandlePlayerChanges);
+		State->OnAliveCountChanged.AddUniqueDynamic(this, &UMyRemainingTeamWidget::HandlePlayerChanges);
 	}
 }
 
-void UMyRemainingTeamWidget::HandlePlayerChanges(const EMyTeam Team, const int32 Count) const
+void UMyRemainingTeamWidget::HandlePlayerChanges(const EMyTeam Team, const int32 Count)
 {
 	LOG_FUNC(LogTemp, Warning, "Alive count change received");
 

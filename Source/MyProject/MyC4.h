@@ -2,6 +2,7 @@
 
 #pragma once
 
+/*
 #include "CoreMinimal.h"
 #include "MyItem.h"
 #include "MyProject/Private/Utilities.hpp"
@@ -146,3 +147,5 @@ private:
 	FTimerHandle OnBombPlantingHandle;
 
 };
+
+*/

@@ -13,8 +13,8 @@ void UMyDamageIndicatorWidget::NativeConstruct()
 
 void UMyDamageIndicatorWidget::DispatchPlayerState(AMyPlayerState* InPlayerState)
 {
-	check(InPlayerState);
-	InPlayerState->OnDamageTaken.AddUniqueDynamic(this, &UMyDamageIndicatorWidget::HandleDamageTaken);
+	ensure(InPlayerState);
+	InPlayerState->OnTakeAnyDamage.AddUniqueDynamic(this, &UMyDamageIndicatorWidget::HandleDamageTaken);
 }
 
 void UMyDamageIndicatorWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
@@ -35,24 +35,22 @@ void UMyDamageIndicatorWidget::NativeTick(const FGeometry& MyGeometry, float InD
 	}
 }
 
-void UMyDamageIndicatorWidget::HandleDamageTaken(AMyPlayerState* DamageGiver)
+void UMyDamageIndicatorWidget::HandleDamageTaken(
+	AActor* DamagedActor, float Damage, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
 {
-	if (IsValid(DamageGiver))
-	{
-		const auto& Victim = GetPlayerContext().GetPlayerState<AMyPlayerState>();
-		const auto& Normal = DamageGiver->GetPawn()->GetActorLocation() - Victim->GetPawn()->GetActorLocation();
+	const auto& Victim = GetPlayerContext().GetPlayerState<AMyPlayerState>();
+	const auto& Normal = DamageCauser->GetActorLocation() - Victim->GetPawn()->GetActorLocation();
 
-		const auto& Angle = FMath::RadiansToDegrees(FMath::Atan2(Normal.Y, Normal.X));
+	const auto& Angle = FMath::RadiansToDegrees(FMath::Atan2(Normal.Y, Normal.X));
 
-		FWidgetTransform Transform;
-		Transform.Angle = Angle;
-		Transform.Translation = FVector2D(0.f, 0.f);
-		Transform.Scale = FVector2D(1.f, 1.f);
+	FWidgetTransform Transform;
+	Transform.Angle = Angle;
+	Transform.Translation = FVector2D(0.f, 0.f);
+	Transform.Scale = FVector2D(1.f, 1.f);
 
-		IndicatorImage->SetRenderTransform(Transform);
+	IndicatorImage->SetRenderTransform(Transform);
 
-		DeltaTime = 0.f;
-		bVisible = true;
-		SetRenderOpacity(0.5f);
-	}
+	DeltaTime = 0.f;
+	bVisible = true;
+	SetRenderOpacity(0.5f);
 }

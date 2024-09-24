@@ -3,10 +3,13 @@
 
 #include "MyProject/MyInGameHUD.h"
 
-#include "MyCharacter.h"
 #include "MyGameState.h"
 #include "Components/WidgetComponent.h"
-#include "MyProject/Widgets/MyBombProgressWidget.h"
+
+#include "Interfaces/CharacterRequiredWidget.h"
+
+#include "Kismet/GameplayStatics.h"
+
 #include "MyProject/Widgets/MyBuyMenuWidget.h"
 #include "MyProject/Widgets/MyInGameStatWidget.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
@@ -94,7 +97,7 @@ void AMyInGameHUD::BeginPlay()
 	{
 		BuyMenuWidget->Populate();
 		InputComponent->BindAction(TEXT("BuyMenu"), IE_Pressed, BuyMenuWidget, &UMyBuyMenuWidget::Toggle);
-		GameState->BindOnBuyChanged(BuyMenuWidget, &UMyBuyMenuWidget::BuyTimeEnded);
+		GameState->OnBuyChanged.AddUniqueDynamic(BuyMenuWidget, &UMyBuyMenuWidget::BuyTimeEnded);
 	}
 
 	if (StatSubWidget)

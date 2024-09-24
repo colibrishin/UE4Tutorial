@@ -7,13 +7,16 @@
 #include "MyProject/MyPlayerState.h"
 
 #include "Blueprint/UserWidget.h"
+
+#include "MyProject/Interfaces/MyPlayerStateRequiredWidget.h"
+
 #include "MyBuyMenuWidget.generated.h"
 
 /**
  * 
  */
 UCLASS()
-class MYPROJECT_API UMyBuyMenuWidget : public UUserWidget
+class MYPROJECT_API UMyBuyMenuWidget : public UUserWidget, public IMyPlayerStateRequiredWidget
 {
 	GENERATED_BODY()
 
@@ -24,15 +27,20 @@ public:
 	void             Toggle();
 
 	FORCEINLINE bool IsOpened() const { return IsOpen; }
+
+	UFUNCTION()
 	void             BuyTimeEnded(bool NewBuyTime);
-	void             BindPlayerState(AMyPlayerState* State);
+	
+	virtual void     DispatchPlayerState(AMyPlayerState* InPlayerState) override;
 
 protected:
 	virtual void NativeConstruct() override;
 
 private:
 	void ProcessBuy(const int32 ID) const;
-	void UpdateMoney(const int32 Money) const;
+
+	UFUNCTION()
+	void UpdateMoney(const int32 Money);
 
 	UPROPERTY(BlueprintReadWrite, meta=(BindWidget, AllowPrivateAccess))
 	class UUniformGridPanel* WeaponGridPanel;

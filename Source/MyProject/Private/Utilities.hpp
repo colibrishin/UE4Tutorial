@@ -1,8 +1,5 @@
 #pragma once
 #include <functional>
-
-#include "MyProject/MyGameInstance.h"
-#include "Kismet/GameplayStatics.h"
 #include "Containers/UnrealString.h"
 
 #define DECL_BINDON_NATIVE(Delegate, ...) \
@@ -69,29 +66,6 @@ FORCEINLINE T PrintErrorAndReturnDefault(const FString& Message, const UObject* 
 
 #define LOG_FUNC_PRINTF(CategoryName, Verbosity, StringAndFormat, ...) \
 	UE_LOG(CategoryName, Verbosity, TEXT("%hs: %s"), __FUNCTION__, *FString::Printf(TEXT(StringAndFormat), __VA_ARGS__))
-
-template <typename T, typename U = std::enable_if_t<std::is_base_of_v<FTableRowBase, T>>>
-FORCEINLINE const T* GetRowData(const UObject* InWorldContext, const int32 ID)
-{
-	const auto& Instance = Cast<UMyGameInstance>(UGameplayStatics::GetGameInstance(InWorldContext));
-
-	if (!IsValid(Instance))
-	{
-		LOG_FUNC(LogTemp, Error, "Invalid game instance");
-		return nullptr;
-	}
-
-	T* Row = nullptr;
-	Instance->GetValue<T>(ID, &Row);
-
-	if (!Row)
-	{
-		LOG_FUNC(LogTemp, Error, "Invalid table");
-		return nullptr;
-	}
-
-	return Row;
-}
 
 template <typename T , typename... Args>
 FORCEINLINE void ExecuteServer(

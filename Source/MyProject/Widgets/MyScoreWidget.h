@@ -22,7 +22,8 @@ protected:
 private:
 	void BindGameState(AMyGameState* State);
 
-	void UpdateScore(const EMyTeam Team) const;
+	UFUNCTION()
+	void UpdateScore(const EMyTeam Team);
 
 	UPROPERTY(Meta=(BindWidget))
 	class UTextBlock* ScoreText;

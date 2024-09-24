@@ -24,6 +24,6 @@ class MYPROJECT_API IMyPlayerStateRequiredWidget
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void DispatchPlayerState(AMyPlayerState* InPlayerState) = 0;
+	virtual void DispatchPlayerState(AMyPlayerState* InCharacter) = 0;
 	
 };

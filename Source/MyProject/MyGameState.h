@@ -4,21 +4,30 @@
 
 #include "CoreMinimal.h"
 #include "MyPlayerState.h"
-#include "MyProjectGameModeBase.h"
+
+#include "Actors/A_C4.h"
+
 #include "Private/Utilities.hpp"
 
 #include "GameFramework/GameState.h"
+
 #include "MyGameState.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged, EMyRoundProgress)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnWinnerSet, EMyTeam)
-DECLARE_MULTICAST_DELEGATE(FOnBombProgressChanging)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombProgressChanged, EMyBombState)
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnPlayerStateChanged, class AMyPlayerState*, EMyCharacterState)
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnAliveCountChanged, EMyTeam, int32)
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnNewPlayerJoined, class AMyPlayerState*);
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnBombPicked, class AMyCharacter*)
+enum class EMyTeam : uint8;
+class AA_C4;
+class AA_Character;
+class UC_Weapon;
+class UC_Buy;
+
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged , EMyRoundProgress)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool, InFlag);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWinnerSet, const EMyTeam, InTeam);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBombProgressChanged, EMyBombState, InBombState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnPlayerStateChanged, AMyPlayerState*, InPlayerState, EMyCharacterState, InCharacterState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAliveCountChanged, EMyTeam, InTeam, const int32, InCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnNewPlayerJoined, AMyPlayerState*, InNewPlayerState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBombPicked, AA_Character*, InCharacter);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FOnBombStateChangedDynamic , const EMyBombState , InOldBombState, const EMyBombState , InNewBombState  , const AA_Character* , InPlanter , const AA_Character* , InDefuser);
 
 /**
  * 
@@ -29,22 +38,32 @@ class MYPROJECT_API AMyGameState : public AGameStateBase
 	GENERATED_BODY()
 
 public:
-	static constexpr float MatchBuyTime = 25.f;
 
-	DECL_BINDON(OnBuyChanged, bool)
-	DECL_BINDON(OnRoundProgressChanged, EMyRoundProgress)
-	DECL_BINDON(OnWinnerSet, EMyTeam)
-	DECL_BINDON(OnBombProgressChanged, EMyBombState)
-	DECL_BINDON(OnPlayerStateChanged, class AMyPlayerState*, EMyCharacterState)
-	DECL_BINDON(OnAliveCountChanged, EMyTeam, int32)
-	DECL_BINDON(OnKillOccurred, class AMyPlayerState*, class AMyPlayerState*, const class AMyWeapon*)
-	DECL_BINDON(OnNewPlayerJoined, class AMyPlayerState*)
-	DECL_BINDON(OnBombPicked, class AMyCharacter*)
+	FOnBuyChanged OnBuyChanged;
+	
+	FOnWinnerSet OnWinnerSet;
+	
+	FTimerHandle BuyTimeHandle;
+	
+	FOnRoundProgressChanged OnRoundProgressChanged;
+	
+	FOnAliveCountChanged OnAliveCountChanged;
+	
+	FOnPlayerStateChanged OnPlayerStateChanged;
+	
+	FOnKillOccurred OnKillOccurred;
+	
+	FOnNewPlayerJoined OnNewPlayerJoined;
 
+	// Forwarding C4 delegate instead of using c4's raw delegate, due to the fact that the c4 can be destroyed;
+	FOnBombStateChangedDynamic OnBombStateChanged;
+
+	FOnBombPicked OnBombPicked;
+
+	AA_C4* GetC4() const { return RoundC4; }
 	EMyRoundProgress GetState() const { return RoundProgress; }
 	int32 GetCTCount() const { return AliveCT; }
 	int32 GetTCount() const { return AliveT; }
-
 	bool CanBuy() const { return bCanBuy; }
 	float GetRoundTime() const
 	{
@@ -52,22 +71,22 @@ public:
 	}
 	float GetRemainingRoundTime() const
 	{
-		return AMyProjectGameModeBase::MatchRoundTime - GetRoundTime();
+		return MatchRoundTime - GetRoundTime();
 	}
 
-	class AMyC4* GetC4() const { return RoundC4; }
-	EMyBombState GetBombState() const { return BombState; }
 	int32        GetCTWins() const { return CTWinCount; }
 	int32        GetTWins() const { return TWinCount; }
 
 	AMyGameState();
 
-	void HandleKillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
+	UFUNCTION()
+	void HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon);
 
 	UFUNCTION()
-	void HandlePlayerStateChanged(class AMyPlayerState* PlayerState, const EMyCharacterState State);
+	void HandlePlayerStateChanged(AMyPlayerState* PlayerState, const EMyCharacterState State);
 
-	void HandleNewPlayer(class AMyPlayerState* State) const;
+	UFUNCTION()
+	void HandleNewPlayer(AMyPlayerState* State) const;
 
 	void RestartRound();
 
@@ -79,7 +98,9 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 private:
-	void OnBombStateChanged(const EMyBombState NewState);
+	UFUNCTION()
+	void HandleBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character*
+	                            InDefuser);
 
 	void SetRoundProgress(const EMyRoundProgress NewProgress);
 
@@ -108,9 +129,10 @@ private:
 
 	void SetWinner(const EMyTeam NewWinner);
 
+	UFUNCTION()
 	void BuyTimeEnded();
 
-	void HandleOnBombPicked(class AMyCharacter* Character) const;
+	void HandleOnBombPicked(AA_Character* Character) const;
 
 	UFUNCTION()
 	void OnRep_WinnerSet() const;
@@ -122,31 +144,40 @@ private:
 	void OnRep_CanBuy() const;
 
 	UFUNCTION()
-	void OnRep_BombState(const EMyBombState PreviousBombState);
-
-	UFUNCTION()
 	void OnRep_AliveCT() const;
 
 	UFUNCTION()
 	void OnRep_AliveT() const;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_KillOccurred(class AMyPlayerState* Killer, class AMyPlayerState* Victim, const class AMyWeapon* Weapon) const;
+	void Multi_NotifyNewPlayer(AMyPlayerState* State) const;
 
 	UFUNCTION(NetMulticast, Reliable)
-	void Multi_NotifyNewPlayer(class AMyPlayerState* State) const;
-
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_NotifyBombPicked(class AMyCharacter* Character) const;
+	void Multi_NotifyBombPicked(AA_Character* Character) const;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_ResetBombIndicator();
 
-	UPROPERTY(VisibleAnywhere)
-	TSubclassOf<class AMyC4> C4BluePrint;
+	UPROPERTY(EditAnywhere)
+	USoundWave* CTRoundWinSound;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
-	class AMyC4* RoundC4;
+	UPROPERTY(EditAnywhere)
+	USoundWave* TRoundWinSound;
+
+	UPROPERTY(EditAnywhere)
+	USoundWave* RoundStartSound;
+
+	UPROPERTY(EditAnywhere)
+	USoundWave* BombPlantedSound;
+
+	UPROPERTY(EditAnywhere)
+	USoundWave* BombDefusedSound;
+
+	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess))
+	float MatchRoundTime;
+
+	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess))
+	float MatchBuyTime;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_RoundProgress)
 	EMyRoundProgress RoundProgress;
@@ -160,49 +191,14 @@ private:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	int32 TWinCount;
 
-	UPROPERTY(EditAnywhere)
-	class USoundWave* CTRoundWinSound;
-
-	UPROPERTY(EditAnywhere)
-	class USoundWave* TRoundWinSound;
-
-	UPROPERTY(EditAnywhere)
-	class USoundWave* RoundStartSound;
-
-	UPROPERTY(EditAnywhere)
-	class USoundWave* BombPlantedSound;
-
-	UPROPERTY(EditAnywhere)
-	class USoundWave* BombDefusedSound;
-
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
 	bool bCanBuy;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_BombState)
-	EMyBombState BombState;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	AA_C4* RoundC4;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	float LastRoundInWorldTime;
-
-	FOnBuyChanged OnBuyChanged;
-
-	FOnWinnerSet OnWinnerSet;
-
-	FOnBombPicked OnBombPicked;
-
-	FTimerHandle BuyTimeHandle;
-
-	FOnRoundProgressChanged OnRoundProgressChanged;
-
-	FOnAliveCountChanged OnAliveCountChanged;
-
-	FOnBombProgressChanged OnBombProgressChanged;
-
-	FOnPlayerStateChanged OnPlayerStateChanged;
-
-	FOnKillOccurred OnKillOccurred;
-
-	FOnNewPlayerJoined OnNewPlayerJoined;
 
 	UPROPERTY(VisibleAnywhere,  ReplicatedUsing=OnRep_AliveCT)
 	int32 AliveCT;
@@ -210,7 +206,7 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_AliveT)
 	int32 AliveT;
 
-	FORCEINLINE void TransitTo
+	void TransitTo
 	(
 		const EMyRoundProgress            NextProgress,
 		void (AMyGameState::*   NextFunction)(),
@@ -222,7 +218,4 @@ private:
 	FTimerHandle FreezeTimerHandle;
 	FTimerHandle RoundTimerHandle;
 	FTimerHandle RoundEndTimerHandle;
-
-	FDelegateHandle OnBombStateChangedHandle;
-	FDelegateHandle OnBombPickedHandle;
 };

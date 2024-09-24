@@ -32,16 +32,16 @@ void UMyRoundTimeWidget::NativeConstruct()
 
 	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
 	{
-		GameState->BindOnBombProgressChanged(this, &UMyRoundTimeWidget::HandleBombProgressChanged);
+		GameState->OnBombStateChanged.AddUniqueDynamic(this, &UMyRoundTimeWidget::HandleBombProgressChanged);
 	}
 }
 
-void UMyRoundTimeWidget::HandleBombProgressChanged(const EMyBombState State) const
+void UMyRoundTimeWidget::HandleBombProgressChanged(const EMyBombState /*InOldState*/, const EMyBombState InNewState, const AA_Character* /*InPlanter*/, const AA_Character* /*InDefuser*/)
 {
-	if (State == EMyBombState::Planted || 
-		State == EMyBombState::Defusing || 
-		State == EMyBombState::Exploded ||
-		State == EMyBombState::Defused)
+	if (InNewState == EMyBombState::Planted || 
+		InNewState == EMyBombState::Defusing || 
+		InNewState == EMyBombState::Exploded ||
+		InNewState == EMyBombState::Defused)
 	{
 		RoundTimeText->SetVisibility(ESlateVisibility::Hidden);
 	}

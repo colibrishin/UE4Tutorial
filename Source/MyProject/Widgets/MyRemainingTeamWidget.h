@@ -24,7 +24,8 @@ protected:
 private:
 	void BindGameState(class AMyGameState* State) const;
 
-	void HandlePlayerChanges(const EMyTeam Team, const int32 Count) const;
+	UFUNCTION()
+	void HandlePlayerChanges(const EMyTeam Team, const int32 Count);
 
 	UPROPERTY(meta = (BindWidget))
 	class UTextBlock* RemainingPlayersText;

@@ -3,18 +3,21 @@
 
 #include "MyProjectGameModeBase.h"
 
-#include "MyCharacter.h"
-#include "MyCollectable.h"
 #include "MyGameState.h"
 #include "MyInGameHUD.h"
 #include "MyPlayerController.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
-#include "MyWeapon.h"
+
+#include "Actors/BaseClass/A_Character.h"
+#include "Actors/BaseClass/A_Weapon.h"
+
+#include "Components/C_Health.h"
+#include "Components/Asset/C_CharacterAsset.h"
+
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerStart.h"
 #include "Kismet/GameplayStatics.h"
-#include "MyProject/Components/MyStatComponent.h"
 
 AMyProjectGameModeBase::AMyProjectGameModeBase()
 	: TSpawnPoint(nullptr),
@@ -23,11 +26,8 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 	// StaticClass, 컴파일 타임 타입
 	// GetClass, 런타임 타입 (Base class 포인터)
 	// DefaultPawnClass = AMyCharacter::StaticClass();
-
-	static ConstructorHelpers::FClassFinder<AMyCharacter> BP_Char
-		(TEXT("Blueprint'/Game/Blueprints/BPMyCharacter.BPMyCharacter_C'"));
-
-	if (BP_Char.Succeeded()) { DefaultPawnClass = BP_Char.Class; }
+	
+	DefaultPawnClass = AA_Character::StaticClass();
 
 	static ConstructorHelpers::FClassFinder<AMyInGameHUD> BP_HUD(TEXT("Class'/Script/MyProject.MyInGameHUD'"));
 
@@ -46,7 +46,7 @@ AMyProjectGameModeBase::AMyProjectGameModeBase()
 void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 {
 	Super::PostLogin(NewPlayer);
-
+	
 	const auto& PlayerState = NewPlayer->GetPlayerState<AMyPlayerState>();
 
 	if (!IsValid(PlayerState))
@@ -55,7 +55,7 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	PlayerState->SetHP(PlayerState->GetStatComponent()->GetMaxHealth());
+	PlayerState->GetHealthComponent()->Reset();
 	PlayerState->AddMoney(18000);
 
 	const auto& MyGameState = GetGameState<AMyGameState>();
@@ -68,7 +68,7 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 
 	PlayerState->OnStateChanged.AddUniqueDynamic(MyGameState, &AMyGameState::HandlePlayerStateChanged);
 	PlayerState->SetState(EMyCharacterState::Alive);
-	PlayerState->BindOnKillOccurred(MyGameState, &AMyGameState::HandleKillOccurred);
+	PlayerState->OnKillOccurred.AddUniqueDynamic(MyGameState, &AMyGameState::HandleKillOccurred);
 	MyGameState->HandleNewPlayer(PlayerState);
 
 	if (!IsValid(MyGameState))
@@ -87,42 +87,33 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
+APawn* AMyProjectGameModeBase::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
+{
+	{
+		// Server Context;
+		const FTransform Transform {FQuat::Identity, StartSpot->GetActorLocation(), FVector::OneVector};
+
+		auto* DefaultCharacter = GetWorld()->SpawnActorDeferred<AA_Character>(
+			AA_Character::StaticClass(),
+			Transform,
+			NewPlayer,
+			nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn,
+			ESpawnActorScaleMethod::OverrideRootScale);
+
+		DefaultCharacter->GetAssetComponent()->SetID(NewPlayer->GetPlayerState<AMyPlayerState>()->GetCharacterAssetID());
+		DefaultCharacter->FetchAsset<UC_CharacterAsset>();
+		UGameplayStatics::FinishSpawningActor(DefaultCharacter, Transform, ESpawnActorScaleMethod::OverrideRootScale);
+
+		return DefaultCharacter;
+	}
+}
+
 AActor* AMyProjectGameModeBase::FindPlayerStart_Implementation(AController* Player, const FString& IncomingName)
 {
 	const auto& Start = PickPlayerStart(Player);
 
 	return IsValid(Start) ? Start : Super::FindPlayerStart_Implementation(Player, IncomingName);
-}
-
-void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
-{
-	Super::RestartPlayer(NewPlayer);
-
-	if (const auto& PlayerState = Cast<AMyPlayerState>(NewPlayer->PlayerState))
-	{
-		const auto& Character = Cast<AMyCharacter>(NewPlayer->GetPawn());
-
-		if (IsValid(PlayerState))
-		{
-			PlayerState->OnHandChanged.AddUniqueDynamic(Character, &AMyCharacter::OnHandChanged);
-		}
-
-		if (const auto& Collectable = PlayerState->GetCurrentHand())
-		{
-			if (IsValid(Character))
-			{
-				if (const auto& Weapon = Cast<AMyWeapon>(Collectable))
-				{
-					PlayerState->SetCurrentWeapon(Weapon);
-				}
-				else
-				{
-					PlayerState->SetCurrentItem(Collectable);
-				}
-			}
-		}
-	}
-
 }
 
 void AMyProjectGameModeBase::InitStartSpot_Implementation(AActor* StartSpot, AController* NewPlayer)

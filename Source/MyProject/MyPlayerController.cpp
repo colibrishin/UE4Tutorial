@@ -3,127 +3,70 @@
 
 #include "MyProject/MyPlayerController.h"
 
-#include "Private/CommonBuy.hpp"
 #include "MyCameraManager.h"
-#include "MyCharacter.h"
 #include "MyInGameHUD.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
-#include "MyWeapon.h"
-#include "MyWeaponDataAsset.h"
+#include "MyProject/Private/Utilities.hpp"
 
-#include "GameFramework/GameStateBase.h"
+#include "Components/Asset/C_CharacterAsset.h"
+
+#include "Interfaces/CharacterRequiredWidget.h"
 #include "Interfaces/MyPlayerStateRequiredWidget.h"
+
+#include "Kismet/GameplayStatics.h"
 
 AMyPlayerController::AMyPlayerController()
 {
 	PlayerCameraManagerClass = AMyCameraManager::StaticClass();
 }
 
+void AMyPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (GetNetMode() == NM_Client && GetWorld()->GetFirstPlayerController() == this)
+	{
+		OnPossessedPawnChanged.AddUniqueDynamic(this, &AMyPlayerController::DispatchPlayerCharacter);
+	}
+}
+
 void AMyPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
-	AMyPlayerState* MyPlayerState = Cast<AMyPlayerState>(PlayerState);
+	AsyncTask
+		(
+		 ENamedThreads::AnyHiPriThreadHiPriTask , [this]()
+		 {
+			 const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD());
 
-	if (!IsValid(MyPlayerState))
-	{
-		return;
-	}
+			 while (HUD == nullptr || !HUD->GetInGameWidget()->IsValidLowLevelFast())
+			 {
+				 HUD = Cast<AMyInGameHUD>(GetHUD());
+				 FPlatformProcess::YieldThread();
+			 }
 
-	// Player state replication would be happened in client side and player controller exists in local player. 
-	if (const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD()))
-	{
-		// Iterate all widgets and pass the own player state to the widgets that require the player state. 
-		for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
-			Iterator;
-			++Iterator)
-		{
-			UUserWidget* Widget = Cast<UUserWidget>(Iterator->GetObjectPropertyValue(Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget(), 0)));
-			if (IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>(Widget))
-			{
-				Interface->DispatchPlayerState(MyPlayerState);
-			}
-		} 
-	}
-}
-
-void AMyPlayerController::ProcessBuy(AMyCharacter* RequestCharacter, const int32 WeaponID) const
-{
-	if (HasAuthority())
-	{
-		const auto& WeaponData        = GetRowData<FMyWeaponData>(this, WeaponID);
-		const auto& WeaponClass       = WeaponData->WeaponDataAsset->GetWeaponClass();
-		const auto& CharacterLocation = RequestCharacter->GetActorLocation();
-
-		GetPlayerState<AMyPlayerState>()->AddMoney
-			(
-			 -WeaponData->WeaponDataAsset->GetWeaponStat().Price
-			);
-
-		const auto& GeneratedWeapon = GetWorld()->SpawnActor
-			(
-				WeaponClass,
-				&CharacterLocation,
-			 nullptr
-			);
-
-		LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponData->WeaponDataAsset->GetWeaponStat().Name);
-
-		if (IsValid(GeneratedWeapon))
-		{
-			GeneratedWeapon->SetReplicateMovement(true);
-			GeneratedWeapon->SetReplicates(true);
-			GeneratedWeapon->SetOwner(RequestCharacter);
-			Cast<AMyWeapon>(GeneratedWeapon)->Server_Interact(RequestCharacter);
-		}
-	}
-}
-
-void AMyPlayerController::Server_BuyWeapon_Implementation(AMyCharacter* RequestCharacter, const int32 WeaponID) const
-{
-	if (!ValidateBuyRequest(WeaponID, RequestCharacter))
-	{
-		LOG_FUNC(LogTemp, Error, "BuyWeapon_Validate failed");
-		return;
-	}
-
-	if (!IsValid(RequestCharacter))
-	{
-		LOG_FUNC(LogTemp, Error, "Player is invalid");
-		return;
-	}
-
-	ProcessBuy(RequestCharacter, WeaponID);
-}
-
-void AMyPlayerController::BuyWeapon(const int32 WeaponID) const
-{
-	const auto& RequestCharacter = Cast<AMyCharacter>(GetPawn());
-
-	if (!IsValid(RequestCharacter))
-	{
-		LOG_FUNC(LogTemp, Error, "Player is invalid");
-		return;
-	}
-
-	if (!ValidateBuyRequest(WeaponID, RequestCharacter))
-	{
-		LOG_FUNC(LogTemp, Error, "BuyWeapon_Validate failed");
-		return;
-	}
-
-	if (IsValid(RequestCharacter))
-	{
-		ExecuteServer(
-			this, 
-			&AMyPlayerController::Server_BuyWeapon, 
-			&AMyPlayerController::ProcessBuy,
-			RequestCharacter,
-			WeaponID);
-	}
-
+			 // Iterate all widgets and pass the own player state to the widgets that require the player state. 
+			 for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
+			      Iterator;
+			      ++Iterator)
+			 {
+				 UUserWidget* Widget = Cast<UUserWidget>
+					 (
+					  Iterator->GetObjectPropertyValue
+					  (
+					   Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget() , 0)
+					  )
+					 );
+				 if (IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>(Widget))
+				 {
+					 Interface->DispatchPlayerState(Cast<AMyPlayerState>(PlayerState));
+				 }
+			 }
+		 }
+		);
 }
 
 void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)
@@ -132,6 +75,45 @@ void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)
 	Possess(Spectator);
 }
 
+void AMyPlayerController::DispatchPlayerCharacter(APawn* /*InOldPawn*/, APawn* /*InNewPawn*/)
+{
+	AsyncTask
+			(
+			 ENamedThreads::AnyHiPriThreadHiPriTask , [this]()
+			 {
+				 if (AA_Character* NewCharacter = Cast<AA_Character>(GetCharacter()))
+				 {
+					 if (const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD()))
+					 {
+						 while (!HUD)
+						 {
+							 HUD = Cast<AMyInGameHUD>(GetHUD());
+							 FPlatformProcess::YieldThread();
+						 }
+
+						 LOG_FUNC_PRINTF
+						 (LogPlayerController , Log , "Dispatch character %s to HUD" , *NewCharacter->GetName());
+
+						 // Iterate all widgets and pass the own player state to the widgets that require the character. 
+						 for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
+						      Iterator;
+						      ++Iterator)
+						 {
+							 UUserWidget* Widget = Cast<UUserWidget>
+									 (
+									  Iterator->GetObjectPropertyValue
+									  (Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget() , 0))
+									 );
+							 if (ICharacterRequiredWidget* Interface = Cast<ICharacterRequiredWidget>(Widget))
+							 {
+								 Interface->DispatchCharacter(NewCharacter);
+							 }
+						 }
+					 }
+				 }
+			 }
+			);
+}
 
 void AMyPlayerController::Client_SetSpectator_Implementation(AMySpectatorPawn* Spectator)
 {

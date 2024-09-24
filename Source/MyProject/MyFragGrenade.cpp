@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
-
+/*
 #include "MyProject/MyFragGrenade.h"
 
 #include "MyCharacter.h"
@@ -17,8 +17,6 @@ AMyFragGrenade::AMyFragGrenade()
 	PrimaryActorTick.bCanEverTick = true;
 
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> SK_Grenade(TEXT("SkeletalMesh'/Game/FPS_Weapon_Bundle/Weapons/Meshes/G67_Grenade/SK_G67_X.SK_G67_X'"));
-
-	SetSkeletalMesh();
 
 	if (SK_Grenade.Succeeded())
 	{
@@ -76,3 +74,4 @@ void AMyFragGrenade::OnExplosionTimerExpiredImpl()
 
 	Destroy(true);
 }
+*/

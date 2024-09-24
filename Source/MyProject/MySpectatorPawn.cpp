@@ -2,18 +2,19 @@
 
 
 #include "MyProject/MySpectatorPawn.h"
-#include "MyCharacter.h"
+
+#include "Actors/BaseClass/A_Character.h"
 
 AMySpectatorPawn::AMySpectatorPawn()
 {
 }
 
-void AMySpectatorPawn::SetPreviousCharacter(AMyCharacter* NewPreviousCharacter)
+void AMySpectatorPawn::SetPreviousCharacter(AA_Character* NewPreviousCharacter)
 {
 	PreviousCharacter = NewPreviousCharacter;
 }
 
-TWeakObjectPtr<AMyCharacter> AMySpectatorPawn::GetPreviousCharacter() const
+TWeakObjectPtr<AA_Character> AMySpectatorPawn::GetPreviousCharacter() const
 {
 	return PreviousCharacter;
 }

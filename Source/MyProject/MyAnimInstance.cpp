@@ -3,13 +3,9 @@
 
 #include "MyAnimInstance.h"
 
-#include "MyAimableWeapon.h"
-#include "MyCharacter.h"
-#include "MyWeapon.h"
+#include "Actors/BaseClass/A_Character.h"
 
-#include "GameFramework/Character.h"
 #include "GameFramework/PawnMovementComponent.h"
-#include "GameFramework/SpringArmComponent.h"
 
 UMyAnimInstance::UMyAnimInstance()
 	: Speed(0),
@@ -32,7 +28,7 @@ void UMyAnimInstance::NativeBeginPlay()
 {
 	Super::NativeBeginPlay();
 
-	const auto& Pawn = Cast<AMyCharacter>(TryGetPawnOwner());
+	const auto& Pawn = Cast<AA_Character>(TryGetPawnOwner());
 
 	if (!IsValid(Pawn))
 	{
@@ -58,7 +54,7 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	Speed = Pawn->GetVelocity().Size();
 
-	const auto& Character = Cast<AMyCharacter>(Pawn);
+	const auto& Character = Cast<AA_Character>(Pawn);
 
 	if (!IsValid(Character))
 	{
@@ -72,8 +68,8 @@ void UMyAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	Vertical = FVector::DotProduct(Velocity, Character->GetActorForwardVector());
 	Horizontal = FVector::DotProduct(Velocity, Character->GetActorRightVector());
 	Yaw = Character->GetActorRotation().Yaw;
-	Pitch = Character->GetPitchInput();
-	bHasWeapon = IsValid(Character->TryGetWeapon());
+	//Pitch = Character->GetPitchInput();
+	bHasWeapon = Character->IsHandBusy();
 }
 
 FName UMyAnimInstance::GetAttackMontageSectionName(const int32 NewIndex)

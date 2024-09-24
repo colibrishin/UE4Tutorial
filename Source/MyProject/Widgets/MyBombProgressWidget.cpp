@@ -4,10 +4,12 @@
 #include "MyBombProgressWidget.h"
 
 #include "../MyC4.h"
-#include "../MyCharacter.h"
 #include "../MyGameState.h"
+#include "MyProject/Actors/BaseClass/A_Character.h"
 
 #include "Components/ProgressBar.h"
+
+#include "MyProject/Actors/A_C4.h"
 
 void UMyBombProgressWidget::SetValue(const float Value) const
 {
@@ -29,7 +31,7 @@ void UMyBombProgressWidget::BindGameState(AMyGameState* GameState)
 	if (GameState)
 	{
 		LOG_FUNC(LogTemp, Warning, "Binding to GameState");
-		GameState->BindOnBombProgressChanged(this, &UMyBombProgressWidget::OnBombStateChanged);
+		GameState->OnBombStateChanged.AddUniqueDynamic(this, &UMyBombProgressWidget::OnBombStateChanged);
 	}
 }
 
@@ -43,37 +45,35 @@ void UMyBombProgressWidget::NativeTick(const FGeometry& MyGeometry, float InDelt
 		{
 			if (const auto& Bomb = GameState->GetC4())
 			{
-				if (GameState->GetBombState() == EMyBombState::Planting)
+				if (Bomb->GetBombState() == EMyBombState::Planting)
 				{
-					SetValue(Bomb->GetPlantingRatio());
+					SetValue(Bomb->GetElapsedPlantTimeRatio());
 				}
-				else if (GameState->GetBombState() == EMyBombState::Defusing)
+				else if (Bomb->GetBombState() == EMyBombState::Defusing)
 				{
-					SetValue(Bomb->GetDefusingRatio());
+					SetValue(Bomb->GetElapsedDefuseTimeRatio());
 				}
 			}
 		}
 	}
 }
 
-void UMyBombProgressWidget::OnBombStateChanged(const EMyBombState NewState)
+void UMyBombProgressWidget::OnBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character* InDefuser)
 {
-	LOG_FUNC_PRINTF(LogTemp, Warning, "Bomb state changed to: %s", *EnumToString(NewState));
+	LOG_FUNC_PRINTF(LogTemp, Warning, "Bomb state changed to: %s", *EnumToString(InNewState));
 
-	if (NewState == EMyBombState::Planting || NewState == EMyBombState::Defusing)
+	if (InNewState == EMyBombState::Planting || InNewState == EMyBombState::Defusing)
 	{
-		const auto& GameState = GetWorld()->GetGameState<AMyGameState>();
-
-		if (NewState == EMyBombState::Planting)
+		if (InNewState == EMyBombState::Planting)
 		{
-			if (GameState->GetC4()->GetItemOwner() == Cast<AMyCharacter>(GetPlayerContext().GetPlayerController()->GetCharacter()))
+			if (InPlanter == GetPlayerContext().GetPlayerController()->GetCharacter())
 			{
 				bNeedToShow = true;
 			}
 		}
-		else if (NewState == EMyBombState::Defusing)
+		else if (InNewState == EMyBombState::Defusing)
 		{
-			if (GameState->GetC4()->GetDefusingCharacter() == Cast<AMyCharacter>(GetPlayerContext().GetPlayerController()->GetCharacter()))
+			if (InDefuser == GetPlayerContext().GetPlayerController()->GetCharacter())
 			{
 				bNeedToShow = true;
 			}

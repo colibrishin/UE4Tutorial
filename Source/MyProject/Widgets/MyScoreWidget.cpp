@@ -20,11 +20,11 @@ void UMyScoreWidget::BindGameState(AMyGameState* State)
 {
 	if (IsValid(State))
 	{
-		State->BindOnWinnerSet(this, &UMyScoreWidget::UpdateScore);
+		State->OnWinnerSet.AddUniqueDynamic(this, &UMyScoreWidget::UpdateScore);
 	}
 }
 
-void UMyScoreWidget::UpdateScore(const EMyTeam Team) const
+void UMyScoreWidget::UpdateScore(const EMyTeam Team)
 {
 	if (IsValid(ScoreText))
 	{
