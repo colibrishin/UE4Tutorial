@@ -24,7 +24,7 @@
 
 DEFINE_LOG_CATEGORY(LogCharacter);
 
-const FName AA_Character::LeftHandSocketName( TEXT( "hand_l" ) );
+const FName AA_Character::LeftHandSocketName( TEXT( "Muzzle_02" ) );
 const FName AA_Character::RightHandSocketName( TEXT( "Muzzle_01" ) );
 const FName AA_Character::HeadSocketName( TEXT( "head_socket" ) );
 const FName AA_Character::ChestSocketName( TEXT( "Chest" ) );
