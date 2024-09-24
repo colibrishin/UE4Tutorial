@@ -21,6 +21,8 @@ class MYPROJECT_API AA_Collectable : public AActor, public IAssetFetchable
 	GENERATED_BODY()
 
 public:
+	using PairAssetComponentType = UC_CollectableAsset;
+	
 	static const FName AssetComponentName;
 	
 	// Sets default values for this actor's properties

@@ -7,6 +7,7 @@
 
 #include "MyProject/DataAsset/DA_AssetBase.h"
 #include "MyProject/Frameworks/Subsystems/SS_World.h"
+#include "MyProject/Interfaces/AssetFetchable.h"
 #include "MyProject/Private/Data.h"
 #include "MyProject/Private/Utilities.hpp"
 
@@ -85,7 +86,7 @@ void UC_Asset::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 void UC_Asset::OnRep_ID()
 {
 	FetchAsset();
-	ApplyAsset();
+	OnAssetIDSet.Broadcast();
 }
 
 void UC_Asset::FetchAsset()

@@ -24,7 +24,10 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 
 	AssetComponent->SetNetAddressable();
 	AssetComponent->SetIsReplicated(true);
-
+	
+	AssetComponent->OnAssetIDSet.AddUObject(
+		this, &AA_Collectable::FetchAsset<PairAssetComponentType>);
+	
 	bDummy = false;
 }
 

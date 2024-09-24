@@ -7,6 +7,7 @@
 #include "C_Asset.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogAssetComponent, Log, All);
+DECLARE_MULTICAST_DELEGATE(FOnAssetIDSet);
 
 class UDA_AssetBase;
 
@@ -19,12 +20,15 @@ public:
 	// Sets default values for this component's properties
 	UC_Asset();
 
+	FOnAssetIDSet OnAssetIDSet;
+
 	void SetID(const uint32 InID)
 	{
 		if (GetNetMode() != NM_Client)
 		{
 			ID = InID;
 			FetchAsset();
+			OnAssetIDSet.Broadcast();
 		}
 	}
 	
@@ -50,7 +54,7 @@ protected:
 
 	UFUNCTION()
 	void OnRep_ID();
-
+	
 	void FetchAsset();
 
 private:
