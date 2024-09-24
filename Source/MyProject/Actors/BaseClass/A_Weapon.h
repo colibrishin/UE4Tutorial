@@ -18,8 +18,6 @@ class MYPROJECT_API AA_Weapon : public AA_Collectable, public IAttackObject, pub
 	GENERATED_BODY()
 
 public:
-	using PairAssetComponentType = UC_Weapon;
-	
 	friend class UC_WeaponAsset;
 	static const FName WeaponComponentName;
 	

@@ -24,7 +24,7 @@ class MYPROJECT_API IAssetFetchable
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	template <typename T> requires (std::is_base_of_v<UC_Asset, T>)
+	template <typename T = UC_Asset> requires (std::is_base_of_v<UC_Asset, T>)
 	void FetchAsset()
 	{
 		const AActor* Object = Cast<AActor>(this);

@@ -85,7 +85,7 @@ AA_Character::AA_Character()
 	
 	AssetComponent->SetNetAddressable();
 	AssetComponent->OnAssetIDSet.AddUObject(
-		this, &AA_Character::FetchAsset<UC_CharacterAsset>);
+		this, &AA_Character::FetchAsset);
 
 	GetCapsuleComponent()->InitCapsuleSize(88.f, 88.f);
 	OnHandChanged.AddUObject(this, &AA_Character::ClientDuplicateHand);

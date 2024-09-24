@@ -26,7 +26,7 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	AssetComponent->SetIsReplicated(true);
 	
 	AssetComponent->OnAssetIDSet.AddUObject(
-		this, &AA_Collectable::FetchAsset<PairAssetComponentType>);
+		this, &AA_Collectable::FetchAsset);
 	
 	bDummy = false;
 }

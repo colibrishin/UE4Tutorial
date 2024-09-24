@@ -14,8 +14,6 @@ class MYPROJECT_API AA_RangeWeapon : public AA_Weapon
 	GENERATED_BODY()
 
 public:
-	using PairAssetComponentType = UC_RangeWeapon;
-	
 	static const FName MuzzleSocketName;
 	friend class UC_WeaponAsset;
 
