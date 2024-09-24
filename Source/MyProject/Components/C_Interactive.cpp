@@ -15,6 +15,7 @@ UC_Interactive::UC_Interactive()
 	// enable and disable the tick only if the interaction timer and predication flag is set and triggered.
 	PrimaryComponentTick.bStartWithTickEnabled = true;
 	PrimaryComponentTick.SetTickFunctionEnable(false);
+	SetIsReplicatedByDefault( true );
 
 	// ...
 }

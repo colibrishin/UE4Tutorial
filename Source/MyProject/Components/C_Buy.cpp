@@ -69,33 +69,27 @@ void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) co
 	{
 		WeaponType = WeaponClassMap[WeaponAsset->GetWeaponType()]; 
 	}
-	
-	static FActorSpawnParameters ActorSpawnParameters;
-	ActorSpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	
-	AA_Weapon* GeneratedWeapon = GetWorld()->SpawnActor<AA_Weapon>
-		(
-		 WeaponType,
-		 CharacterLocation,
-		 FRotator::ZeroRotator,
-		 ActorSpawnParameters
-		);
 
-	LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponAsset->GetAssetName());
+	const FTransform Transform {FQuat::Identity, CharacterLocation, FVector::OneVector};
+	AA_Weapon* GeneratedWeapon = GetWorld()->SpawnActorDeferred<AA_Weapon>(
+		WeaponType,
+		Transform,
+		RequestCharacter->GetController(),
+		RequestCharacter,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn,
+		ESpawnActorScaleMethod::OverrideRootScale);
 
-	GeneratedWeapon->GetAssetComponent()->SetID(WeaponID);
+	GeneratedWeapon->GetAssetComponent<UC_WeaponAsset>()->SetID(WeaponID);
 	GeneratedWeapon->FetchAsset<UC_WeaponAsset>();
+	UGameplayStatics::FinishSpawningActor(GeneratedWeapon, Transform);
 	
-	if (IsValid(GeneratedWeapon))
+	LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponAsset->GetAssetName());
+	GeneratedWeapon->SetReplicateMovement(true);
+	GeneratedWeapon->SetReplicates(true);
+	
+	if (const UC_PickUp* PickUpComponent = GeneratedWeapon->GetPickUpComponent())
 	{
-		GeneratedWeapon->SetOwner(RequestCharacter);
-		GeneratedWeapon->SetReplicateMovement(true);
-		GeneratedWeapon->SetReplicates(true);
-
-		if (const UC_PickUp* PickUpComponent = GeneratedWeapon->GetPickUpComponent())
-		{
-			PickUpComponent->OnObjectPickUp.Broadcast(RequestCharacter);
-		}
+		PickUpComponent->OnObjectPickUp.Broadcast(RequestCharacter);
 	}
 }
 

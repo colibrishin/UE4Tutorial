@@ -19,9 +19,10 @@ class MYPROJECT_API AA_Weapon : public AA_Collectable, public IAttackObject, pub
 
 public:
 	friend class UC_WeaponAsset;
+	static const FName WeaponComponentName;
 	
 	// Sets default values for this actor's properties
-	AA_Weapon();
+	AA_Weapon(const FObjectInitializer& ObjectInitializer);
 
 	UC_Weapon* GetWeaponComponent() const;
 

@@ -23,7 +23,7 @@ class MYPROJECT_API AA_C4 : public AA_Collectable, public IInteractiveObject
 
 public:
 	// Sets default values for this actor's properties
-	AA_C4();
+	AA_C4(const FObjectInitializer& ObjectInitializer);
 
 	FOnBombStateChanged OnBombStateChanged;
 

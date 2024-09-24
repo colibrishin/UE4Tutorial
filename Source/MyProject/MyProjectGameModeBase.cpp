@@ -13,6 +13,7 @@
 #include "Actors/BaseClass/A_Weapon.h"
 
 #include "Components/C_Health.h"
+#include "Components/Asset/C_CharacterAsset.h"
 
 #include "GameFramework/GameStateBase.h"
 #include "GameFramework/PlayerStart.h"
@@ -86,16 +87,33 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 	}
 }
 
+APawn* AMyProjectGameModeBase::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AActor* StartSpot)
+{
+	{
+		// Server Context;
+		const FTransform Transform {FQuat::Identity, StartSpot->GetActorLocation(), FVector::OneVector};
+
+		auto* DefaultCharacter = GetWorld()->SpawnActorDeferred<AA_Character>(
+			AA_Character::StaticClass(),
+			Transform,
+			NewPlayer,
+			nullptr,
+			ESpawnActorCollisionHandlingMethod::AlwaysSpawn,
+			ESpawnActorScaleMethod::OverrideRootScale);
+
+		DefaultCharacter->GetAssetComponent()->SetID(NewPlayer->GetPlayerState<AMyPlayerState>()->GetCharacterAssetID());
+		DefaultCharacter->FetchAsset<UC_CharacterAsset>();
+		UGameplayStatics::FinishSpawningActor(DefaultCharacter, Transform, ESpawnActorScaleMethod::OverrideRootScale);
+
+		return DefaultCharacter;
+	}
+}
+
 AActor* AMyProjectGameModeBase::FindPlayerStart_Implementation(AController* Player, const FString& IncomingName)
 {
 	const auto& Start = PickPlayerStart(Player);
 
 	return IsValid(Start) ? Start : Super::FindPlayerStart_Implementation(Player, IncomingName);
-}
-
-void AMyProjectGameModeBase::RestartPlayer(AController* NewPlayer)
-{
-	Super::RestartPlayer(NewPlayer);
 }
 
 void AMyProjectGameModeBase::InitStartSpot_Implementation(AActor* StartSpot, AController* NewPlayer)

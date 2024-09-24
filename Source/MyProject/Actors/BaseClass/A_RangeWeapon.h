@@ -16,8 +16,8 @@ class MYPROJECT_API AA_RangeWeapon : public AA_Weapon
 public:
 	static const FName MuzzleSocketName;
 	friend class UC_WeaponAsset;
-	
-	AA_RangeWeapon();
+
+	AA_RangeWeapon(const FObjectInitializer& ObjectInitializer);
 
 	UC_RangeWeapon* GetRangeWeaponComponent() const;
 
@@ -28,9 +28,6 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 public:
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
-
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_StartBulletTrail();
 

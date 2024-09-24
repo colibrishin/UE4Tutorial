@@ -8,21 +8,23 @@
 
 #include "Net/UnrealNetwork.h"
 
+const FName AA_Collectable::AssetComponentName (TEXT("AssetComponent"));
 
 // Sets default values
-AA_Collectable::AA_Collectable()
+AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
+	Super(ObjectInitializer)
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(TEXT("CollectableAsset"));
+	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(TEXT("AssetComponent"));
 	PickUpComponent = CreateDefaultSubobject<UC_PickUp>(TEXT("PickUpComponent"));
-	
-	PickUpComponent->SetNetAddressable();
-	AssetComponent->SetNetAddressable();
 
-	bNetLoadOnClient = true;
-	bReplicates = true;
+	SetRootComponent(PickUpComponent);
+
+	AssetComponent->SetNetAddressable();
+	AssetComponent->SetIsReplicated(true);
+
 	bDummy = false;
 }
 
@@ -36,7 +38,6 @@ void AA_Collectable::BeginPlay()
 void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AA_Collectable, PickUpComponent);
 	DOREPLIFETIME(AA_Collectable, AssetComponent);
 	DOREPLIFETIME_CONDITION(AA_Collectable, bDummy, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AA_Collectable, Sibling, COND_OwnerOnly);

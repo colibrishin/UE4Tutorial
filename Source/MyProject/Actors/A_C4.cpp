@@ -10,7 +10,7 @@
 
 
 // Sets default values
-AA_C4::AA_C4()
+AA_C4::AA_C4(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitializer)
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;

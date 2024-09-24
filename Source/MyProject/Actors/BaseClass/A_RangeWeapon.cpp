@@ -8,22 +8,14 @@
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Weapon/C_RangeWeapon.h"
 
-#include "Net/UnrealNetwork.h"
-
 const FName AA_RangeWeapon::MuzzleSocketName ( "Muzzle" ); 
 
 // Sets default values
-AA_RangeWeapon::AA_RangeWeapon()
+AA_RangeWeapon::AA_RangeWeapon(const FObjectInitializer& ObjectInitializer) :
+	Super(ObjectInitializer.SetDefaultSubobjectClass<UC_RangeWeapon>(WeaponComponentName))
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = true;
-
-	// Destroy previously defined component; using range weapon component for normal and CDO case (AA_Weapon)
-	WeaponComponent->DestroyComponent();
-
-	WeaponComponent = CreateDefaultSubobject<UC_RangeWeapon>(TEXT("RangeWepaonComponent"));
-	WeaponComponent->SetNetAddressable();
-	WeaponComponent->SetIsReplicated(true);
+	PrimaryActorTick.bCanEverTick = false;
 
 	BulletTrailComponent = CreateDefaultSubobject<UNiagaraComponent>(TEXT("BulletTrailComponent"));
 	BulletTrailComponent->SetAutoDestroy(false);
@@ -45,13 +37,6 @@ void AA_RangeWeapon::BeginPlay()
 void AA_RangeWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AA_RangeWeapon, WeaponComponent);
-}
-
-// Called every frame
-void AA_RangeWeapon::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
 }
 
 void AA_RangeWeapon::StartBulletTrailImplementation() const

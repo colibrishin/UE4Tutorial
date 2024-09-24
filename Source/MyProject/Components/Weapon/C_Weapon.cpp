@@ -5,6 +5,7 @@
 
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "InputMappingContext.h"
 #include "MyProject/Components/C_PickUp.h"
 
 #include "../../../../../UnrealEngine/Engine/Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
@@ -163,7 +164,7 @@ void UC_Weapon::BeginPlay()
 	// ...
 	if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 	{
-		LOG_FUNC(LogWeaponComponent, Log, "Attach pick up delegate for weapon");
+		LOG_FUNC_PRINTF(LogWeaponComponent, Log, "Attach pick up delegate for weapon %s", *GetOwner()->GetName());
 		PickUpComponent->OnObjectPickUp.AddUniqueDynamic(this , &UC_Weapon::HandlePickUp);
 	}
 

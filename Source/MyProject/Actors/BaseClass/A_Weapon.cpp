@@ -8,22 +8,17 @@
 
 #include "Net/UnrealNetwork.h"
 
+const FName AA_Weapon::WeaponComponentName( "WeaponComponent" );
 
-// Sets default values
-AA_Weapon::AA_Weapon()
+AA_Weapon::AA_Weapon(const FObjectInitializer& ObjectInitializer) :
+	Super(ObjectInitializer.SetDefaultSubobjectClass<UC_WeaponAsset>(AssetComponentName))
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	AssetComponent = CreateDefaultSubobject<UC_WeaponAsset>(TEXT("WeaponAsset"));
-	WeaponComponent = CreateDefaultSubobject<UC_Weapon>(TEXT("WeaponCompoent"));
-
-	AssetComponent->SetNetAddressable();
+	WeaponComponent = CreateDefaultSubobject<UC_Weapon>(WeaponComponentName);
 	WeaponComponent->SetNetAddressable();
-
-	AssetComponent->SetIsReplicated(true);
 	WeaponComponent->SetIsReplicated(true);
-
 }
 
 UC_Weapon* AA_Weapon::GetWeaponComponent() const

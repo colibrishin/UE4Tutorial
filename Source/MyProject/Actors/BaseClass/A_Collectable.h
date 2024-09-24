@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "MyProject/Components/Asset/C_CollectableAsset.h"
 
 #include "MyProject/Interfaces/AssetFetchable.h"
 #include "A_Collectable.generated.h"
@@ -20,12 +21,19 @@ class MYPROJECT_API AA_Collectable : public AActor, public IAssetFetchable
 	GENERATED_BODY()
 
 public:
+	static const FName AssetComponentName;
+	
 	// Sets default values for this actor's properties
-	AA_Collectable();
+	AA_Collectable(const FObjectInitializer& ObjectInitializer);
 
 	FOnDummyFlagSet OnDummyFlagSet;
 
-	UC_CollectableAsset* GetAssetComponent() const { return AssetComponent; }
+	template <typename T> requires (std::is_base_of_v<UC_CollectableAsset, T>)
+	T* GetAssetComponent()
+	{
+		return Cast<T>(AssetComponent);
+	}
+	
 	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
 	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling)
 	{
@@ -56,7 +64,7 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_CollectableAsset* AssetComponent;
 
-	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	UC_PickUp* PickUpComponent;
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Dummy, meta=(AllowPrivateAccess))

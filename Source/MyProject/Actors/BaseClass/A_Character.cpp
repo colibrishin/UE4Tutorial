@@ -24,8 +24,8 @@
 
 DEFINE_LOG_CATEGORY(LogCharacter);
 
-const FName AA_Character::LeftHandSocketName( TEXT( "hand_l_socket" ) );
-const FName AA_Character::RightHandSocketName( TEXT( "hand_r_socket" ) );
+const FName AA_Character::LeftHandSocketName( TEXT( "hand_l" ) );
+const FName AA_Character::RightHandSocketName( TEXT( "Muzzle_01" ) );
 const FName AA_Character::HeadSocketName( TEXT( "head_socket" ) );
 const FName AA_Character::ChestSocketName( TEXT( "Chest" ) );
 
@@ -82,14 +82,10 @@ AA_Character::AA_Character()
 	GetMesh()->SetCastShadow(true);
 	ArmMeshComponent->SetOnlyOwnerSee(true);
 	ArmMeshComponent->SetCastShadow(false);
+	
 	AssetComponent->SetNetAddressable();
 
 	GetCapsuleComponent()->InitCapsuleSize(88.f, 88.f);
-	
-	bReplicates = true;
-	ACharacter::SetReplicateMovement(true);
-	bNetLoadOnClient = true;
-
 	OnHandChanged.AddUObject(this, &AA_Character::ClientDuplicateHand);
 }
 
@@ -126,14 +122,14 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 			return;
 		}
 		
-		if (InPickUp->GetOwner()->GetComponentByClass<USkeletalMeshComponent>()->AttachToComponent(
+		if (InPickUp->AttachToComponent(
 		GetMesh(),
 		FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 		RightHandSocketName
 		) )
 		{
 			bHandBusy = true;
-			OnHandChanged.Broadcast(nullptr, InPickUp);
+			OnHandChanged.Broadcast(Hand, InPickUp);
 			Hand = InPickUp;
 		}
 		else
@@ -143,7 +139,7 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	}
 	else
 	{
-		if (!InPickUp->GetOwner()->GetComponentByClass<USkeletalMeshComponent>()->AttachToComponent(
+		if (!InPickUp->AttachToComponent(
 			ArmMeshComponent,
 			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 			RightHandSocketName

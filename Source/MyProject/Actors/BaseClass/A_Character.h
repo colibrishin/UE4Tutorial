@@ -39,7 +39,8 @@ public:
 	AA_Character();
 
 	FOnHandChanged OnHandChanged;
-	
+
+	UC_CharacterAsset*      GetAssetComponent() const { return AssetComponent; }
 	USkeletalMeshComponent* GetArmMesh() const { return ArmMeshComponent; }
 	UC_PickUp*              GetHand() const { return Hand; }
 	bool                    IsHandBusy() const { return bHandBusy; };
