@@ -36,8 +36,10 @@ void UC_CharacterAsset::ApplyAsset()
 			Character->GetMesh()->SetSkeletalMesh(CharacterAsset->GetSkeletalMesh());
 			Character->GetMesh()->SetRelativeLocation(CharacterAsset->GetMeshOffset());
 			Character->GetMesh()->SetRelativeRotation(CharacterAsset->GetMeshRotation());
-
+			Character->GetMesh()->SetOwnerNoSee(CharacterAsset->GetOwnerNoSee());
+			Character->GetMesh()->SetGenerateOverlapEvents(CharacterAsset->GetMeshOverlapEvent());
 			Character->GetMesh()->SetAnimInstanceClass(CharacterAsset->GetAnimInstance());
+			
 			Character->GetArmMesh()->SetSkeletalMesh(CharacterAsset->GetArmMesh());
 			Character->GetArmMesh()->SetAnimInstanceClass(CharacterAsset->GetArmAnimInstance());
 
@@ -53,6 +55,10 @@ void UC_CharacterAsset::ApplyAsset()
 			{
 				SpringArmComponent->SetRelativeLocation(CharacterAsset->GetCameraOffset());
 				SpringArmComponent->SetRelativeRotation(CharacterAsset->GetCameraRotation());
+				SpringArmComponent->TargetOffset = CharacterAsset->GetCameraArmTargetOffset();
+				SpringArmComponent->SocketOffset = CharacterAsset->GetCameraArmSocketOffset();
+				SpringArmComponent->TargetArmLength = CharacterAsset->GetCameraArmLength();
+				SpringArmComponent->ProbeSize = CharacterAsset->GetCollisionProbeSize();
 			}
 			
 			if (const AMyPlayerState* PlayerState = Character->GetPlayerState<AMyPlayerState>())

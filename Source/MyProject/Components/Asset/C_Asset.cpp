@@ -59,7 +59,8 @@ void UC_Asset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEven
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (PropertyChangedEvent.Property->GetNameCPP() == "ID" &&
+	if (const FName PropertyName = PropertyChangedEvent.Property->GetFName();
+		PropertyName == GET_MEMBER_NAME_CHECKED(UC_Asset, ID) &&
 		PropertyChangedEvent.ChangeType == EPropertyChangeType::ValueSet)
 	{
 		FetchAsset();
