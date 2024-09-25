@@ -3,6 +3,7 @@
 
 #include "A_JumpMovingFloor.h"
 
+#include "MyProject/Jump/Components/C_JumpCheckpoint.h"
 #include "MyProject/Jump/Components/C_JumpFloorMovement.h"
 #include "MyProject/Jump/Components/Assets/C_JumpMovingFloorAsset.h"
 
@@ -21,7 +22,9 @@ AA_JumpMovingFloor::AA_JumpMovingFloor(const FObjectInitializer& ObjectInitializ
 void AA_JumpMovingFloor::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	// Will not use moving floor as checkpoint;
+	CheckpointComponent->UnbindDelegate();
 }
 
 // Called every frame

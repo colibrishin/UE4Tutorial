@@ -20,11 +20,15 @@ public:
 
 	// Sets default values for this component's properties
 	UC_JumpCheckpoint();
+	
+	void UnbindDelegate();
 
 protected:
 
 	// Called when the game starts
 	virtual void BeginPlay() override;
+	
+	void BindDelegate();
 	
 	UPROPERTY(VisibleAnywhere)
 	bool bMarkedPreviously;

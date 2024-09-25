@@ -11,6 +11,7 @@
 
 #include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
+#include "MyProject/Jump/Actors/A_JumpCharacter.h"
 
 
 // Sets default values
@@ -32,7 +33,7 @@ APawn* AGM_Jump::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AAct
 	const FTransform Transform{FQuat::Identity, StartSpot->GetActorLocation(), FVector::OneVector};
 
 	AA_Character* Character = GetWorld()->SpawnActorDeferred<AA_Character>(
-		AA_Character::StaticClass(),
+		AA_JumpCharacter::StaticClass(),
 		Transform,
 		NewPlayer,
 		nullptr,

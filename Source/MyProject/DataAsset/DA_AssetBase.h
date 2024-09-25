@@ -24,6 +24,13 @@ public:
 	FRotator    GetMeshRotation() const { return MeshRotation; }
 	FVector     GetSize() const { return Size; }
 
+#if WITH_EDITOR
+	DECLARE_MULTICAST_DELEGATE(FOnAssetPropertyChanged);
+	FOnAssetPropertyChanged OnAssetPropertyChanged;
+	
+	virtual void PostEditChangeChainProperty(FPropertyChangedChainEvent& PropertyChangedEvent) override;
+#endif
+	
 private:
 	UPROPERTY(VisibleAnywhere)
 	int32 ID;

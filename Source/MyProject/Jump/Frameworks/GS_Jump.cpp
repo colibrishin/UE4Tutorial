@@ -3,6 +3,8 @@
 
 #include "GS_Jump.h"
 
+#include "Kismet/GameplayStatics.h"
+
 
 // Sets default values
 AGS_Jump::AGS_Jump()

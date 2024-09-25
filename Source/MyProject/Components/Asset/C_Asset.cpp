@@ -24,6 +24,13 @@ UC_Asset::UC_Asset()
 
 	// ...
 	SetIsReplicatedByDefault(true);
+
+#if WITH_EDITOR
+	if (AssetData)
+	{
+		AssetData->OnAssetPropertyChanged.AddUObject(this, &UC_Asset::ApplyAsset);
+	}
+#endif
 }
 
 
@@ -101,12 +108,20 @@ void UC_Asset::FetchAsset()
 	{
 		World = GEditor->GetEditorWorldContext().World();
 	}
+
+	if (AssetData)
+	{
+		AssetData->OnAssetPropertyChanged.RemoveAll(this);
+	}
 #endif
 	
 	if (const FBaseAssetRow* Data = World->GetSubsystem<USS_World>()->GetRowData<FBaseAssetRow>(ID))
 	{
 		check(Data->AssetToLink);
 		AssetData = Data->AssetToLink;
+#if WITH_EDITOR
+		AssetData->OnAssetPropertyChanged.AddUObject(this, &UC_Asset::ApplyAsset);
+#endif
 	}
 	else
 	{

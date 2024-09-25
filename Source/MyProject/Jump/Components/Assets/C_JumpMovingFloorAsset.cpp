@@ -42,14 +42,18 @@ void UC_JumpMovingFloorAsset::ApplyAsset()
 {
 	Super::ApplyAsset();
 
-	const UDA_JumpMovingFloor* Asset = GetAsset<UDA_JumpMovingFloor>();
-	
-	if (UC_JumpFloorMovement* FloorMovement = GetOwner()->GetComponentByClass<UC_JumpFloorMovement>())
+	if (const UDA_JumpMovingFloor* Asset = GetAsset<UDA_JumpMovingFloor>())
 	{
-		FloorMovement->Acceleration = Asset->GetAcceleration();
-		FloorMovement->Direction = Asset->GetDirection();
-		FloorMovement->Length = Asset->GetLength();
-		FloorMovement->Duration = Asset->GetDuration();
+		if (UC_JumpFloorMovement* FloorMovement = GetOwner()->GetComponentByClass<UC_JumpFloorMovement>())
+		{
+			FloorMovement->Acceleration = Asset->GetAcceleration();
+			FloorMovement->Direction = Asset->GetDirection();
+			FloorMovement->Length = Asset->GetLength();
+			FloorMovement->Duration = Asset->GetDuration();
+			FloorMovement->bMoving = Asset->IsMoving();
+			FloorMovement->Rotation = Asset->GetRotation();
+			FloorMovement->bRotating = Asset->IsRotating();
+		}
 	}
 }
 

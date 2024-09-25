@@ -28,6 +28,7 @@ void UC_JumpCheckpoint::MarkCheckpoint(
 			const auto GameState = GetWorld()->GetGameState<AGS_Jump>();
 			GameState->SetLastCheckPoint(this);
 			bMarkedPreviously = true;
+			UnbindDelegate();
 		}
 	}
 }
@@ -40,15 +41,27 @@ UC_JumpCheckpoint::UC_JumpCheckpoint()
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-// Called when the game starts
-void UC_JumpCheckpoint::BeginPlay()
+void UC_JumpCheckpoint::UnbindDelegate()
 {
-	Super::BeginPlay();
+	if (UMeshComponent* MeshComponent = Cast<AA_JumpFloor>(GetOwner())->GetCollisionVolumeMesh())
+	{
+		MeshComponent->OnComponentBeginOverlap.RemoveAll(this);
+	}
+}
 
+void UC_JumpCheckpoint::BindDelegate()
+{
 	if (UMeshComponent* MeshComponent = Cast<AA_JumpFloor>(GetOwner())->GetCollisionVolumeMesh())
 	{
 		MeshComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &UC_JumpCheckpoint::MarkCheckpoint);
 	}
+}
+
+// Called when the game starts
+void UC_JumpCheckpoint::BeginPlay()
+{
+	Super::BeginPlay();
+	BindDelegate();
 }
 
 // Called every frame

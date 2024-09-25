@@ -40,6 +40,7 @@ public:
 		return Cast<T>(AssetData);
 	}
 
+	UFUNCTION()
 	virtual void ApplyAsset();
 
 #if WITH_EDITOR

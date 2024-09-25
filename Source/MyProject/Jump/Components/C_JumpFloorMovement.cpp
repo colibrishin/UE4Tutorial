@@ -14,6 +14,11 @@ UC_JumpFloorMovement::UC_JumpFloorMovement()
 	// ...
 }
 
+void UC_JumpFloorMovement::Flipflop()
+{
+	bFlip = !bFlip;
+}
+
 
 // Called when the game starts
 void UC_JumpFloorMovement::BeginPlay()
@@ -21,7 +26,12 @@ void UC_JumpFloorMovement::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
-	
+	GetWorld()->GetTimerManager().SetTimer(
+		MoveTimerHandle,
+		this,
+		&UC_JumpFloorMovement::Flipflop,
+		Duration,
+		true);
 }
 
 
@@ -33,5 +43,36 @@ void UC_JumpFloorMovement::TickComponent(
 	Super::TickComponent(DeltaTime , TickType , ThisTickFunction);
 
 	// ...
+	if (bMoving)
+	{
+		const FVector MoveDirection = bFlip ? -Direction : Direction;
+		const float Speed = Length / Duration;
+		const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(MoveTimerHandle);
+		float CurrentAcceleration = 1.f;
+	
+		if (Acceleration)
+		{
+			CurrentAcceleration = Acceleration->GetFloatValue(ElapsedTime / Duration);
+		}
+
+		const FVector FinalMovement = MoveDirection * (Speed * CurrentAcceleration * DeltaTime);
+		GetOwner()->AddActorWorldOffset(FinalMovement);
+	}
+
+	if (bRotating)
+	{
+		const FRotator SpinRotation = bFlip ? Rotation.GetInverse() : Rotation;
+		const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(MoveTimerHandle);
+		const float Alpha = ElapsedTime / Duration;
+		float CurrentAcceleration = 1.f;
+
+		if (Acceleration)
+		{
+			CurrentAcceleration = Acceleration->GetFloatValue(Alpha);
+		}
+		
+		const FRotator FinalRotation = SpinRotation * Alpha * CurrentAcceleration * DeltaTime;
+		GetOwner()->AddActorWorldRotation(FinalRotation);		
+	}
 }
 

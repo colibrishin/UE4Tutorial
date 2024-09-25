@@ -31,7 +31,7 @@ public class MyProject: ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[]
         {
-			"InputCore", "EnhancedInput"
+			"InputCore", "EnhancedInput", "NavigationSystem"
         });
 	}
 }

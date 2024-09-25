@@ -6,6 +6,8 @@
 #include "GameFramework/HUD.h"
 #include "HD_Jump.generated.h"
 
+class UWG_Time;
+
 UCLASS()
 class MYPROJECT_API AHD_Jump : public AHUD
 {
@@ -18,6 +20,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UWG_Time* ElapsedTimerWidget;
 
 public:
 	// Called every frame

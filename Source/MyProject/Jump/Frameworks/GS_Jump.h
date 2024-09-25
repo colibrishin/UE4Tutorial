@@ -18,6 +18,7 @@ public:
 	AGS_Jump();
 
 	void SetLastCheckPoint(UC_JumpCheckpoint* InCheckPoint) { LastCheckpoint = InCheckPoint; }
+	UC_JumpCheckpoint* GetLastCheckpoint() const { return LastCheckpoint; }
 
 protected:
 	// Called when the game starts or when spawned
@@ -25,6 +26,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere)
 	UC_JumpCheckpoint* LastCheckpoint;
+
+	UPROPERTY(VisibleAnywhere)
+	float GameStartedTime;
 
 public:
 	// Called every frame
