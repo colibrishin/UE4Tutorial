@@ -20,7 +20,7 @@ class MYPROJECT_API UWG_Time : public UUserWidget
 
 public:
 	UWG_Time(const FObjectInitializer& ObjectInitializer);
-
+	
 	virtual void NativeConstruct() override;
 
 	virtual void NativeDestruct() override;
@@ -32,6 +32,9 @@ public:
 	
 protected:
 
+	UFUNCTION()
+	void StartTimer(const bool InValue);
+	
 	UFUNCTION()
 	void UpdateTime();
 	

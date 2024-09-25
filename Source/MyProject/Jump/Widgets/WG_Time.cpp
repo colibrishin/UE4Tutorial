@@ -17,23 +17,30 @@ UWG_Time::UWG_Time(const FObjectInitializer& ObjectInitializer) :
 void UWG_Time::NativeConstruct()
 {
 	Super::NativeConstruct();
-
-	GetWorld()->GetTimerManager().SetTimer(
-		UpdateHandle,
-		this,
-		&UWG_Time::UpdateTime,
-		1.f,
-		true);
-
-	GetWorld()->GetGameState<AGS_Jump>()->OnCoinGained.AddUniqueDynamic(
+	
+	if (AGS_Jump* GameState = GetWorld()->GetGameState<AGS_Jump>())
+	{
+		GameState->OnCoinGained.AddUniqueDynamic(
 			this, &UWG_Time::ShowWinText);
+		GameState->OnGameStarted.AddUniqueDynamic(
+			this, &UWG_Time::StartTimer);
+	}
 }
 
 void UWG_Time::NativeDestruct()
 {
 	Super::NativeDestruct();
 
-	GetWorld()->GetGameState<AGS_Jump>()->OnCoinGained.RemoveAll(this);
+	if (AGS_Jump* GameState = GetWorld()->GetGameState<AGS_Jump>())
+	{
+		GameState->OnCoinGained.RemoveAll(this);
+		GameState->OnGameStarted.RemoveAll(this);
+	}
+
+	if (UpdateHandle.IsValid())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(UpdateHandle);
+	}
 }
 
 void UWG_Time::NativeOnInitialized()
@@ -47,16 +54,42 @@ void UWG_Time::ShowWinText(UC_PickUp*, UC_PickUp*)
 	WinText->SetVisibility(ESlateVisibility::Visible);
 }
 
+void UWG_Time::StartTimer(const bool InValue)
+{
+	if (InValue)
+	{
+		// Initial time update;
+		UpdateTime();
+		
+		GetWorld()->GetTimerManager().SetTimer(
+		UpdateHandle,
+		this,
+		&UWG_Time::UpdateTime,
+		1.f,
+		true);
+	}
+	else
+	{
+		if (UpdateHandle.IsValid())
+		{
+			GetWorld()->GetTimerManager().ClearTimer(UpdateHandle);
+		}
+	}
+}
+
 void UWG_Time::UpdateTime()
 {
-	const double TotalSeconds = GetWorld()->GetTimeSeconds();
-
-	const int32 Seconds = FMath::Fmod(TotalSeconds, 60);
-	const int32 Minutes = TotalSeconds / 60;
-	const int32 Hours = TotalSeconds / 3600;
-	const FString TimeFormat = FString::Printf(TEXT("%02d:%02d:%02d"), Hours, Minutes, Seconds);
+	if (const AGS_Jump* GameState = GetWorld()->GetGameState<AGS_Jump>())
+	{
+		const double TotalSeconds = GetWorld()->GetTimeSeconds() - GameState->GetStartTime();
+		
+		const int32 Seconds = FMath::Fmod(TotalSeconds, 60);
+		const int32 Minutes = TotalSeconds / 60;
+		const int32 Hours = TotalSeconds / 3600;
+		const FString TimeFormat = FString::Printf(TEXT("%02d:%02d:%02d"), Hours, Minutes, Seconds);
 	
-	ElapsedTime->SetText(FText::FromString(TimeFormat));
+		ElapsedTime->SetText(FText::FromString(TimeFormat));
+	}
 }
 
 

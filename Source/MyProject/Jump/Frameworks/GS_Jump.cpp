@@ -13,6 +13,21 @@ AGS_Jump::AGS_Jump()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
+void AGS_Jump::SetStartTime()
+{
+	GameStartedTime = GetWorld()->GetTimeSeconds();
+}
+
+void AGS_Jump::SetStopTime()
+{
+	GameEndedTime = GetWorld()->GetTimeSeconds();
+}
+
+float AGS_Jump::GetStartTime() const
+{
+	return GameStartedTime;
+}
+
 void AGS_Jump::ProcessWin(UC_PickUp* InPrevious, UC_PickUp* InNew)
 {
 	GetWorld()->GetTimerManager().SetTimer(
@@ -26,6 +41,11 @@ void AGS_Jump::ProcessWin(UC_PickUp* InPrevious, UC_PickUp* InNew)
 void AGS_Jump::ChangeLevel() const
 {
 	UGameplayStatics::OpenLevel(GetWorld(), "Untitled", true);
+}
+
+void AGS_Jump::OnStartedSet(const bool InValue)
+{
+	OnGameStarted.Broadcast(InValue);
 }
 
 // Called when the game starts or when spawned
