@@ -3,6 +3,10 @@
 
 #include "PC_Jump.h"
 
+#include "GS_Jump.h"
+
+#include "MyProject/Actors/BaseClass/A_Character.h"
+
 
 // Sets default values
 APC_Jump::APC_Jump()
@@ -16,6 +20,19 @@ void APC_Jump::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void APC_Jump::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+
+	if (AA_Character* CastCharacter = Cast<AA_Character>(InPawn))
+	{
+		if (const AGS_Jump* GameState = GetWorld()->GetGameState<AGS_Jump>())
+		{
+			CastCharacter->OnHandChanged.AddRaw(&GameState->OnCoinGained, &FOnCoinGained::Broadcast);
+		}
+	}
 }
 
 // Called every frame

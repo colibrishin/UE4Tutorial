@@ -13,11 +13,27 @@ AGS_Jump::AGS_Jump()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
+void AGS_Jump::ProcessWin(UC_PickUp* InPrevious, UC_PickUp* InNew)
+{
+	GetWorld()->GetTimerManager().SetTimer(
+		WinDelay,
+		this,
+		&AGS_Jump::ChangeLevel,
+		5.f,
+		false);
+}
+
+void AGS_Jump::ChangeLevel() const
+{
+	UGameplayStatics::OpenLevel(GetWorld(), "Untitled", true);
+}
+
 // Called when the game starts or when spawned
 void AGS_Jump::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	OnCoinGained.AddUniqueDynamic(this, &AGS_Jump::ProcessWin);
 }
 
 // Called every frame

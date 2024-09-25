@@ -5,10 +5,13 @@
 
 #include "Components/TextBlock.h"
 
+#include "MyProject/Jump/Frameworks/GS_Jump.h"
+
 UWG_Time::UWG_Time(const FObjectInitializer& ObjectInitializer) :
 	Super(ObjectInitializer)
 {
 	ElapsedTime = CreateDefaultSubobject<UTextBlock>(TEXT("ElapsedTime"));
+	WinText = CreateDefaultSubobject<UTextBlock>(TEXT("WinText"));
 }
 
 void UWG_Time::NativeConstruct()
@@ -21,6 +24,19 @@ void UWG_Time::NativeConstruct()
 		&UWG_Time::UpdateTime,
 		1.f,
 		true);
+}
+
+void UWG_Time::NativeOnInitialized()
+{
+	Super::NativeOnInitialized();
+
+	GetPlayerContext().GetGameState<AGS_Jump>()->OnCoinGained.AddUniqueDynamic(this, &UWG_Time::ShowWinText);
+}
+
+void UWG_Time::ShowWinText(UC_PickUp*, UC_PickUp*)
+{
+	WinText->SetText(FText::FromString("Win!"));
+	WinText->SetVisibility(ESlateVisibility::Visible);
 }
 
 void UWG_Time::UpdateTime()

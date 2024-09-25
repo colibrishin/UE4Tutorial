@@ -7,11 +7,14 @@
 
 #include "MyProject/DataAsset/DA_AssetBase.h"
 #include "MyProject/Frameworks/Subsystems/SS_World.h"
-#include "MyProject/Interfaces/AssetFetchable.h"
 #include "MyProject/Private/Data.h"
 #include "MyProject/Private/Utilities.hpp"
 
 #include "Net/UnrealNetwork.h"
+
+#if WITH_EDITOR
+#include "Editor.h"
+#endif
 
 DEFINE_LOG_CATEGORY(LogAssetComponent);
 
