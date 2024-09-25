@@ -19,23 +19,9 @@ public:
 	UC_JumpFloorMovement();
 
 protected:
-	UFUNCTION()
-	void Flipflop();
 
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	float Length;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	FVector Direction;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	FRotator Rotation;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
-	UCurveFloat* Acceleration;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	float Duration;
@@ -45,9 +31,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	bool bRotating;
-	
-	UPROPERTY(VisibleAnywhere)
-	bool bFlip;
 
 	FTimerHandle MoveTimerHandle;
 

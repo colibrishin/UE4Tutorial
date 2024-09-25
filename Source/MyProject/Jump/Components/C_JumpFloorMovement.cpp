@@ -3,6 +3,10 @@
 
 #include "C_JumpFloorMovement.h"
 
+#include "Components/SplineComponent.h"
+
+#include "MyProject/Jump/Actors/A_JumpMovingFloor.h"
+
 
 // Sets default values for this component's properties
 UC_JumpFloorMovement::UC_JumpFloorMovement()
@@ -14,12 +18,6 @@ UC_JumpFloorMovement::UC_JumpFloorMovement()
 	// ...
 }
 
-void UC_JumpFloorMovement::Flipflop()
-{
-	bFlip = !bFlip;
-}
-
-
 // Called when the game starts
 void UC_JumpFloorMovement::BeginPlay()
 {
@@ -28,8 +26,6 @@ void UC_JumpFloorMovement::BeginPlay()
 	// ...
 	GetWorld()->GetTimerManager().SetTimer(
 		MoveTimerHandle,
-		this,
-		&UC_JumpFloorMovement::Flipflop,
 		Duration,
 		true);
 }
@@ -43,36 +39,25 @@ void UC_JumpFloorMovement::TickComponent(
 	Super::TickComponent(DeltaTime , TickType , ThisTickFunction);
 
 	// ...
-	if (bMoving)
+	// Use spline component closed loop for flip;
+	if (const USplineComponent* SplineComponent = GetOwner()->GetComponentByClass<USplineComponent>())
 	{
-		const FVector MoveDirection = bFlip ? -Direction : Direction;
-		const float Speed = Length / Duration;
-		const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(MoveTimerHandle);
-		float CurrentAcceleration = 1.f;
-	
-		if (Acceleration)
-		{
-			CurrentAcceleration = Acceleration->GetFloatValue(ElapsedTime / Duration);
-		}
-
-		const FVector FinalMovement = MoveDirection * (Speed * CurrentAcceleration * DeltaTime);
-		GetOwner()->AddActorWorldOffset(FinalMovement);
-	}
-
-	if (bRotating)
-	{
-		const FRotator SpinRotation = bFlip ? (FRotator::ZeroRotator - Rotation) : Rotation;
-		const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(MoveTimerHandle);
-		const float Alpha = ElapsedTime / Duration;
-		float CurrentAcceleration = 1.f;
-
-		if (Acceleration)
-		{
-			CurrentAcceleration = Acceleration->GetFloatValue(Alpha);
-		}
+		const float Elapsed = GetWorld()->GetTimerManager().GetTimerElapsed(MoveTimerHandle);
 		
-		const FRotator FinalRotation = SpinRotation * CurrentAcceleration * DeltaTime;
-		GetOwner()->AddActorWorldRotation(FinalRotation);		
+		if (UStaticMeshComponent* StaticMeshComponent = Cast<AA_JumpMovingFloor>(GetOwner())->GetMesh())
+		{
+			if (bMoving)
+			{
+				const FVector NextPosition = SplineComponent->GetLocationAtTime(Elapsed, ESplineCoordinateSpace::Local);
+				StaticMeshComponent->SetRelativeLocation(NextPosition);	
+			}
+
+			if (bRotating)
+			{
+				const FRotator NextRotation = SplineComponent->GetRotationAtTime(Elapsed, ESplineCoordinateSpace::Local);
+				StaticMeshComponent->SetRelativeRotation(NextRotation);
+			}
+		}
 	}
 }
 

@@ -9,6 +9,7 @@
 
 #include "A_JumpFloor.generated.h"
 
+class USplineComponent;
 class UC_JumpFloorAsset;
 class UC_JumpCheckpoint;
 
@@ -21,6 +22,7 @@ public:
 	// Sets default values for this actor's properties
 	AA_JumpFloor(const FObjectInitializer& ObjectInitializer);
 
+	UStaticMeshComponent* GetMesh() const { return Mesh; }
 	UStaticMeshComponent* GetCollisionVolumeMesh() const { return CollisionVolumeMesh; }
 
 #if WITH_EDITOR
@@ -30,6 +32,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	USceneComponent* DummyRootComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UStaticMeshComponent* Mesh;

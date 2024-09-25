@@ -3,6 +3,8 @@
 
 #include "C_JumpMovingFloorAsset.h"
 
+#include "Components/SplineComponent.h"
+
 #include "MyProject/Jump/Components/C_JumpFloorMovement.h"
 #include "MyProject/Jump/DataAssets/DA_JumpMovingFloor.h"
 
@@ -46,13 +48,14 @@ void UC_JumpMovingFloorAsset::ApplyAsset()
 	{
 		if (UC_JumpFloorMovement* FloorMovement = GetOwner()->GetComponentByClass<UC_JumpFloorMovement>())
 		{
-			FloorMovement->Acceleration = Asset->GetAcceleration();
-			FloorMovement->Direction = Asset->GetDirection();
-			FloorMovement->Length = Asset->GetLength();
 			FloorMovement->Duration = Asset->GetDuration();
 			FloorMovement->bMoving = Asset->IsMoving();
-			FloorMovement->Rotation = Asset->GetRotation();
 			FloorMovement->bRotating = Asset->IsRotating();
+		}
+
+		if (USplineComponent* SplineComponent = GetOwner()->GetComponentByClass<USplineComponent>())
+		{
+			SplineComponent->Duration = Asset->GetDuration();
 		}
 	}
 }

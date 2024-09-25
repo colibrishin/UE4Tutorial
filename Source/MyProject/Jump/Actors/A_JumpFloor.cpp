@@ -12,12 +12,15 @@ AA_JumpFloor::AA_JumpFloor(const FObjectInitializer& ObjectInitializer) : Super(
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	DummyRootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("DummyRootComponent"));
+
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	CollisionVolumeMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("CollisionVolumeMesh"));
 	CheckpointComponent = CreateDefaultSubobject<UC_JumpCheckpoint>(TEXT("CheckpointComponent"));
 	AssetComponent = CreateDefaultSubobject<UC_JumpFloorAsset>(TEXT("AssetComponent"));
 	
-	SetRootComponent(Mesh);
+	SetRootComponent(DummyRootComponent);
+	Mesh->SetupAttachment(DummyRootComponent);
 	Mesh->SetGenerateOverlapEvents(false);
 
 	CollisionVolumeMesh->SetupAttachment(Mesh);
@@ -25,7 +28,7 @@ AA_JumpFloor::AA_JumpFloor(const FObjectInitializer& ObjectInitializer) : Super(
 	CollisionVolumeMesh->SetGenerateOverlapEvents(true);
 	CollisionVolumeMesh->SetCollisionProfileName(TEXT("OverlapAll"));
 	// Slightly large mesh than actual mesh for overlap detection;
-	CollisionVolumeMesh->SetWorldScale3D(FVector::OneVector + FVector{0.f, 0.f, FLT_EPSILON});
+	CollisionVolumeMesh->SetRelativeLocation({0.f, 0.f, 0.1f});
 }
 
 #if WITH_EDITOR

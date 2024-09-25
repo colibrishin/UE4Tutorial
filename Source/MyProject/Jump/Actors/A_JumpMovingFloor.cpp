@@ -3,6 +3,8 @@
 
 #include "A_JumpMovingFloor.h"
 
+#include "Components/SplineComponent.h"
+
 #include "MyProject/Jump/Components/C_JumpCheckpoint.h"
 #include "MyProject/Jump/Components/C_JumpFloorMovement.h"
 #include "MyProject/Jump/Components/Assets/C_JumpMovingFloorAsset.h"
@@ -15,7 +17,11 @@ AA_JumpMovingFloor::AA_JumpMovingFloor(const FObjectInitializer& ObjectInitializ
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	SplineComponent = CreateDefaultSubobject<USplineComponent>(TEXT("SplineComponent"));
 	FloorMovementComponent = CreateDefaultSubobject<UC_JumpFloorMovement>(TEXT("FloorMovementComponent"));
+
+	SplineComponent->SetupAttachment(DummyRootComponent);
+	Mesh->SetupAttachment(SplineComponent);
 }
 
 // Called when the game starts or when spawned

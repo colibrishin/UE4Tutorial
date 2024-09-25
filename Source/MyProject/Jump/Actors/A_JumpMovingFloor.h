@@ -22,7 +22,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	USplineComponent* SplineComponent;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UC_JumpFloorMovement* FloorMovementComponent;
 
