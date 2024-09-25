@@ -25,11 +25,11 @@ public:
 
 	virtual void NativeOnInitialized() override;
 	
-protected:
-
 	UFUNCTION()
 	void ShowWinText(UC_PickUp* InPrevious, UC_PickUp* InNew);
 	
+protected:
+
 	UFUNCTION()
 	void UpdateTime();
 	
