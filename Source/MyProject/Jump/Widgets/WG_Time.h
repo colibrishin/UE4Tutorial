@@ -23,6 +23,8 @@ public:
 
 	virtual void NativeConstruct() override;
 
+	virtual void NativeDestruct() override;
+
 	virtual void NativeOnInitialized() override;
 	
 	UFUNCTION()

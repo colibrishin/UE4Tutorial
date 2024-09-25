@@ -29,6 +29,13 @@ void UWG_Time::NativeConstruct()
 			this, &UWG_Time::ShowWinText);
 }
 
+void UWG_Time::NativeDestruct()
+{
+	Super::NativeDestruct();
+
+	GetWorld()->GetGameState<AGS_Jump>()->OnCoinGained.RemoveAll(this);
+}
+
 void UWG_Time::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
