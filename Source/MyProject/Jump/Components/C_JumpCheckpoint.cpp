@@ -24,11 +24,15 @@ void UC_JumpCheckpoint::MarkCheckpoint(
 		
 		if (!bMarkedPreviously)
 		{
-			LOG_FUNC(LogTemp, Log, "Marking checkpoint");
-			const auto GameState = GetWorld()->GetGameState<AGS_Jump>();
-			GameState->SetLastCheckPoint(this);
-			bMarkedPreviously = true;
-			UnbindDelegate();
+			FTimerDelegate Delegate;
+			Delegate.BindUObject(this, &UC_JumpCheckpoint::CheckOverlapAtTimerEnd, OtherActor);
+
+			// Postpone overlap process for check whether player is still on the floor;
+			GetWorld()->GetTimerManager().SetTimer(
+				CheckpointTimerHandle,
+				Delegate,
+				1.f,
+				false);
 		}
 	}
 }
@@ -54,6 +58,27 @@ void UC_JumpCheckpoint::BindDelegate()
 	if (UMeshComponent* MeshComponent = Cast<AA_JumpFloor>(GetOwner())->GetCollisionVolumeMesh())
 	{
 		MeshComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &UC_JumpCheckpoint::MarkCheckpoint);
+	}
+}
+
+void UC_JumpCheckpoint::CheckOverlapAtTimerEnd(AActor* InOtherActor)
+{
+	if (bMarkedPreviously)
+	{
+		return;
+	}
+	
+	if (InOtherActor->IsOverlappingActor(GetOwner()))
+	{
+		LOG_FUNC_PRINTF(LogTemp, Log, "Marking checkpoint %s", *GetOwner()->GetName());
+		const auto GameState = GetWorld()->GetGameState<AGS_Jump>();
+		GameState->SetLastCheckPoint(this);
+		bMarkedPreviously = true;
+		UnbindDelegate();
+	}
+	else
+	{
+		LOG_FUNC_PRINTF(LogTemp, Log, "%s overlap prematurely finished, not marking", *GetOwner()->GetName())
 	}
 }
 

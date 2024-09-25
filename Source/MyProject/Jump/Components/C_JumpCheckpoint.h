@@ -29,9 +29,13 @@ protected:
 	virtual void BeginPlay() override;
 	
 	void BindDelegate();
+
+	void CheckOverlapAtTimerEnd(AActor* InOtherActor);
 	
 	UPROPERTY(VisibleAnywhere)
 	bool bMarkedPreviously;
+
+	FTimerHandle CheckpointTimerHandle;
 
 public:
 	// Called every frame
