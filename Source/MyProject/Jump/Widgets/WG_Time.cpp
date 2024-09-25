@@ -24,13 +24,14 @@ void UWG_Time::NativeConstruct()
 		&UWG_Time::UpdateTime,
 		1.f,
 		true);
+
+	GetWorld()->GetGameState<AGS_Jump>()->OnCoinGained.AddUniqueDynamic(
+			this, &UWG_Time::ShowWinText);
 }
 
 void UWG_Time::NativeOnInitialized()
 {
 	Super::NativeOnInitialized();
-
-	GetPlayerContext().GetGameState<AGS_Jump>()->OnCoinGained.AddUniqueDynamic(this, &UWG_Time::ShowWinText);
 }
 
 void UWG_Time::ShowWinText(UC_PickUp*, UC_PickUp*)
