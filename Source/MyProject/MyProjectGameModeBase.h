@@ -7,6 +7,7 @@
 #include "GameFramework/GameMode.h"
 #include "MyProjectGameModeBase.generated.h"
 
+class APlayerStart;
 /**
  * 
  */

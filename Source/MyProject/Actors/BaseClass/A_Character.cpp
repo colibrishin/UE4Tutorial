@@ -15,6 +15,7 @@
 
 #include "Components/CapsuleComponent.h"
 
+#include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
 #include "MyProject/MyPlayerState.h"
@@ -86,6 +87,8 @@ AA_Character::AA_Character()
 	AssetComponent->SetNetAddressable();
 	AssetComponent->OnAssetIDSet.AddUObject(
 		this, &AA_Character::FetchAsset);
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	GetCapsuleComponent()->InitCapsuleSize(88.f, 88.f);
 	OnHandChanged.AddUObject(this, &AA_Character::ClientDuplicateHand);

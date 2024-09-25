@@ -1,6 +1,4 @@
 #include "MyProject/Private/Data.h"
-
-#include "Editor.h"
 #include "Utilities.hpp"
 #include "MyProject/DataAsset/DA_AssetBase.h"
 

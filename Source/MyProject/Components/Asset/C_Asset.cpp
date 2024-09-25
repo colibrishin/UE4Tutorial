@@ -7,11 +7,14 @@
 
 #include "MyProject/DataAsset/DA_AssetBase.h"
 #include "MyProject/Frameworks/Subsystems/SS_World.h"
-#include "MyProject/Interfaces/AssetFetchable.h"
 #include "MyProject/Private/Data.h"
 #include "MyProject/Private/Utilities.hpp"
 
 #include "Net/UnrealNetwork.h"
+
+#if WITH_EDITOR
+#include "Editor.h"
+#endif
 
 DEFINE_LOG_CATEGORY(LogAssetComponent);
 
@@ -24,6 +27,13 @@ UC_Asset::UC_Asset()
 
 	// ...
 	SetIsReplicatedByDefault(true);
+
+#if WITH_EDITOR
+	if (AssetData)
+	{
+		AssetData->OnAssetPropertyChanged.AddUObject(this, &UC_Asset::ApplyAsset);
+	}
+#endif
 }
 
 
@@ -59,7 +69,8 @@ void UC_Asset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEven
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (PropertyChangedEvent.Property->GetNameCPP() == "ID" &&
+	if (const FName PropertyName = PropertyChangedEvent.Property->GetFName();
+		PropertyName == GET_MEMBER_NAME_CHECKED(UC_Asset, ID) &&
 		PropertyChangedEvent.ChangeType == EPropertyChangeType::ValueSet)
 	{
 		FetchAsset();
@@ -100,12 +111,20 @@ void UC_Asset::FetchAsset()
 	{
 		World = GEditor->GetEditorWorldContext().World();
 	}
+
+	if (AssetData)
+	{
+		AssetData->OnAssetPropertyChanged.RemoveAll(this);
+	}
 #endif
 	
 	if (const FBaseAssetRow* Data = World->GetSubsystem<USS_World>()->GetRowData<FBaseAssetRow>(ID))
 	{
 		check(Data->AssetToLink);
 		AssetData = Data->AssetToLink;
+#if WITH_EDITOR
+		AssetData->OnAssetPropertyChanged.AddUObject(this, &UC_Asset::ApplyAsset);
+#endif
 	}
 	else
 	{
