@@ -25,7 +25,7 @@ AA_JumpFloor::AA_JumpFloor(const FObjectInitializer& ObjectInitializer) : Super(
 	CollisionVolumeMesh->SetGenerateOverlapEvents(true);
 	CollisionVolumeMesh->SetCollisionProfileName(TEXT("OverlapAll"));
 	// Slightly large mesh than actual mesh for overlap detection;
-	CollisionVolumeMesh->SetWorldScale3D(FVector::OneVector * (1.f + FLT_EPSILON));
+	CollisionVolumeMesh->SetWorldScale3D(FVector::OneVector + FVector{0.f, 0.f, FLT_EPSILON});
 }
 
 #if WITH_EDITOR

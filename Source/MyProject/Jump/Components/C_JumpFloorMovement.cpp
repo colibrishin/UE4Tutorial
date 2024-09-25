@@ -61,7 +61,7 @@ void UC_JumpFloorMovement::TickComponent(
 
 	if (bRotating)
 	{
-		const FRotator SpinRotation = bFlip ? Rotation.GetInverse() : Rotation;
+		const FRotator SpinRotation = bFlip ? (FRotator::ZeroRotator - Rotation) : Rotation;
 		const float ElapsedTime = GetWorld()->GetTimerManager().GetTimerElapsed(MoveTimerHandle);
 		const float Alpha = ElapsedTime / Duration;
 		float CurrentAcceleration = 1.f;
@@ -71,7 +71,7 @@ void UC_JumpFloorMovement::TickComponent(
 			CurrentAcceleration = Acceleration->GetFloatValue(Alpha);
 		}
 		
-		const FRotator FinalRotation = SpinRotation * Alpha * CurrentAcceleration * DeltaTime;
+		const FRotator FinalRotation = SpinRotation * CurrentAcceleration * DeltaTime;
 		GetOwner()->AddActorWorldRotation(FinalRotation);		
 	}
 }
