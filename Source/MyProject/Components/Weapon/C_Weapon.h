@@ -23,9 +23,11 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSprayStarted , UC_Weapon* , InWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnSprayEnded , UC_Weapon* , InWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackStart , UC_Weapon* , InWeapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnAttack);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAttackEnd , UC_Weapon* , InWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnStopAttack, UC_Weapon*, InWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadStart , UC_Weapon* , InWeapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReload);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnReloadEnd , UC_Weapon* , InWeapon);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogWeaponComponent , Log , All);
@@ -46,15 +48,21 @@ public:
 
 	FOnAttackStart OnAttackStart;
 
+	FOnAttack OnAttack;
+
 	FOnAttackEnd OnAttackEnd;
 
 	FOnStopAttack OnStopAttack;
 
 	FOnReloadStart OnReloadStart;
 
+	FOnReload OnReload;
+
 	FOnReloadEnd OnReloadEnd;
 
 	EMyWeaponType GetWeaponType() const { return WeaponType; }
+
+	float GetRange() const { return Range; }
 	
 	uint32 GetRemainingAmmo() const;
 
@@ -106,11 +114,11 @@ protected:
 	void Multi_PlayReloadSound();
 
 protected:
-	virtual void StopAttackImplementation();
+	void StopAttackImplementation();
 
-	virtual void AttackImplementation();
+	void AttackImplementation();
 
-	virtual void ReloadImplementation();
+	void ReloadImplementation();
 
 protected:
 	bool ValidateAttack();

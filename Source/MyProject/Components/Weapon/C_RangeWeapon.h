@@ -14,23 +14,22 @@ class MYPROJECT_API UC_RangeWeapon : public UC_Weapon
 
 public:
 	friend class UC_WeaponAsset;
-	
+
 	// Sets default values for this component's properties
 	UC_RangeWeapon();
 
 	FVector GetRecoiledNormal() const { return RecoiledNormal; }
-
+	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void AttackImplementation() override;
+	FVector ApplyRecoil(const FVector& InNormal, const FVector& InRightVector, const FVector& InUpVector) const;
 
-	virtual void StopAttackImplementation() override;
-
-	FVector ApplyRecoil(const FVector& InNormal) const;
+	UFUNCTION()
+	void Fire();
 	
 	void DoHitscan(const FVector& InRecoiledNormal);
 	

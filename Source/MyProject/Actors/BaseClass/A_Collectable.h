@@ -29,7 +29,7 @@ public:
 	FOnDummyFlagSet OnDummyFlagSet;
 
 	template <typename T> requires (std::is_base_of_v<UC_CollectableAsset, T>)
-	T* GetAssetComponent()
+	T* GetAssetComponent() const
 	{
 		return Cast<T>(AssetComponent);
 	}

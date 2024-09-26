@@ -174,9 +174,15 @@ void UC_Weapon::BeginPlay()
 		HandleDummy();
 	}
 
-	TScriptDelegate<FNotThreadSafeDelegateMode> AttackDelegate;
-	AttackDelegate.BindUFunction(GetOwner(), "Attack");
-	OnAttackStart.Add(AttackDelegate);
+	if (IAttackObject* AttackObject = Cast<IAttackObject>(GetOwner()))
+	{
+		OnAttack.AddUniqueDynamic(AttackObject, &IAttackObject::Attack);
+	}
+
+	if (IReloadObject* ReloadObject = Cast<IReloadObject>(GetOwner()))
+	{
+		OnReload.AddUniqueDynamic(ReloadObject, &IReloadObject::Reload);
+	}
 }
 
 #pragma region Network
@@ -202,7 +208,7 @@ void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCha
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
 			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
-			Subsystem->AddMappingContext(InputMapping , 1);
+			Subsystem->AddMappingContext(InputMapping , IsDummy() ? 1 : 0);
 		}
 
 		if (UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>(InCharacter->InputComponent))
@@ -270,7 +276,10 @@ void UC_Weapon::AttackImplementation()
 	if (TargetComponent->ValidateAttack())
 	{
 		bFiring = true;
+		// Update state, consume ammo, Play sound, animation etc...
 		OnAttackStart.Broadcast(this);
+		// Process for attack
+		OnAttack.Broadcast();
 	}
 	else
 	{
@@ -294,7 +303,11 @@ void UC_Weapon::ReloadImplementation()
 	if (TargetComponent->ValidateReload())
 	{
 		bReloading = true;
+
+		// Update state, play sound, animation etc...
 		OnReloadStart.Broadcast(this);
+		// Process for reload.
+		OnReload.Broadcast();
 	}
 }
 
@@ -479,6 +492,7 @@ void UC_Weapon::ConsumeAmmo()
 	bFiring = true;
 	AmmoSpentInClip++;
 	ConsecutiveShot++;
+
 	LOG_FUNC_PRINTF(LogWeaponComponent, Log, "AmmoSpentInClip: %d, ConsecutiveShot: %d", AmmoSpentInClip, ConsecutiveShot);
 }
 
