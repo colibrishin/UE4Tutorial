@@ -36,9 +36,14 @@ void AMyPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
+	if (GetWorld()->GetFirstPlayerController() != this)
+	{
+		return;
+	}
+
 	AsyncTask
 		(
-		 ENamedThreads::AnyHiPriThreadHiPriTask , [this]()
+		 ENamedThreads::AnyNormalThreadHiPriTask , [this]()
 		 {
 			 const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD());
 
@@ -79,7 +84,7 @@ void AMyPlayerController::DispatchPlayerCharacter(APawn* /*InOldPawn*/, APawn* /
 {
 	AsyncTask
 			(
-			 ENamedThreads::AnyHiPriThreadHiPriTask , [this]()
+			 ENamedThreads::AnyNormalThreadHiPriTask , [this]()
 			 {
 				 if (AA_Character* NewCharacter = Cast<AA_Character>(GetCharacter()))
 				 {

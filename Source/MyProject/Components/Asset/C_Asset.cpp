@@ -19,7 +19,7 @@
 DEFINE_LOG_CATEGORY(LogAssetComponent);
 
 // Sets default values for this component's properties
-UC_Asset::UC_Asset()
+UC_Asset::UC_Asset() : ID(-1)
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.

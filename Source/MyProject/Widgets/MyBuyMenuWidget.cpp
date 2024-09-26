@@ -44,7 +44,7 @@ void UMyBuyMenuWidget::Populate()
 			const auto  RawWidget = CreateWidget(GetRootWidget(), ItemWidgetClass);
 			const auto  Widget    = Cast<UMyBuyMenuWeaponWidget>(RawWidget);
 
-			Widget->SetName(WeaponAsset->GetName());
+			Widget->SetName(WeaponAsset->GetAssetName());
 			Widget->SetPrice(WeaponAsset->GetPrice());
 			Widget->SetID(WeaponAsset->GetID());
 			Widget->BindOnItemClicked(this, &UMyBuyMenuWidget::ProcessBuy);
