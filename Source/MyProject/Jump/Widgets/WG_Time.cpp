@@ -56,11 +56,11 @@ void UWG_Time::ShowWinText(UC_PickUp*, UC_PickUp*)
 
 void UWG_Time::StartTimer(const bool InValue)
 {
+	// Initial time update;
+	UpdateTime();
+	
 	if (InValue)
 	{
-		// Initial time update;
-		UpdateTime();
-		
 		GetWorld()->GetTimerManager().SetTimer(
 		UpdateHandle,
 		this,
@@ -81,7 +81,10 @@ void UWG_Time::UpdateTime()
 {
 	if (const AGS_Jump* GameState = GetWorld()->GetGameState<AGS_Jump>())
 	{
-		const double TotalSeconds = GetWorld()->GetTimeSeconds() - GameState->GetStartTime();
+		const double TotalSeconds =
+			GameState->IsStarted() ?
+				GetWorld()->GetTimeSeconds() - GameState->GetStartTime() :
+				GameState->GetEndTime() - GameState->GetStartTime();
 		
 		const int32 Seconds = FMath::Fmod(TotalSeconds, 60);
 		const int32 Minutes = TotalSeconds / 60;

@@ -31,12 +31,19 @@ public:
 	void SetLastCheckPoint(UC_JumpCheckpoint* InCheckPoint) { LastCheckpoint = InCheckPoint; }
 
 	UFUNCTION(BlueprintCallable)
+	void SetStarted(bool InValue);
+
+	UFUNCTION(BlueprintCallable)
+	bool IsStarted() const { return bStarted; }
+	
+	UFUNCTION(BlueprintCallable)
 	void SetStartTime();
 
 	UFUNCTION(BlueprintCallable)
 	void SetStopTime();
 
 	float GetStartTime() const;
+	float GetEndTime() const;
 	
 	UC_JumpCheckpoint* GetLastCheckpoint() const { return LastCheckpoint; }
 

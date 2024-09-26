@@ -13,6 +13,12 @@ AGS_Jump::AGS_Jump()
 	PrimaryActorTick.bCanEverTick = true;
 }
 
+void AGS_Jump::SetStarted(bool InValue)
+{
+	bStarted = InValue;
+	OnGameStarted.Broadcast(InValue);
+}
+
 void AGS_Jump::SetStartTime()
 {
 	GameStartedTime = GetWorld()->GetTimeSeconds();
@@ -28,8 +34,16 @@ float AGS_Jump::GetStartTime() const
 	return GameStartedTime;
 }
 
+float AGS_Jump::GetEndTime() const
+{
+	return GameEndedTime;
+}
+
 void AGS_Jump::ProcessWin(UC_PickUp* InPrevious, UC_PickUp* InNew)
 {
+	SetStopTime();
+	SetStarted(false);
+	
 	GetWorld()->GetTimerManager().SetTimer(
 		WinDelay,
 		this,
@@ -45,14 +59,14 @@ void AGS_Jump::ChangeLevel() const
 
 void AGS_Jump::OnStartedSet(const bool InValue)
 {
-	OnGameStarted.Broadcast(InValue);
+	SetStarted(InValue);
 }
 
 // Called when the game starts or when spawned
 void AGS_Jump::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	OnCoinGained.AddUniqueDynamic(this, &AGS_Jump::ProcessWin);
 }
 
