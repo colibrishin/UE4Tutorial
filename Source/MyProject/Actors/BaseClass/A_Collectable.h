@@ -35,20 +35,8 @@ public:
 	}
 	
 	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
-	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling)
-	{
-		if (GetNetMode() != NM_Client)
-		{
-			bDummy = InFlag;
-			if (InFlag)
-			{
-				ensure(InSibling);
-			}
-			Sibling = InSibling;
-			OnDummyFlagSet.Broadcast();
-		}
-	}
-	
+	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling);
+
 	bool                 IsDummy() const { return bDummy; }
 	AA_Collectable*      GetSibling() const { return Sibling; }
 	

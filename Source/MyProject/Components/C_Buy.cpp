@@ -70,6 +70,8 @@ void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) co
 		WeaponType = WeaponClassMap[WeaponAsset->GetWeaponType()]; 
 	}
 
+	LOG_FUNC_PRINTF(LogTemp, Warning, "Spawning template weapon: %s", *WeaponAsset->GetAssetName());
+	
 	const FTransform Transform {FQuat::Identity, CharacterLocation, FVector::OneVector};
 	AA_Weapon* GeneratedWeapon = GetWorld()->SpawnActorDeferred<AA_Weapon>(
 		WeaponType,
@@ -82,10 +84,6 @@ void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) co
 	GeneratedWeapon->GetAssetComponent<UC_WeaponAsset>()->SetID(WeaponID);
 	GeneratedWeapon->FetchAsset<UC_WeaponAsset>();
 	UGameplayStatics::FinishSpawningActor(GeneratedWeapon, Transform);
-	
-	LOG_FUNC_PRINTF(LogTemp, Warning, "Buying Weapon: %s", *WeaponAsset->GetAssetName());
-	GeneratedWeapon->SetReplicateMovement(true);
-	GeneratedWeapon->SetReplicates(true);
 	
 	if (const UC_PickUp* PickUpComponent = GeneratedWeapon->GetPickUpComponent())
 	{

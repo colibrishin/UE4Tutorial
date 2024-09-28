@@ -4,11 +4,9 @@
 #include "A_RangeWeapon.h"
 
 #include "NiagaraComponent.h"
-#include "Camera/CameraComponent.h"
 
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Weapon/C_RangeWeapon.h"
-#include "MyProject/Components/Asset/C_WeaponAsset.h"
 
 const FName AA_RangeWeapon::MuzzleSocketName ( "Muzzle" ); 
 

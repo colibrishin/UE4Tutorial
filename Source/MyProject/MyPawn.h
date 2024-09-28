@@ -27,18 +27,18 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 private:
-	// ºí·çÇÁ¸°Æ®¿¡¼­ ÇÔ¼ö¸¦ »ç¿ëÇÏ·Á¸é UFUNCTION() ¸ÅÅ©·Î¸¦ »ç¿ëÇØ¾ßÇÔ
+	// ë¸”ë£¨í”„ë¦°íŠ¸ì—ì„œ í•¨ìˆ˜ë¥¼ ì‚¬ìš©í•˜ë ¤ë©´ UFUNCTION() ë§¤í¬ë¡œë¥¼ ì‚¬ìš©í•´ì•¼í•¨
 	
 	void UpDown(const float Value);
 
 	void LeftRight(const float Value);
 
-	// UProperties, ¿¡µðÅÍ¿¡ ÇØ´ç ÄÄÆ÷³ÍÆ® ¹× º¯¼ö¸¦ ¶ç¿ì°Ô ÇØÁÖ´Â ¿ªÈ°
+	// UProperties, ì—ë””í„°ì— í•´ë‹¹ ì»´í¬ë„ŒíŠ¸ ë° ë³€ìˆ˜ë¥¼ ë„ìš°ê²Œ í•´ì£¼ëŠ” ì—­í™œ
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* Mesh;
 
-	// ±âº»ÀûÀ¸·Î ÄÄÆÑÆ®ÇÑ Çì´õ¸¦ ¾²°í, ÇØ´ç ÄÄÆ÷³ÍÆ®°¡ Æ÷ÇÔµÅÀÖÁö ¾Ê±â ¶§¹®¿¡, Àü¹æ¼±¾ðÀ» ÇÏ°í ±¸ÇöºÎ¿¡¼­ ½ÇÁ¦ °´Ã¼ÀÇ ±¸ÇöÀ» »ç¿ëÇÏ¿© incomplete typeÀÌ µÇÁö ¾Êµµ·Ï ÇÔ.
-	// + Áß·Â È¿°ú°¡ ¾ø´Â ÄÄÆ÷³ÍÆ®
+	// ê¸°ë³¸ì ìœ¼ë¡œ ì»´íŒ©íŠ¸í•œ í—¤ë”ë¥¼ ì“°ê³ , í•´ë‹¹ ì»´í¬ë„ŒíŠ¸ê°€ í¬í•¨ë¼ìžˆì§€ ì•Šê¸° ë•Œë¬¸ì—, ì „ë°©ì„ ì–¸ì„ í•˜ê³  êµ¬í˜„ë¶€ì—ì„œ ì‹¤ì œ ê°ì²´ì˜ êµ¬í˜„ì„ ì‚¬ìš©í•˜ì—¬ incomplete typeì´ ë˜ì§€ ì•Šë„ë¡ í•¨.
+	// + ì¤‘ë ¥ íš¨ê³¼ê°€ ì—†ëŠ” ì»´í¬ë„ŒíŠ¸
 	UPROPERTY(VisibleAnywhere)
 	class UFloatingPawnMovement* Movement;
 

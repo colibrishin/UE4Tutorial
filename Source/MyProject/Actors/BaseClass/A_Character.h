@@ -22,7 +22,7 @@ class UC_Asset;
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter , Log , All);
 
 // Non-dynamic delegate due to forwarding to player state;
-DECLARE_MULTICAST_DELEGATE_TwoParams(FOnHandChanged, UC_PickUp*, UC_PickUp*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnHandChanged, UChildActorComponent*);
 
 UCLASS()
 class MYPROJECT_API AA_Character : public ACharacter, public IPickingUp, public IAssetFetchable
@@ -42,7 +42,7 @@ public:
 
 	UC_CharacterAsset*      GetAssetComponent() const { return AssetComponent; }
 	USkeletalMeshComponent* GetArmMesh() const { return ArmMeshComponent; }
-	UC_PickUp*              GetHand() const { return Hand; }
+	UChildActorComponent*   GetHand() const { return Hand; }
 	bool                    IsHandBusy() const { return bHandBusy; };
 
 protected:
@@ -70,12 +70,14 @@ public:
 
 private:
 	UFUNCTION()
-	void OnRep_Hand(UC_PickUp* InOldHand) const;
+	void OnRep_Hand() const;
 
 	UFUNCTION()
-	void ClientDuplicateHand(UC_PickUp* InOldHand, UC_PickUp* InNewHand);
-	
+	void SetupHand(AActor* InChildActor) const;
+
 protected:
+	virtual void PostFetchAsset() override;
+	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bHandBusy;
 
@@ -103,11 +105,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	UC_CharacterAsset* AssetComponent;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Hand)
-	UC_PickUp* Hand;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	UChildActorComponent* Hand;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
-	AA_Collectable* HandArm;
+	UChildActorComponent* ArmHand;
 
 	FDelegateHandle CharacterForwardHandle;
 	

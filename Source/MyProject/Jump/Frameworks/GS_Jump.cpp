@@ -39,7 +39,7 @@ float AGS_Jump::GetEndTime() const
 	return GameEndedTime;
 }
 
-void AGS_Jump::ProcessWin(UC_PickUp* InPrevious, UC_PickUp* InNew)
+void AGS_Jump::ProcessWin(UChildActorComponent* InPrevious)
 {
 	SetStopTime();
 	SetStarted(false);

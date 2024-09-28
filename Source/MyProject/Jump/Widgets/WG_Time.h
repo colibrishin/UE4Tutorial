@@ -28,7 +28,7 @@ public:
 	virtual void NativeOnInitialized() override;
 	
 	UFUNCTION()
-	void ShowWinText(UC_PickUp* InPrevious, UC_PickUp* InNew);
+	void ShowWinText(UChildActorComponent* InNew);
 	
 protected:
 

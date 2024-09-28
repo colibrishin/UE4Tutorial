@@ -25,6 +25,8 @@ public:
 
 	FOnObjectDrop OnObjectDrop;
 
+	virtual void SetActive(bool bNewActive, bool bReset = false) override;
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -37,4 +39,7 @@ protected:
 	
 	UFUNCTION()
 	void OnDropCallback(TScriptInterface<IPickingUp> InCaller);
+
+private:
+	void AttachEventHandlers();
 };

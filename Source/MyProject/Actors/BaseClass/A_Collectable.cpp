@@ -27,8 +27,28 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	
 	AssetComponent->OnAssetIDSet.AddUObject(
 		this, &AA_Collectable::FetchAsset);
-	
+
+	bReplicates = true;
+	bNetLoadOnClient = true;
 	bDummy = false;
+}
+
+void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)
+{
+	if (GetNetMode() != NM_Client)
+	{
+		bDummy = InFlag;
+		if (InFlag)
+		{
+			ensure(InSibling);
+		}
+		Sibling = InSibling;
+		
+		// Disable pickup component;
+		PickUpComponent->SetActive(false);
+
+		OnDummyFlagSet.Broadcast();
+	}
 }
 
 // Called when the game starts or when spawned
