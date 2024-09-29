@@ -118,7 +118,7 @@ void UC_Buy::BeginPlay()
 }
 
 // Called every frame
-void UC_Buy::TickComponent(float DeltaTime , ELevelTick TickType ,
+void UC_Buy::TickComponent(float                                 DeltaTime , ELevelTick TickType ,
                                     FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime , TickType , ThisTickFunction);

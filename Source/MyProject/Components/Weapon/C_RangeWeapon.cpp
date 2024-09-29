@@ -63,7 +63,7 @@ void UC_RangeWeapon::Fire()
 	}
 	
 	const UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>();
-	const UCameraComponent* CameraComponent = PickUpComponent->GetAttachParentActor()->GetComponentByClass<UCameraComponent>();
+	const UCameraComponent* CameraComponent = PickUpComponent->GetOwner()->GetAttachParentActor()->GetComponentByClass<UCameraComponent>();
 
 	if (bHitscan)
 	{
@@ -78,7 +78,7 @@ void UC_RangeWeapon::DoHitscan(const FVector& InRecoiledNormal)
 {
 	// Weapon -> Character;
 	const UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>();
-	const UCameraComponent* Cam = PickUpComponent->GetAttachParentActor()->GetComponentByClass<UCameraComponent>();
+	const UCameraComponent* Cam = PickUpComponent->GetOwner()->GetAttachParentActor()->GetComponentByClass<UCameraComponent>();
 	const FVector ShotPosition = Cam->GetComponentLocation();
 	const FVector EndPosition = ShotPosition + (InRecoiledNormal * Range);
 	FHitResult OutHitResult{};

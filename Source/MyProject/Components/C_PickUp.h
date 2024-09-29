@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "C_PickUp.generated.h"
 
+class UInputMappingContext;
+class UInputAction;
 class IPickingUp;
 class AMyCharacter;
 
@@ -13,7 +15,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectDrop, TScriptInterface<IPi
 DECLARE_LOG_CATEGORY_EXTERN(LogPickUp, Log, All);
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_PickUp : public USkeletalMeshComponent
+class MYPROJECT_API UC_PickUp : public UActorComponent
 {
 	GENERATED_BODY()
 

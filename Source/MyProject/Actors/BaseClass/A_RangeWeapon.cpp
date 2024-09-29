@@ -64,7 +64,7 @@ void AA_RangeWeapon::PostFetchAsset()
 	ensure
 	(
 		BulletTrailComponent->AttachToComponent(
-			GetPickUpComponent(),
+			GetSkeletalMeshComponent(),
 			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 			MuzzleSocketName)
 	);

@@ -28,13 +28,14 @@ public:
 
 	FOnDummyFlagSet OnDummyFlagSet;
 
-	template <typename T> requires (std::is_base_of_v<UC_CollectableAsset, T>)
+	template <typename T = UC_CollectableAsset> requires (std::is_base_of_v<UC_CollectableAsset, T>)
 	T* GetAssetComponent() const
 	{
 		return Cast<T>(AssetComponent);
 	}
 	
 	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
 	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling);
 
 	bool                 IsDummy() const { return bDummy; }
@@ -48,11 +49,14 @@ protected:
 
 	UFUNCTION()
 	void OnRep_Dummy() const;
+
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	USkeletalMeshComponent* SkeletalMeshComponent;
 	
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_CollectableAsset* AssetComponent;
 
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_PickUp* PickUpComponent;
 	
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Dummy, meta=(AllowPrivateAccess))

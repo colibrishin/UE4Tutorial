@@ -17,18 +17,25 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
 	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(TEXT("AssetComponent"));
 	PickUpComponent = CreateDefaultSubobject<UC_PickUp>(TEXT("PickUpComponent"));
 
-	SetRootComponent(PickUpComponent);
+	SetRootComponent(SkeletalMeshComponent);
+
+	PickUpComponent->SetNetAddressable();
+	PickUpComponent->SetIsReplicated(true);
 
 	AssetComponent->SetNetAddressable();
 	AssetComponent->SetIsReplicated(true);
-	
+
 	AssetComponent->OnAssetIDSet.AddUObject(
 		this, &AA_Collectable::FetchAsset);
 
+	SkeletalMeshComponent->SetCollisionProfileName("MyCollectable");
+
 	bReplicates = true;
+	AActor::SetReplicateMovement(true);
 	bNetLoadOnClient = true;
 	bDummy = false;
 }
@@ -45,8 +52,7 @@ void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)
 		Sibling = InSibling;
 		
 		// Disable pickup component;
-		PickUpComponent->SetActive(false);
-
+		PickUpComponent->SetActive(!InFlag);
 		OnDummyFlagSet.Broadcast();
 	}
 }
@@ -62,6 +68,7 @@ void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AA_Collectable, AssetComponent);
+	DOREPLIFETIME(AA_Collectable, PickUpComponent);
 	DOREPLIFETIME_CONDITION(AA_Collectable, bDummy, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AA_Collectable, Sibling, COND_OwnerOnly);
 }

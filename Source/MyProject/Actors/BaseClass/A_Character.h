@@ -75,8 +75,17 @@ private:
 	UFUNCTION()
 	void SetupHand(AActor* InChildActor) const;
 
+	UFUNCTION()
+	void SetupArmHand(AActor* InChildActor) const;
+
 protected:
 	virtual void PostFetchAsset() override;
+
+	UFUNCTION(Server, Reliable)
+	virtual void Server_PickUp();
+
+	UFUNCTION(Server, Reliable)
+	virtual void Server_Drop();
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bHandBusy;
@@ -90,6 +99,15 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	USkeletalMeshComponent* ArmMeshComponent;
 
+	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
+	UC_CharacterAsset* AssetComponent;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	UChildActorComponent* Hand;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	UChildActorComponent* ArmHand;
+
 	UPROPERTY(EditAnywhere)
 	UInputMappingContext* InputMapping;
 
@@ -102,14 +120,11 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UInputAction* JumpAction;
 
-	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
-	UC_CharacterAsset* AssetComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UInputAction* PickUpAction;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UChildActorComponent* Hand;
-
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UChildActorComponent* ArmHand;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	UInputAction* DropAction;
 
 	FDelegateHandle CharacterForwardHandle;
 	

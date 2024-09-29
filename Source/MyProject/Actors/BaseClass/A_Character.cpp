@@ -15,6 +15,8 @@
 
 #include "Components/CapsuleComponent.h"
 
+#include "Engine/OverlapResult.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
@@ -64,6 +66,18 @@ AA_Character::AA_Character()
 	{
 		JumpAction = IA_Jump.Object;
 	}
+
+	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_PickUp(TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_PickUp.IA_PickUp'"));
+		 IA_PickUp.Succeeded())
+	{
+		PickUpAction = IA_PickUp.Object;
+	}
+
+	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Drop(TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Drop.IA_Drop'"));
+		 IA_Drop.Succeeded())
+	{
+		DropAction = IA_Drop.Object;
+	}
 	
 	ArmMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmMesh"));
 	AssetComponent = CreateDefaultSubobject<UC_CharacterAsset>(TEXT("AssetComponent"));
@@ -99,7 +113,9 @@ AA_Character::AA_Character()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	GetCapsuleComponent()->InitCapsuleSize(88.f, 88.f);
+
 	Hand->OnChildActorCreated().AddUObject(this, &AA_Character::SetupHand);
+	ArmHand->OnChildActorCreated().AddUObject(this, &AA_Character::SetupArmHand);
 }
 
 // Called when the game starts or when spawned
@@ -126,13 +142,6 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 		return;
 	}
 
-	if (bHandBusy)
-	{
-		LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, drop item %s back", *InPickUp->GetOwner()->GetName());
-		InPickUp->OnObjectDrop.Broadcast(this, true);
-		return;
-	}
-
 	const AA_Collectable* Collectable = Cast<AA_Collectable>(InPickUp->GetOwner());
 	check(Collectable);
 	ensureAlwaysMsgf(
@@ -147,20 +156,20 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	
 	// Hides the hand object;
 	AActor* HandChild = Hand->GetChildActor();
+	AActor* ArmChild = ArmHand->GetChildActor();
+
+	// Disable the UC_PickUp component;
+	HandChild->GetComponentByClass<UC_PickUp>()->SetActive(false);
+	ArmChild->GetComponentByClass<UC_PickUp>()->SetActive(false);
+
 	HandChild->SetOwner(this);
-	HandChild->GetComponentByClass<UMeshComponent>()->SetOwnerNoSee(true);
+	ArmChild->SetOwner(this);
+
 	Cast<AA_Collectable>(HandChild)->SetDummy(false, nullptr);
-	// Force the pick up event without pickup function calling to trigger the dependent components of
-	// pick up component's event for setup such as weapon.
-	HandChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
+	Cast<AA_Collectable>(ArmChild)->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
 
 	// Replicates the arm hand child actor to owner only;
-	AActor* ArmChild = ArmHand->GetChildActor();
-	ArmChild->SetOwner(this);
-	ArmChild->GetComponentByClass<UMeshComponent>()->SetOnlyOwnerSee(true);
 	ArmChild->bOnlyRelevantToOwner = true;
-	Cast<AA_Collectable>(ArmChild)->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
-	ArmChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
 	
 	const int32 InPickUpID = Collectable->GetComponentByClass<UC_Asset>()->GetID();
 	UC_Asset* CollectableAsset = Hand->GetChildActor()->GetComponentByClass<UC_Asset>();
@@ -184,21 +193,18 @@ void AA_Character::Drop(UC_PickUp* InPickUp)
 
 	const AA_Collectable* Collectable = Cast<AA_Collectable>(InPickUp->GetOwner());
 	ensure(Collectable);
+	ensureAlwaysMsgf(
+		!Collectable->IsDummy(),
+		TEXT("Undefined behaviour, PickUpComponet should be disabled if AA_Collectable is dummy"));
 	
 	// If Item is attached to character;
 	if (const UC_PickUp* PickUp = Collectable->GetComponentByClass<UC_PickUp>();
-		 PickUp && PickUp->GetAttachParentActor() == this)
+		 PickUp && PickUp->GetOwner()->GetAttachParentActor() == this)
 	{
-		UChildActorComponent** TargetComponent = Collectable->IsDummy() ? &ArmHand : &Hand;
-
-		if (!Collectable->IsDummy())
-		{
-			bHandBusy = false;
-			OnHandChanged.Broadcast(*TargetComponent);
-			*TargetComponent = nullptr;
-		}
-
-		(*TargetComponent)->DestroyChildActor();
+		bHandBusy = false;
+		OnHandChanged.Broadcast(Hand);
+		Hand->DestroyChildActor();
+		ArmHand->DestroyChildActor();
 	}
 }
 
@@ -239,6 +245,9 @@ void AA_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AA_Character::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AA_Character::StopJumping);
+
+		EnhancedInputComponent->BindAction(PickUpAction, ETriggerEvent::Started, this, &AA_Character::Server_PickUp);
+		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &AA_Character::Server_Drop);
 	}
 }
 
@@ -258,9 +267,24 @@ void AA_Character::OnRep_Hand() const
 
 void AA_Character::SetupHand(AActor* InChildActor) const
 {
-	// OnChildActorCreated will be triggered only if child actor is valid;
-	// todo: this is not working as intended.
-	InChildActor->GetComponentByClass<UMeshComponent>()->SetCastShadow(false);
+	if (UMeshComponent* MeshComponent = InChildActor->GetComponentByClass<UMeshComponent>())
+	{
+		MeshComponent->SetCastShadow(false);
+		MeshComponent->SetOwnerNoSee(true);
+		MeshComponent->SetSimulatePhysics(false);
+		MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+}
+
+void AA_Character::SetupArmHand(AActor* InChildActor) const
+{
+	if (UMeshComponent* MeshComponent = InChildActor->GetComponentByClass<UMeshComponent>())
+	{
+		MeshComponent->SetCastShadow(false);
+		MeshComponent->SetOnlyOwnerSee(true);
+		MeshComponent->SetSimulatePhysics(false);
+		MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 }
 
 void AA_Character::PostFetchAsset()
@@ -269,5 +293,67 @@ void AA_Character::PostFetchAsset()
 
 	Hand->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, RightHandSocketName);
 	ArmHand->AttachToComponent(ArmMeshComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale, RightHandSocketName);
+}
+
+void AA_Character::Server_PickUp_Implementation()
+{
+	TArray<FOverlapResult> OutResult;
+	FVector Center, Extents;
+	GetActorBounds(true, Center, Extents);
+
+	// Ignore the character just in case;
+	FCollisionQueryParams Params{NAME_None, false, this};
+
+	// Ignore hand collectable objects;
+	if (const AA_Collectable* HandActor = Cast<AA_Collectable>(Hand->GetChildActor()))
+	{
+		Params.AddIgnoredActor(HandActor);
+	}
+
+	if (const AActor* ArmHandActor = Cast<AA_Collectable>(ArmHand->GetChildActor()))
+	{
+		Params.AddIgnoredActor(ArmHandActor);
+	}
+
+	if (GetWorld()->OverlapMultiByChannel
+		(
+		 OutResult ,
+		 GetActorLocation() ,
+		 FQuat::Identity ,
+		 ECC_GameTraceChannel3 ,
+		 FCollisionShape::MakeSphere(Extents.GetMax()) ,
+		 Params
+		))
+	{
+		return;
+	}
+
+	// Sort the objects in distance wise;
+	OutResult.Sort([this](const FOverlapResult& InLeft, const FOverlapResult& InRight)
+	{
+		const float& LeftDistance = FVector::Distance(GetActorLocation(), InLeft.GetActor()->GetActorLocation());
+		const float& RightDistance = FVector::Distance(GetActorLocation(), InRight.GetActor()->GetActorLocation());
+		return LeftDistance > RightDistance; 
+	});
+
+	const AA_Collectable* Collectable = Cast<AA_Collectable>((*OutResult.begin()).GetActor());
+	check(Collectable);
+
+	// todo: inventory;
+	if (bHandBusy)
+	{
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, ignore pick up request", *Collectable->GetOwner()->GetName());
+		return;
+	}
+
+	Collectable->GetPickUpComponent()->OnObjectPickUp.Broadcast(this, true);
+}
+
+void AA_Character::Server_Drop_Implementation()
+{
+	if (const AA_Collectable* Collectable = Cast<AA_Collectable>(Hand->GetChildActor()))
+	{
+		Collectable->GetPickUpComponent()->OnObjectDrop.Broadcast(this, true);
+	}
 }
 

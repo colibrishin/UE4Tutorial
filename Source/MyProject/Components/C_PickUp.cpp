@@ -16,22 +16,29 @@ UC_PickUp::UC_PickUp()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
+
+	SetIsReplicatedByDefault(true);
 }
 
 
 void UC_PickUp::SetActive(bool bNewActive, bool bReset)
 {
+	const bool bPreviousActive = IsActive();
+
 	Super::SetActive(bNewActive , bReset);
 
-	if (!bNewActive)
+	if (bNewActive != bPreviousActive && GetNetMode() != NM_Client)
 	{
-		OnObjectPickUp.RemoveAll(this);
-		OnObjectDrop.RemoveAll(this);
-		OnComponentBeginOverlap.RemoveAll(this);
-	}
-	else
-	{
-		AttachEventHandlers();
+		if (!bNewActive)
+		{
+			OnObjectPickUp.RemoveAll(this);
+			OnObjectDrop.RemoveAll(this);
+			GetOwner()->GetComponentByClass<UMeshComponent>()->OnComponentBeginOverlap.RemoveAll(this);
+		}
+		else
+		{
+			AttachEventHandlers();
+		}
 	}
 }
 
@@ -39,7 +46,7 @@ void UC_PickUp::AttachEventHandlers()
 {
 	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
 	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
-	OnComponentBeginOverlap.AddUniqueDynamic(this , &UC_PickUp::OnBeginOverlap);
+	GetOwner()->GetComponentByClass<UMeshComponent>()->OnComponentBeginOverlap.AddUniqueDynamic(this , &UC_PickUp::OnBeginOverlap);
 }
 
 // Called when the game starts
@@ -47,9 +54,7 @@ void UC_PickUp::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Do not listen any event if parent object is dummy;
-	if (const AA_Collectable* Collectable = Cast<AA_Collectable>(GetOwner());
-		!Collectable->IsDummy())
+	if (GetNetMode() != NM_Client)
 	{
 		AttachEventHandlers();
 	}
@@ -77,17 +82,15 @@ void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickingUp> InCaller, const bo
 
 	LOG_FUNC_PRINTF(LogPickUp , Log , "Caught pickup : %s" , *InCaller->_getUObject()->GetName());
 
-	OnComponentBeginOverlap.RemoveAll(this);
 	OnObjectPickUp.RemoveAll(this);
 	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
-	SetSimulatePhysics(false);
 
 	if (bCallPickUp)
 	{
-		InCaller->PickUp(this);
-
 		if (GetNetMode() != NM_Client)
 		{
+			InCaller->PickUp(this);
+
 			// Assuming the object is cloned into child actor component or consumed etc;
 			GetOwner()->Destroy(true);
 		}
@@ -104,32 +107,47 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 
 	LOG_FUNC_PRINTF(LogPickUp , Log , "Caught drop : %s" , *InCaller->_getUObject()->GetName());
 
-	OnComponentBeginOverlap.AddUniqueDynamic(this , &UC_PickUp::OnBeginOverlap);
 	OnObjectDrop.RemoveAll(this);
 	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
-	SetSimulatePhysics(true);
 
 	if (bCallDrop)
 	{
 		if (GetNetMode() != NM_Client)
 		{
-			// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
-			AActor* Cloned = NewObject<AActor>(
-				nullptr, GetOwner()->GetClass(), NAME_None, RF_NoFlags, GetOwner());
-
-			Cloned->SetReplicates(true);
-			Cloned->SetReplicateMovement(true);
-			Cloned->SetOwner(GetWorld()->GetFirstPlayerController()); // Owning by server;
-
+			const AActor* PickingObject = Cast<AActor>(InCaller.GetInterface());
 			FVector Origin, Extents;
-			Cast<AActor>(InCaller.GetInterface())->GetActorBounds(true, Origin, Extents);
+			PickingObject->GetActorBounds(true, Origin, Extents);
 
-			const FVector RePickPrevention = Extents + GetOwner()->GetActorForwardVector();
-			Cloned->SetActorLocation(GetOwner()->GetActorLocation() + RePickPrevention); // to avoid overlap;
-			Cloned->GetComponentByClass<UMeshComponent>()->AddImpulse(Cloned->GetActorForwardVector() * 50.f); // Throw;
+			const FVector ForwardVector = PickingObject->GetActorForwardVector();
+			const FVector RePickPrevention = Extents + ForwardVector;
+
+			// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
+			const FTransform Transform
+			{
+				FQuat::Identity,
+				PickingObject->GetActorLocation() + RePickPrevention,
+				FVector::OneVector
+			};
+
+			AA_Collectable* InObject = Cast<AA_Collectable>(GetOwner());
+			AA_Collectable* Cloned = CloneChildActor(InObject);
+
+			Cloned->SetOwner(GetWorld()->GetFirstPlayerController());
+			Cloned->GetComponentByClass<UC_Asset>()->SetID(InObject->GetAssetComponent()->GetID());
+			Cloned->FetchAsset();
+
+			Cloned->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+			Cloned->SetActorLocation
+			(
+				PickingObject->GetActorLocation() + RePickPrevention, 
+				false, 
+				nullptr, 
+				ETeleportType::TeleportPhysics
+			);
+			Cloned->GetComponentByClass<UMeshComponent>()->AddImpulse(ForwardVector * 50.f);
+
+			// Object destruction should be handled in InCaller's Drop;
+			InCaller->Drop(this);
 		}
-
-		// Object destruction should be handled in InCaller's Drop;
-		InCaller->Drop(this);
 	}
 }
