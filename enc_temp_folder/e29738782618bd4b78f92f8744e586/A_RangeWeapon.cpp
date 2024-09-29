@@ -5,7 +5,6 @@
 
 #include "NiagaraComponent.h"
 
-#include "MyProject/Private/Utilities.hpp"
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Weapon/C_RangeWeapon.h"
 
@@ -47,8 +46,6 @@ void AA_RangeWeapon::StartBulletTrailImplementation() const
 		const FVector& Normal = IsDummy() ? 
 			Cast<AA_RangeWeapon>(GetSibling())->GetRangeWeaponComponent()->GetRecoiledNormal() :
 			GetRangeWeaponComponent()->GetRecoiledNormal();
-
-		LOG_FUNC_PRINTF(LogTemp, Log, "Bullet trail normal: %s, Client?: %d, Dummy?: %d", *Normal.ToString(), GetNetMode() == NM_Client, IsDummy());
 		
 		BulletTrailComponent->SetVariableFloat(TEXT("Yaw"), Normal.X);
 		BulletTrailComponent->SetVariableFloat(TEXT("Pitch"), Normal.Y);

@@ -142,10 +142,10 @@ protected:
 	void HandleReloadEnd(UC_Weapon* InWeapon);
 
 	UFUNCTION()
-	virtual void HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject);
+	virtual void HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallPickUp);
 
 	UFUNCTION()
-	virtual void HandleDrop(TScriptInterface<IPickingUp> InPickUpObject);
+	virtual void HandleDrop(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallDrop);
 
 	UFUNCTION()
 	void ConsumeAmmo();

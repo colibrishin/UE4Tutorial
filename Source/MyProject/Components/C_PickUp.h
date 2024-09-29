@@ -8,8 +8,8 @@
 class IPickingUp;
 class AMyCharacter;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectPickUp, TScriptInterface<IPickingUp>, InCaller);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectDrop, TScriptInterface<IPickingUp>, InCaller);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectPickUp, TScriptInterface<IPickingUp>, InCaller, const bool, bCallPickUp);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectDrop, TScriptInterface<IPickingUp>, InCaller, const bool, bCallDrop);
 DECLARE_LOG_CATEGORY_EXTERN(LogPickUp, Log, All);
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
@@ -35,10 +35,10 @@ protected:
 	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
 
 	UFUNCTION()
-	void OnPickUpCallback(TScriptInterface<IPickingUp> InCaller);
+	void OnPickUpCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallPickUp);
 	
 	UFUNCTION()
-	void OnDropCallback(TScriptInterface<IPickingUp> InCaller);
+	void OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallDrop);
 
 private:
 	void AttachEventHandlers();

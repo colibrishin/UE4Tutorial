@@ -129,7 +129,7 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	if (bHandBusy)
 	{
 		LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, drop item %s back", *InPickUp->GetOwner()->GetName());
-		InPickUp->OnObjectDrop.Broadcast( this );
+		InPickUp->OnObjectDrop.Broadcast(this, true);
 		return;
 	}
 
@@ -139,20 +139,28 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 		!Collectable->IsDummy(),
 		TEXT("Undefined behaviour, PickUpComponet should be disabled if AA_Collectable is dummy"));
 
-	// NOTE: CHILD ACTOR COMPONENT REPLICATION FLAG FOLLOWS THE CDO OF CHILD ACTOR CLASS REPLICATION
+	// NOTE: CHILD ACTOR COMPONENT REPLICATION FLAG FOLLOWS THE REPLICATION FLAG OF THE CHILD ACTOR CDO
 	// REPLICATION FLAG OF COMPONENT ITSELF DOES NOTHING IF ACTOR CLASS DOES NOT REPLICATES IN DEFAULT!!
 	// see also ChildActorComponent.cpp:858
 	Hand->SetChildActorClass(Collectable->GetClass());
 	ArmHand->SetChildActorClass(Collectable->GetClass());
-
+	
 	// Hides the hand object;
-	Hand->GetChildActor()->SetOwner(this);
-	Hand->GetChildActor()->GetComponentByClass<UMeshComponent>()->SetOwnerNoSee(true);
+	AActor* HandChild = Hand->GetChildActor();
+	HandChild->SetOwner(this);
+	HandChild->GetComponentByClass<UMeshComponent>()->SetOwnerNoSee(true);
+	Cast<AA_Collectable>(HandChild)->SetDummy(false, nullptr);
+	// Force the pick up event without pickup function calling to trigger the dependent components of
+	// pick up component's event for setup such as weapon.
+	HandChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
 
 	// Replicates the arm hand child actor to owner only;
-	ArmHand->GetChildActor()->SetOwner(this);
-	ArmHand->GetChildActor()->GetComponentByClass<UMeshComponent>()->SetOnlyOwnerSee(true);
-	ArmHand->GetChildActor()->bOnlyRelevantToOwner = true;
+	AActor* ArmChild = ArmHand->GetChildActor();
+	ArmChild->SetOwner(this);
+	ArmChild->GetComponentByClass<UMeshComponent>()->SetOnlyOwnerSee(true);
+	ArmChild->bOnlyRelevantToOwner = true;
+	Cast<AA_Collectable>(ArmChild)->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
+	ArmChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
 	
 	const int32 InPickUpID = Collectable->GetComponentByClass<UC_Asset>()->GetID();
 	UC_Asset* CollectableAsset = Hand->GetChildActor()->GetComponentByClass<UC_Asset>();

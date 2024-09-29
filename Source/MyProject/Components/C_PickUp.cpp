@@ -63,11 +63,11 @@ void UC_PickUp::OnBeginOverlap(
 {
 	if (Cast<IPickingUp>(OtherActor))
 	{
-		OnObjectPickUp.Broadcast(TScriptInterface<IPickingUp>(OtherActor));
+		OnObjectPickUp.Broadcast(TScriptInterface<IPickingUp>(OtherActor), true);
 	}
 }
 
-void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickingUp> InCaller)
+void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallPickUp)
 {
 	if (!InCaller)
 	{
@@ -82,16 +82,19 @@ void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickingUp> InCaller)
 	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
 	SetSimulatePhysics(false);
 
-	InCaller->PickUp(this);
-
-	if (GetNetMode() != NM_Client)
+	if (bCallPickUp)
 	{
-		// Assuming the object is cloned into child actor component or consumed etc;
-		GetOwner()->Destroy(true);
+		InCaller->PickUp(this);
+
+		if (GetNetMode() != NM_Client)
+		{
+			// Assuming the object is cloned into child actor component or consumed etc;
+			GetOwner()->Destroy(true);
+		}
 	}
 }
 
-void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller)
+void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallDrop)
 {
 	if (!InCaller)
 	{
@@ -105,25 +108,28 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller)
 	OnObjectDrop.RemoveAll(this);
 	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
 	SetSimulatePhysics(true);
-	
-	if (GetNetMode() != NM_Client)
+
+	if (bCallDrop)
 	{
-		// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
-		AActor* Cloned = NewObject<AActor>(
-			nullptr, GetOwner()->GetClass(), NAME_None, RF_NoFlags, GetOwner());
+		if (GetNetMode() != NM_Client)
+		{
+			// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
+			AActor* Cloned = NewObject<AActor>(
+				nullptr, GetOwner()->GetClass(), NAME_None, RF_NoFlags, GetOwner());
 
-		Cloned->SetReplicates(true);
-		Cloned->SetReplicateMovement(true);
-		Cloned->SetOwner(GetWorld()->GetFirstPlayerController()); // Owning by server;
+			Cloned->SetReplicates(true);
+			Cloned->SetReplicateMovement(true);
+			Cloned->SetOwner(GetWorld()->GetFirstPlayerController()); // Owning by server;
 
-		FVector Origin, Extents;
-		Cast<AActor>(InCaller.GetInterface())->GetActorBounds(true, Origin, Extents);
+			FVector Origin, Extents;
+			Cast<AActor>(InCaller.GetInterface())->GetActorBounds(true, Origin, Extents);
 
-		const FVector RePickPrevention = Extents + GetOwner()->GetActorForwardVector();
-		Cloned->SetActorLocation(GetOwner()->GetActorLocation() + RePickPrevention); // to avoid overlap;
-		Cloned->GetComponentByClass<UMeshComponent>()->AddImpulse(Cloned->GetActorForwardVector() * 50.f); // Throw;
+			const FVector RePickPrevention = Extents + GetOwner()->GetActorForwardVector();
+			Cloned->SetActorLocation(GetOwner()->GetActorLocation() + RePickPrevention); // to avoid overlap;
+			Cloned->GetComponentByClass<UMeshComponent>()->AddImpulse(Cloned->GetActorForwardVector() * 50.f); // Throw;
+		}
+
+		// Object destruction should be handled in InCaller's Drop;
+		InCaller->Drop(this);
 	}
-
-	// Object destruction should be handled in InCaller's Drop;
-	InCaller->Drop(this);
 }

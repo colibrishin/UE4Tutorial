@@ -43,14 +43,11 @@ void UC_RangeWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 FVector UC_RangeWeapon::ApplyRecoil(const FVector& InNormal, const FVector& InRightVector, const FVector& InUpVector) const
 {
 	FVector     Normal = InNormal;
-	const float HModifier      = HSpread->GetFloatValue((float)GetConsecutiveShot() / (float)GetAmmoPerClip());
-	const float VModifier      = VSpread->GetFloatValue((float)GetConsecutiveShot() / (float)GetAmmoPerClip());
-
-	const float HDegree = FMath::RadiansToDegrees(FMath::Sin(HModifier));
-	const float VDegree = FMath::RadiansToDegrees(FMath::Sin(VModifier));
-
-	Normal = Normal.RotateAngleAxis(HDegree, -InRightVector);
-	Normal = Normal.RotateAngleAxis(VDegree, InUpVector);
+	const float HModifier      = HSpread->GetFloatValue(GetConsecutiveShot() / GetAmmoPerClip());
+	const float VModifier      = VSpread->GetFloatValue(GetConsecutiveShot() / GetAmmoPerClip());
+	
+	Normal = Normal.RotateAngleAxis(FMath::RadiansToDegrees(HModifier), InRightVector);
+	Normal = Normal.RotateAngleAxis(FMath::RadiansToDegrees(VModifier), InUpVector);
 
 	return Normal;
 }
@@ -89,7 +86,7 @@ void UC_RangeWeapon::DoHitscan(const FVector& InRecoiledNormal)
 	// Character;
 	QueryParams.AddIgnoredActor(GetOwner()->GetOwner());
 
-	LOG_FUNC_PRINTF(LogWeaponComponent, Log, "Hitscaning with normal %s, Client? : %d", *InRecoiledNormal.ToString(), GetNetMode() == NM_Client);
+	LOG_FUNC_PRINTF(LogWeaponComponent, Log, "Hitscaning with normal %s", *InRecoiledNormal.ToString());
 	
 	if (GetWorld()->LineTraceSingleByChannel(OutHitResult, ShotPosition, EndPosition, ECC_Visibility, QueryParams))
 	{

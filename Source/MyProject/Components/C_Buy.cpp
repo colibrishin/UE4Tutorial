@@ -87,7 +87,7 @@ void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) co
 	
 	if (const UC_PickUp* PickUpComponent = GeneratedWeapon->GetPickUpComponent())
 	{
-		PickUpComponent->OnObjectPickUp.Broadcast(RequestCharacter);
+		PickUpComponent->OnObjectPickUp.Broadcast(RequestCharacter, true);
 	}
 }
 
