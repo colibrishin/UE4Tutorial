@@ -4,6 +4,7 @@
 #include "GS_Jump.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "MyProject/Actors/BaseClass/A_Collectable.h"
 
 
 // Sets default values
@@ -39,7 +40,7 @@ float AGS_Jump::GetEndTime() const
 	return GameEndedTime;
 }
 
-void AGS_Jump::ProcessWin(UChildActorComponent* InPrevious)
+void AGS_Jump::ProcessWin(AA_Collectable* InPrevious)
 {
 	SetStopTime();
 	SetStarted(false);

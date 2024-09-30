@@ -22,7 +22,7 @@ class UC_Asset;
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter , Log , All);
 
 // Non-dynamic delegate due to forwarding to player state;
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHandChanged, UChildActorComponent*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnHandChanged, AA_Collectable*);
 
 UCLASS()
 class MYPROJECT_API AA_Character : public ACharacter, public IPickingUp, public IAssetFetchable
@@ -73,10 +73,7 @@ private:
 	void OnRep_Hand() const;
 
 	UFUNCTION()
-	void SetupHand(AActor* InChildActor) const;
-
-	UFUNCTION()
-	void SetupArmHand(AActor* InChildActor) const;
+	void SyncHandProperties() const;
 
 protected:
 	virtual void PostFetchAsset() override;
@@ -107,7 +104,17 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UChildActorComponent* ArmHand;
+	
+	// Properties that allows not to iterate the child actors;
+#pragma region ChildActors
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Hand)
+	AA_Collectable* HandActor;
 
+	// Since ArmHand is duplication of hand actor, the availability of ArmHandActor can be assumed by OnHandChanged;
+	UPROPERTY(VisibleAnywhere, Replicated)
+	AA_Collectable* ArmHandActor;
+#pragma endregion
+	
 	UPROPERTY(EditAnywhere)
 	UInputMappingContext* InputMapping;
 

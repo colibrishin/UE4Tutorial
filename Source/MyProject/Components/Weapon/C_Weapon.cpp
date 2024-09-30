@@ -433,7 +433,7 @@ void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const 
 
 	if (const AA_Character* Character = Cast<AA_Character>(InPickUpObject.GetInterface()))
 	{
-		if (!IsDummy())
+		if (!IsDummy() && Character->Controller == GetWorld()->GetFirstPlayerController())
 		{
 			Client_SetupPickupInput(Character);	
 		}
@@ -458,7 +458,7 @@ void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject, const bo
 		// todo/fixme : possible unhandled condition
 		// spawn normally -> pick up -> set dummy during picked up -> input binding still persist;
 
-		if (!IsDummy())
+		if (!IsDummy() && Character->GetController() == GetWorld()->GetFirstPlayerController())
 		{
 			Client_SetupDropInput(Character);	
 		}

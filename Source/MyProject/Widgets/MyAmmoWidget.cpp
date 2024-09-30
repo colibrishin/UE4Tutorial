@@ -5,6 +5,7 @@
 
 #include "../MyPlayerState.h"
 #include "Components/TextBlock.h"
+#include "MyProject/Actors/BaseClass/A_Collectable.h"
 #include "MyProject/Private/Utilities.hpp"
 
 #include "MyProject/Components/Weapon/C_Weapon.h"
@@ -26,13 +27,13 @@ void UMyAmmoWidget::UpdateAmmo(const int32 CurrentAmmoCount, const int32 Remaini
 	AmmoText->SetText(Formatted);
 }
 
-void UMyAmmoWidget::HandleWeaponChanged(UChildActorComponent* InNew)
+void UMyAmmoWidget::HandleWeaponChanged(AA_Collectable* InNew)
 {
 	LOG_FUNC(LogAmmoWidget, Log, "Caught weapon change");
 
 	if (InNew)
 	{
-		if (UC_Weapon* NewWeapon = InNew->GetChildActor()->GetComponentByClass<UC_Weapon>())
+		if (UC_Weapon* NewWeapon = InNew->GetComponentByClass<UC_Weapon>())
 		{
 			NewWeapon->OnAmmoUpdated.AddUniqueDynamic(this, &UMyAmmoWidget::UpdateAmmo);
 			UpdateAmmo(

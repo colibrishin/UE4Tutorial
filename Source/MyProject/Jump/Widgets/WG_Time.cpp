@@ -48,7 +48,7 @@ void UWG_Time::NativeOnInitialized()
 	Super::NativeOnInitialized();
 }
 
-void UWG_Time::ShowWinText(UChildActorComponent*)
+void UWG_Time::ShowWinText(AA_Collectable*)
 {
 	WinText->SetText(FText::FromString("Win!"));
 	WinText->SetVisibility(ESlateVisibility::Visible);

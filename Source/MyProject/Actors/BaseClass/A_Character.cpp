@@ -113,9 +113,6 @@ AA_Character::AA_Character()
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	GetCapsuleComponent()->InitCapsuleSize(88.f, 88.f);
-
-	Hand->OnChildActorCreated().AddUObject(this, &AA_Character::SetupHand);
-	ArmHand->OnChildActorCreated().AddUObject(this, &AA_Character::SetupArmHand);
 }
 
 // Called when the game starts or when spawned
@@ -130,6 +127,11 @@ void AA_Character::BeginPlay()
 		{
 			Subsystem->AddMappingContext( InputMapping , 0 );
 		}
+	}
+
+	if (GetNetMode() == NM_Client)
+	{
+		OnHandChanged.AddUFunction(this, "SyncHandProperties");
 	}
 }
 
@@ -154,13 +156,8 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	Hand->SetChildActorClass(Collectable->GetClass());
 	ArmHand->SetChildActorClass(Collectable->GetClass());
 	
-	// Hides the hand object;
-	AActor* HandChild = Hand->GetChildActor();
-	AActor* ArmChild = ArmHand->GetChildActor();
-
-	// Disable the UC_PickUp component;
-	HandChild->GetComponentByClass<UC_PickUp>()->SetActive(false);
-	ArmChild->GetComponentByClass<UC_PickUp>()->SetActive(false);
+	AA_Collectable* HandChild = Cast<AA_Collectable>(Hand->GetChildActor());
+	AA_Collectable* ArmChild = Cast<AA_Collectable>(ArmHand->GetChildActor());
 
 	HandChild->SetOwner(this);
 	ArmChild->SetOwner(this);
@@ -168,6 +165,8 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	Cast<AA_Collectable>(HandChild)->SetDummy(false, nullptr);
 	Cast<AA_Collectable>(ArmChild)->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
 
+	// Replicates the hand child actor to everyone;
+	HandChild->bAlwaysRelevant = true;
 	// Replicates the arm hand child actor to owner only;
 	ArmChild->bOnlyRelevantToOwner = true;
 	
@@ -178,7 +177,25 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	CollectableAsset->SetID(InPickUpID);
 	ArmCollectableAsset->SetID(InPickUpID);
 
-	OnHandChanged.Broadcast(Hand);
+	if (UMeshComponent* MeshComponent = HandChild->GetComponentByClass<UMeshComponent>())
+	{
+		MeshComponent->SetOwnerNoSee(true);
+	}
+
+	if (UMeshComponent* MeshComponent = ArmChild->GetComponentByClass<UMeshComponent>())
+	{
+		MeshComponent->SetOnlyOwnerSee(true);
+	}
+	
+	// Broadcast the pick up component to trigger any pick up event dependent listeners;
+	HandChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
+	ArmChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
+	
+	HandActor = Cast<AA_Collectable>(HandChild);
+	ArmHandActor = Cast<AA_Collectable>(ArmChild);
+	SyncHandProperties();
+
+	OnHandChanged.Broadcast(HandActor);
 	bHandBusy = true;
 }
 
@@ -202,9 +219,11 @@ void AA_Character::Drop(UC_PickUp* InPickUp)
 		 PickUp && PickUp->GetOwner()->GetAttachParentActor() == this)
 	{
 		bHandBusy = false;
-		OnHandChanged.Broadcast(Hand);
+		OnHandChanged.Broadcast(nullptr);
 		Hand->DestroyChildActor();
 		ArmHand->DestroyChildActor();
+		HandActor = nullptr;
+		ArmHandActor = nullptr;
 	}
 }
 
@@ -255,35 +274,45 @@ void AA_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(AA_Character, bHandBusy);
-	DOREPLIFETIME(AA_Character, Hand);
 	DOREPLIFETIME(AA_Character, AssetComponent);
+	
+	DOREPLIFETIME(AA_Character, Hand);
 	DOREPLIFETIME_CONDITION(AA_Character, ArmHand, COND_OwnerOnly);
+	DOREPLIFETIME(AA_Character, HandActor);
+	DOREPLIFETIME_CONDITION(AA_Character, ArmHandActor, COND_OwnerOnly);
 }
 
 void AA_Character::OnRep_Hand() const
 {
-	OnHandChanged.Broadcast(Hand);
+	OnHandChanged.Broadcast(HandActor);
 }
 
-void AA_Character::SetupHand(AActor* InChildActor) const
+void AA_Character::SyncHandProperties() const
 {
-	if (UMeshComponent* MeshComponent = InChildActor->GetComponentByClass<UMeshComponent>())
+	const auto& SyncProperties = [this](const AA_Collectable* InChild)
 	{
-		MeshComponent->SetCastShadow(false);
-		MeshComponent->SetOwnerNoSee(true);
-		MeshComponent->SetSimulatePhysics(false);
-		MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
-}
+		// Since resetting Hand with nullptr exists, validity should be checked; 
+		if (!IsValid(InChild))
+		{
+			LOG_FUNC(LogCharacter, Log, "Empty hand, ignore property sync");
+			return;
+		}
+		
+		LOG_FUNC_PRINTF(LogCharacter, Log, "Set default hand properties to %s", *InChild->GetName());
+		if (UMeshComponent* MeshComponent = InChild->GetComponentByClass<UMeshComponent>())
+		{
+			MeshComponent->SetCastShadow(false);
+			MeshComponent->SetSimulatePhysics(false);
+			MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	};
 
-void AA_Character::SetupArmHand(AActor* InChildActor) const
-{
-	if (UMeshComponent* MeshComponent = InChildActor->GetComponentByClass<UMeshComponent>())
+	SyncProperties(HandActor);
+
+	// Arm hand is replicated to only owner;
+	if (GetController() == GetWorld()->GetFirstPlayerController())
 	{
-		MeshComponent->SetCastShadow(false);
-		MeshComponent->SetOnlyOwnerSee(true);
-		MeshComponent->SetSimulatePhysics(false);
-		MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		SyncProperties(ArmHandActor);
 	}
 }
 
@@ -305,16 +334,12 @@ void AA_Character::Server_PickUp_Implementation()
 	FCollisionQueryParams Params{NAME_None, false, this};
 
 	// Ignore hand collectable objects;
-	if (const AA_Collectable* HandActor = Cast<AA_Collectable>(Hand->GetChildActor()))
+	if (HandActor)
 	{
 		Params.AddIgnoredActor(HandActor);
-	}
-
-	if (const AActor* ArmHandActor = Cast<AA_Collectable>(ArmHand->GetChildActor()))
-	{
 		Params.AddIgnoredActor(ArmHandActor);
 	}
-
+	
 	if (GetWorld()->OverlapMultiByChannel
 		(
 		 OutResult ,

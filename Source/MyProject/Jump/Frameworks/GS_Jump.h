@@ -7,7 +7,7 @@
 #include "GS_Jump.generated.h"
 
 class UC_PickUp;
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCoinGained , UChildActorComponent*, InNew);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnCoinGained , AA_Collectable*, InNew);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameStarted, const bool, InValue);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnGameEnded, const bool, InValue);
 
@@ -49,7 +49,7 @@ public:
 
 protected:
 	UFUNCTION()
-	void ProcessWin(UChildActorComponent* InPrevious);
+	void ProcessWin(AA_Collectable* InPrevious);
 
 	UFUNCTION()
 	void ChangeLevel() const;
