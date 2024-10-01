@@ -33,7 +33,11 @@ void UC_PickUp::SetActive(bool bNewActive, bool bReset)
 		{
 			OnObjectPickUp.RemoveAll(this);
 			OnObjectDrop.RemoveAll(this);
-			GetOwner()->GetComponentByClass<UMeshComponent>()->OnComponentBeginOverlap.RemoveAll(this);
+
+			if (UMeshComponent* MeshComponent = GetOwner()->GetComponentByClass<UMeshComponent>())
+			{
+				MeshComponent->OnComponentBeginOverlap.RemoveAll(this);
+			}
 		}
 		else
 		{
@@ -46,7 +50,11 @@ void UC_PickUp::AttachEventHandlers()
 {
 	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
 	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
-	GetOwner()->GetComponentByClass<UMeshComponent>()->OnComponentBeginOverlap.AddUniqueDynamic(this , &UC_PickUp::OnBeginOverlap);
+
+	if (UMeshComponent* MeshComponent = GetOwner()->GetComponentByClass<UMeshComponent>())
+	{
+		MeshComponent->OnComponentBeginOverlap.AddUniqueDynamic(this , &UC_PickUp::OnBeginOverlap);
+	}
 }
 
 // Called when the game starts
@@ -56,6 +64,11 @@ void UC_PickUp::BeginPlay()
 
 	if (GetNetMode() != NM_Client)
 	{
+		if (UMeshComponent* MeshComponent = GetOwner()->GetComponentByClass<UMeshComponent>())
+		{
+			MeshComponent->SetGenerateOverlapEvents(true);
+		}
+
 		AttachEventHandlers();
 	}
 }
@@ -122,29 +135,32 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 			const FVector RePickPrevention = Extents + ForwardVector;
 
 			// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
-			const FTransform Transform
-			{
-				FQuat::Identity,
-				PickingObject->GetActorLocation() + RePickPrevention,
-				FVector::OneVector
-			};
-
 			AA_Collectable* InObject = Cast<AA_Collectable>(GetOwner());
-			AA_Collectable* Cloned = CloneChildActor(InObject);
-
-			Cloned->SetOwner(GetWorld()->GetFirstPlayerController());
-			Cloned->GetComponentByClass<UC_Asset>()->SetID(InObject->GetAssetComponent()->GetID());
-			Cloned->FetchAsset();
-
-			Cloned->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-			Cloned->SetActorLocation
+			AA_Collectable* Cloned = CloneChildActor
 			(
-				PickingObject->GetActorLocation() + RePickPrevention, 
-				false, 
-				nullptr, 
-				ETeleportType::TeleportPhysics
+				InObject,
+				[this, &PickingObject, &RePickPrevention, &ForwardVector](AActor* InCollectable)
+				{
+					InCollectable->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
+					InCollectable->SetActorLocation
+					(
+						PickingObject->GetActorLocation() + RePickPrevention,
+						false,
+						nullptr,
+						ETeleportType::TeleportPhysics
+					);
+					InCollectable->SetReplicates(true);
+
+					InCollectable->SetReplicateMovement(true);
+
+					if (UMeshComponent* MeshComponent = InCollectable->GetComponentByClass<UMeshComponent>())
+					{
+						MeshComponent->AddImpulse(ForwardVector * 50.f);
+						MeshComponent->SetSimulatePhysics(true);
+						MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+					}
+				}
 			);
-			Cloned->GetComponentByClass<UMeshComponent>()->AddImpulse(ForwardVector * 50.f);
 
 			// Object destruction should be handled in InCaller's Drop;
 			InCaller->Drop(this);

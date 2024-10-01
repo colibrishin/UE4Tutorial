@@ -147,4 +147,4 @@ inline static FString EnumToString(const T Value)
 }
 
 // Creates a new object and copy the properties of every components;
-static AA_Collectable* CloneChildActor(AA_Collectable* InObject);
+static AA_Collectable* CloneChildActor(AA_Collectable* InObject, const std::function<void(AActor*)>& InDeferredFunction);

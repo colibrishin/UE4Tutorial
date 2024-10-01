@@ -7,7 +7,7 @@
 #include "Utilities.hpp"
 
 
-AA_Collectable* CloneChildActor(AA_Collectable* InObject)
+AA_Collectable* CloneChildActor(AA_Collectable* InObject, const std::function<void(AActor*)>& InDeferredFunction)
 {
 	if (!InObject)
 	{
@@ -17,30 +17,33 @@ AA_Collectable* CloneChildActor(AA_Collectable* InObject)
 	UWorld* World = InObject->GetWorld();
 	check(World);
 
-	const FTransform Transform {FQuat::Identity, InObject->GetActorLocation(), FVector::OneVector};
-	
-	AA_Collectable* GeneratedObject = World->SpawnActorDeferred<AA_Collectable>(
-		InObject->GetClass(),
-		Transform,
-		nullptr,
-		nullptr,
-		ESpawnActorCollisionHandlingMethod::AlwaysSpawn,
-		ESpawnActorScaleMethod::OverrideRootScale);
-
-	GeneratedObject->GetAssetComponent()->SetID(InObject->GetComponentByClass<UC_Asset>()->GetID());
-	GeneratedObject->FetchAsset();
-
-	for (UActorComponent* OriginalComponent : InObject->GetComponents())
+	const auto& PreSpawn = [&InObject, &InDeferredFunction](AActor* InActor)
 	{
-		// todo: use tag? (5.4 introduced)
-		UActorComponent* Destination = GeneratedObject->FindComponentByClass
-		(
-			OriginalComponent->GetClass()
-		);
+		AA_Collectable* GeneratedObject = Cast<AA_Collectable>(InActor);
+		
+		for (UActorComponent* OriginalComponent : InObject->GetComponents())
+		{
+			// todo: use tag? (5.4 introduced)
+			UActorComponent* Destination = InActor->FindComponentByClass
+			(
+				OriginalComponent->GetClass()
+			);
 
-		Destination->ReinitializeProperties(OriginalComponent);
-	}
+			Destination->ReinitializeProperties(OriginalComponent);
+		}
 
-	UGameplayStatics::FinishSpawningActor(GeneratedObject, Transform);
+		InDeferredFunction(InActor);
+		GeneratedObject->GetAssetComponent()->SetID(InObject->GetAssetComponent()->GetID());
+	};
+	
+	FActorSpawnParameters SpawnParameters;
+	SpawnParameters.CustomPreSpawnInitalization = PreSpawn;
+	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	SpawnParameters.bNoFail = true;
+	
+	AA_Collectable* GeneratedObject = World->SpawnActor<AA_Collectable>(
+		InObject->GetClass(),
+		SpawnParameters);
+		
 	return GeneratedObject;
 }

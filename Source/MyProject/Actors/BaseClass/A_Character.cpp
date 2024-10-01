@@ -332,7 +332,7 @@ void AA_Character::Server_PickUp_Implementation()
 
 	// Ignore the character just in case;
 	FCollisionQueryParams Params{NAME_None, false, this};
-
+	
 	// Ignore hand collectable objects;
 	if (HandActor)
 	{
@@ -340,12 +340,12 @@ void AA_Character::Server_PickUp_Implementation()
 		Params.AddIgnoredActor(ArmHandActor);
 	}
 	
-	if (GetWorld()->OverlapMultiByChannel
+	if (!GetWorld()->OverlapMultiByChannel
 		(
 		 OutResult ,
 		 GetActorLocation() ,
 		 FQuat::Identity ,
-		 ECC_GameTraceChannel3 ,
+		 ECC_GameTraceChannel9 ,
 		 FCollisionShape::MakeSphere(Extents.GetMax()) ,
 		 Params
 		))
@@ -358,7 +358,7 @@ void AA_Character::Server_PickUp_Implementation()
 	{
 		const float& LeftDistance = FVector::Distance(GetActorLocation(), InLeft.GetActor()->GetActorLocation());
 		const float& RightDistance = FVector::Distance(GetActorLocation(), InRight.GetActor()->GetActorLocation());
-		return LeftDistance > RightDistance; 
+		return LeftDistance < RightDistance; 
 	});
 
 	const AA_Collectable* Collectable = Cast<AA_Collectable>((*OutResult.begin()).GetActor());
@@ -376,9 +376,9 @@ void AA_Character::Server_PickUp_Implementation()
 
 void AA_Character::Server_Drop_Implementation()
 {
-	if (const AA_Collectable* Collectable = Cast<AA_Collectable>(Hand->GetChildActor()))
+	if (HandActor)
 	{
-		Collectable->GetPickUpComponent()->OnObjectDrop.Broadcast(this, true);
+		HandActor->GetPickUpComponent()->OnObjectDrop.Broadcast(this, true);
 	}
 }
 
