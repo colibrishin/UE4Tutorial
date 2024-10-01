@@ -20,6 +20,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
+#include "Kismet/GameplayStatics.h"
+
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
 #include "MyProject/Components/Asset/C_WeaponAsset.h"
@@ -121,7 +123,7 @@ void AA_Character::BeginPlay()
 	Super::BeginPlay();
 
 	if ( const APlayerController* PlayerController = Cast<APlayerController>( Controller );
-		 PlayerController && PlayerController == GetWorld()->GetFirstPlayerController())
+		 PlayerController && PlayerController->IsLocalPlayerController())
 	{
 		if ( UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>( PlayerController->GetLocalPlayer() ) )
 		{
@@ -310,7 +312,7 @@ void AA_Character::SyncHandProperties() const
 	SyncProperties(HandActor);
 
 	// Arm hand is replicated to only owner;
-	if (GetController() == GetWorld()->GetFirstPlayerController())
+	if (ArmHandActor)
 	{
 		SyncProperties(ArmHandActor);
 	}

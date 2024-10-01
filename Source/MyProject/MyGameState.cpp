@@ -149,7 +149,7 @@ void AMyGameState::OnRep_AliveT() const
 
 void AMyGameState::Multi_ResetBombIndicator_Implementation()
 {
-	if (const auto& HUD = GetWorld()->GetFirstPlayerController()->GetHUD())
+	if (const auto& HUD = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld())->GetHUD())
 	{
 		if (const auto& InGameHUD = Cast<AMyInGameHUD>(HUD))
 		{
