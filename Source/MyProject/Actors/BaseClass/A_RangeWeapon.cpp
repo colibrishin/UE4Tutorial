@@ -49,25 +49,11 @@ void AA_RangeWeapon::StartBulletTrailImplementation() const
 		const FVector& Normal = IsDummy() ? 
 			Cast<AA_RangeWeapon>(GetSibling())->GetRangeWeaponComponent()->GetRecoiledNormal() :
 			GetRangeWeaponComponent()->GetRecoiledNormal();
-		
-		LOG_FUNC_PRINTF(LogTemp, Log, "Bullet trail normal: %s, Client?: %d, Dummy?: %d", *Normal.ToString(), GetNetMode() == NM_Client, IsDummy());
-		
-		const UCameraComponent* CameraComponent = GetAttachParentActor()->GetComponentByClass<UCameraComponent>();
-		const FVector MuzzleLocation = GetSkeletalMeshComponent()->GetSocketLocation(MuzzleSocketName);
-		const FVector StartLocation = CameraComponent->GetComponentLocation();
-		const FVector EndLocation = StartLocation + (GetWeaponComponent()->GetRange() * Normal);
-		const FVector Delta = EndLocation - MuzzleLocation;
-		const FVector DeltaNormal = Delta.GetSafeNormal();
 
-		// Roll (Vertical difference) Y and X plane (Forward vs Right)
-		const float Yaw = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Y, DeltaNormal.X));
-		// Pitch (Horizontal difference) Z and X plane (Up vs Forward)
-		const float Pitch = FMath::RadiansToDegrees(FMath::Atan2(DeltaNormal.Z, DeltaNormal.X));
-		
-		BulletTrailComponent->SetVariableFloat(TEXT("Yaw"), Yaw);
-		BulletTrailComponent->SetVariableFloat(TEXT("Pitch"), Pitch);
-		BulletTrailComponent->SetVariableFloat(TEXT("Roll"), 0.f); // No roll (same start point)
-		BulletTrailComponent->Activate();
+		// todo: no need to process this in dedicated server;
+		LOG_FUNC_PRINTF(LogTemp, Log, "Bullet trail normal: %s, Client?: %d, Dummy?: %d", *Normal.ToString(), GetNetMode() == NM_Client, IsDummy());
+		BulletTrailComponent->SetVariableVec3(TEXT("Normal"), Normal);
+		BulletTrailComponent->Activate(true);
 	}
 }
 

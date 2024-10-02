@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 
+#include "MyProject/Actors/BaseClass/A_Collectable.h"
 #include "MyProject/Components/C_PickUp.h"
 
 #include "C_Weapon.generated.h"
@@ -104,6 +105,12 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void Client_SetupDropInput(const AA_Character* InCharacter);
 
+	UFUNCTION(Client, Reliable)
+	void Client_OnAttack();
+
+	UFUNCTION(Client, Reliable)
+	void Client_OnReload();
+
 	UFUNCTION()
 	void OnRep_OnAmmoUpdated();
 
@@ -154,7 +161,7 @@ protected:
 	void ReloadClip();
 
 	UFUNCTION()
-	void HandleDummy();
+	void HandleDummy(AA_Collectable* InPreviousDummy);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 

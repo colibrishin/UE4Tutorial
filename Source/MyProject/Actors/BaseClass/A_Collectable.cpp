@@ -49,11 +49,12 @@ void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)
 		{
 			ensure(InSibling);
 		}
+		AA_Collectable* Previous = Sibling;
 		Sibling = InSibling;
 		
 		// Disable pickup component;
 		PickUpComponent->SetActive(!InFlag);
-		OnDummyFlagSet.Broadcast();
+		OnDummyFlagSet.Broadcast(Previous);
 	}
 }
 
@@ -73,9 +74,9 @@ void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME_CONDITION(AA_Collectable, Sibling, COND_OwnerOnly);
 }
 
-void AA_Collectable::OnRep_Dummy() const
+void AA_Collectable::OnRep_Dummy(AA_Collectable* InPreviousDummy) const
 {
-	OnDummyFlagSet.Broadcast();
+	OnDummyFlagSet.Broadcast(InPreviousDummy);
 }
 
 // Called every frame

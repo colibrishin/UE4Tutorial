@@ -6,7 +6,6 @@
 #include "NiagaraComponent.h"
 
 #include "MyProject/Actors/BaseClass/A_RangeWeapon.h"
-#include "MyProject/Actors/BaseClass/A_Weapon.h"
 #include "MyProject/Components/Weapon/C_RangeWeapon.h"
 #include "MyProject/Components/Weapon/C_ThrowWeapon.h"
 #include "MyProject/Components/Weapon/C_Weapon.h"
@@ -39,7 +38,6 @@ void UC_WeaponAsset::ApplyAsset()
 		WeaponComponent->AttackSound = WeaponAsset->GetAttackSound();
 		WeaponComponent->ReloadSound = WeaponAsset->GetReloadSound();
 		WeaponComponent->AttackRate = WeaponAsset->GetAttackRate();
-		WeaponComponent->AttackRate = WeaponAsset->GetAttackRate();
 		WeaponComponent->bCanSpray = WeaponAsset->GetSpray();
 		WeaponComponent->AmmoPerClip = WeaponAsset->GetMaxAmmo();
 		WeaponComponent->TotalAmmo = WeaponAsset->GetMaxAmmo() * WeaponAsset->GetMagazine();
@@ -67,6 +65,7 @@ void UC_WeaponAsset::ApplyAsset()
 				if (const AA_RangeWeapon* Weapon = Cast<AA_RangeWeapon>(GetOwner()))
 				{
 					Weapon->BulletTrailComponent->SetAsset(RangeAsset->GetBulletTrail());
+					Weapon->BulletTrailComponent->SetVariableFloat("FireRate", WeaponAsset->GetAttackRate());
 				}
 
 				break;

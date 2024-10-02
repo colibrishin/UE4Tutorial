@@ -90,6 +90,7 @@ AMyGameState::AMyGameState()
 	}
 
 	OnBombStateChanged.AddUniqueDynamic(this, &AMyGameState::HandleBombStateChanged);
+	MatchRoundTime = 240.f;
 }
 
 void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon)
