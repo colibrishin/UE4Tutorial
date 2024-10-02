@@ -27,7 +27,7 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	
+
 	void ProcessBuy(AA_Character* RequestCharacter , int32 WeaponID) const;
 
 	UFUNCTION(Server, Reliable)

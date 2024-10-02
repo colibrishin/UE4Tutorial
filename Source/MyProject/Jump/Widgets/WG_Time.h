@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "MyProject/Actors/BaseClass/A_Collectable.h"
 
 #include "MyProject/Components/C_PickUp.h"
 
@@ -28,7 +29,7 @@ public:
 	virtual void NativeOnInitialized() override;
 	
 	UFUNCTION()
-	void ShowWinText(UC_PickUp* InPrevious, UC_PickUp* InNew);
+	void ShowWinText(AA_Collectable* InNew);
 	
 protected:
 

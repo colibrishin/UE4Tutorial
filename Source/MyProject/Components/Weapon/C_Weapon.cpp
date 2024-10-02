@@ -92,45 +92,24 @@ uint32 UC_Weapon::GetConsecutiveShot() const
 
 void UC_Weapon::Attack()
 {
-	UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
-	if (TargetComponent->ValidateAttack())
+	if (ValidateAttack())
 	{
-		if (IsDummy())
-		{
-			AttackImplementation();
-			return;
-		}
-
 		Server_Attack();
 	}
 }
 
 void UC_Weapon::StopAttack()
 {
-	const UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
-	if (TargetComponent->bFiring)
+	if (bFiring)
 	{
-		if (IsDummy())
-		{
-			StopAttackImplementation();
-			return;
-		}
-
 		Server_StopAttack();
 	}
 }
 
 void UC_Weapon::Reload()
 {
-	UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
-	if (TargetComponent->ValidateReload())
+	if (ValidateReload())
 	{
-		if (IsDummy())
-		{
-			ReloadImplementation();
-			return;
-		}
-
 		Server_Reload();
 	}
 }
@@ -160,7 +139,7 @@ UC_Weapon* UC_Weapon::GetSiblingComponent() const
 void UC_Weapon::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	// ...
 	if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 	{
@@ -171,12 +150,22 @@ void UC_Weapon::BeginPlay()
 	if (AA_Collectable* Collectable = Cast<AA_Collectable>(GetOwner()))
 	{
 		Collectable->OnDummyFlagSet.AddUniqueDynamic(this, &UC_Weapon::HandleDummy);
-		HandleDummy();
+
+		if (IsDummy())
+		{
+			HandleDummy(nullptr);
+		}
 	}
 
-	TScriptDelegate<FNotThreadSafeDelegateMode> AttackDelegate;
-	AttackDelegate.BindUFunction(GetOwner(), "Attack");
-	OnAttackStart.Add(AttackDelegate);
+	if (IAttackObject* AttackObject = Cast<IAttackObject>(GetOwner()))
+	{
+		OnAttack.AddUniqueDynamic(AttackObject, &IAttackObject::Attack);
+	}
+
+	if (IReloadObject* ReloadObject = Cast<IReloadObject>(GetOwner()))
+	{
+		OnReload.AddUniqueDynamic(ReloadObject, &IReloadObject::Reload);
+	}
 }
 
 #pragma region Network
@@ -202,7 +191,7 @@ void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCha
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
 			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
-			Subsystem->AddMappingContext(InputMapping , 1);
+			Subsystem->AddMappingContext(InputMapping , IsDummy() ? 1 : 0);
 		}
 
 		if (UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>(InCharacter->InputComponent))
@@ -258,6 +247,16 @@ void UC_Weapon::Multi_PlayReloadSound_Implementation()
 	}
 }
 
+void UC_Weapon::Client_OnAttack_Implementation()
+{
+	OnAttack.Broadcast();
+}
+
+void UC_Weapon::Client_OnReload_Implementation()
+{
+	OnReload.Broadcast();
+}
+
 void UC_Weapon::OnRep_OnAmmoUpdated()
 {
 	OnAmmoUpdated.Broadcast(GetRemainingAmmoInClip() , GetRemainingAmmoWithoutCurrentClip(), this);
@@ -266,11 +265,16 @@ void UC_Weapon::OnRep_OnAmmoUpdated()
 
 void UC_Weapon::AttackImplementation()
 {
-	UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
-	if (TargetComponent->ValidateAttack())
+	check(!IsDummy());
+	
+	if (ValidateAttack())
 	{
 		bFiring = true;
+		// Update state, consume ammo, Play sound, animation etc...
 		OnAttackStart.Broadcast(this);
+		// Process for attack
+		OnAttack.Broadcast();
+		Client_OnAttack();
 	}
 	else
 	{
@@ -280,8 +284,9 @@ void UC_Weapon::AttackImplementation()
 
 void UC_Weapon::StopAttackImplementation()
 {
-	const UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
-	if (TargetComponent->bFiring)
+	check(!IsDummy());
+	
+	if (bFiring)
 	{
 		bFiring = false;
 		OnStopAttack.Broadcast(this);
@@ -290,11 +295,17 @@ void UC_Weapon::StopAttackImplementation()
 
 void UC_Weapon::ReloadImplementation()
 {
-	UC_Weapon* TargetComponent = IsDummy() ? GetSiblingComponent() : this;
-	if (TargetComponent->ValidateReload())
+	check(!IsDummy());
+	
+	if (ValidateReload())
 	{
 		bReloading = true;
+
+		// Update state, play sound, animation etc...
 		OnReloadStart.Broadcast(this);
+		// Process for reload.
+		OnReload.Broadcast();
+		Client_OnReload();
 	}
 }
 
@@ -308,7 +319,6 @@ bool UC_Weapon::ValidateAttack()
 		return false;
 	}
 
-	ensure(Cast<IAttackObject>(GetOwner()));
 	return true;
 }
 
@@ -321,8 +331,6 @@ bool UC_Weapon::ValidateReload()
 		(LogWeaponComponent , Log , "Cannot reload; Ammo spent: %d; Total ammo: %d Dummy: %d;" , AmmoSpent , TotalAmmo, IsDummy());
 		return false;
 	}
-
-	ensure(Cast<IReloadObject>(GetOwner()));
 
 	if (!GetRemainingAmmo())
 	{
@@ -433,7 +441,7 @@ void UC_Weapon::HandleReloadEnd(UC_Weapon* /*InWeapon*/)
 	bCanReload = MagazineLeft;
 }
 
-void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject)
+void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallPickUp)
 {
 	if (GetNetMode() == NM_Client)
 	{
@@ -445,7 +453,10 @@ void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject)
 
 	if (const AA_Character* Character = Cast<AA_Character>(InPickUpObject.GetInterface()))
 	{
-		Client_SetupPickupInput(Character);
+		if (!IsDummy())
+		{
+			Client_SetupPickupInput(Character);	
+		}
 
 		if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 		{
@@ -455,7 +466,7 @@ void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject)
 	}
 }
 
-void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject)
+void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallDrop)
 {
 	if (GetNetMode() == NM_Client)
 	{
@@ -464,7 +475,13 @@ void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject)
 
 	if (const AA_Character* Character = Cast<AA_Character>(InPickUpObject.GetInterface()))
 	{
-		Client_SetupDropInput(Character);
+		// todo/fixme : possible unhandled condition
+		// spawn normally -> pick up -> set dummy during picked up -> input binding still persist;
+
+		if (!IsDummy())
+		{
+			Client_SetupDropInput(Character);	
+		}
 
 		if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 		{
@@ -479,6 +496,7 @@ void UC_Weapon::ConsumeAmmo()
 	bFiring = true;
 	AmmoSpentInClip++;
 	ConsecutiveShot++;
+
 	LOG_FUNC_PRINTF(LogWeaponComponent, Log, "AmmoSpentInClip: %d, ConsecutiveShot: %d", AmmoSpentInClip, ConsecutiveShot);
 }
 
@@ -489,29 +507,50 @@ void UC_Weapon::ReloadClip()
 		AmmoSpent       += AmmoSpentInClip;
 		LoadedAmmo = FMath::Clamp(GetRemainingAmmo(), 0, AmmoPerClip);
 		AmmoSpentInClip = 0;
+		
+		bCanFire = GetRemainingAmmoInClip() > 0;
+		bCanReload = GetRemainingAmmo() > 0;
 	}
 }
 
-void UC_Weapon::HandleDummy()
+void UC_Weapon::HandleDummy(AA_Collectable* InPreviousDummy)
 {
 	SetIsReplicated(!IsDummy());
-
-	TScriptDelegate<FNotThreadSafeDelegateMode> AttackImplDelegate;
-	AttackImplDelegate.BindUFunction(this, "AttackImplementation");
-	TScriptDelegate<FNotThreadSafeDelegateMode> StopAttackImplDelegate;
-	StopAttackImplDelegate.BindUFunction(this, "StopAttackImplementation");
-	TScriptDelegate<FNotThreadSafeDelegateMode> ReloadImplDelegate;
-	ReloadImplDelegate.BindUFunction(this, "ReloadImplementation");
 	
-	if (UC_Weapon* Sibling = GetSiblingComponent();
-		Sibling && IsDummy())
+	if (IsDummy())
 	{
-		Sibling->OnAttackStart.Add(AttackImplDelegate);
-		Sibling->OnStopAttack.Add(StopAttackImplDelegate);
-		Sibling->OnReloadStart.Add(ReloadImplDelegate);
+		UC_Weapon* Sibling = GetSiblingComponent();
+		check(Sibling);
+			
+		if (IAttackObject* AttackObject = Cast<IAttackObject>(GetOwner()))
+		{
+			Sibling->OnAttack.AddUniqueDynamic(AttackObject, &IAttackObject::Attack);
+		}
+
+		if (IReloadObject* ReloadObject = Cast<IReloadObject>(GetOwner()))
+		{
+			Sibling->OnReload.AddUniqueDynamic(ReloadObject, &IReloadObject::Reload);
+		}
+	}
+
+	if (InPreviousDummy)
+	{
+		UC_Weapon* PreviousSibling = InPreviousDummy->GetComponentByClass<UC_Weapon>();
+		check(PreviousSibling);
+			
+		if (Cast<IAttackObject>(InPreviousDummy))
+		{
+			PreviousSibling->OnAttack.RemoveAll(this);
+		}
+
+		if (Cast<IReloadObject>(InPreviousDummy))
+		{
+			PreviousSibling->OnReload.RemoveAll(this);
+		}
 	}
 	
 	{
+		// Disable sound and ammo consumption if it is a dummy;
 		TScriptDelegate<FNotThreadSafeDelegateMode> SoundDelegate;
 		SoundDelegate.BindUFunction(this, "Multi_PlayAttackSound");
 		TScriptDelegate<FNotThreadSafeDelegateMode> AmmoDelegate;
@@ -530,6 +569,7 @@ void UC_Weapon::HandleDummy()
 	}
 
 	{
+		// Also same on reload;
 		TScriptDelegate<FNotThreadSafeDelegateMode> SoundDelegate;
 		SoundDelegate.BindUFunction(this, "Multi_PlayReloadSound");
 		TScriptDelegate<FNotThreadSafeDelegateMode> ReloadDelegate;

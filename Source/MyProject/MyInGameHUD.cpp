@@ -33,7 +33,7 @@ AMyInGameHUD::AMyInGameHUD()
 
 	static ConstructorHelpers::FClassFinder<UMyBuyMenuWidget> BP_BuyMenu(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyBuyMenuWidget.BPMyBuyMenuWidget_C'"));
 
-	if (BP_Widget.Succeeded())
+	if (BP_BuyMenu.Succeeded())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("BuyMenu is loaded"));
 		BuyMenu->SetWidgetClass(BP_BuyMenu.Class);

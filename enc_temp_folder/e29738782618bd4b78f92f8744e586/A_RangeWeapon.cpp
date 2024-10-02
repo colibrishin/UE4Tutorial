@@ -5,9 +5,6 @@
 
 #include "NiagaraComponent.h"
 
-#include "Camera/CameraComponent.h"
-
-#include "MyProject/Private/Utilities.hpp"
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Weapon/C_RangeWeapon.h"
 
@@ -49,10 +46,10 @@ void AA_RangeWeapon::StartBulletTrailImplementation() const
 		const FVector& Normal = IsDummy() ? 
 			Cast<AA_RangeWeapon>(GetSibling())->GetRangeWeaponComponent()->GetRecoiledNormal() :
 			GetRangeWeaponComponent()->GetRecoiledNormal();
-
-		// todo: no need to process this in dedicated server;
-		LOG_FUNC_PRINTF(LogTemp, Log, "Bullet trail normal: %s, Client?: %d, Dummy?: %d", *Normal.ToString(), GetNetMode() == NM_Client, IsDummy());
-		BulletTrailComponent->SetVariableVec3(TEXT("Normal"), Normal);
+		
+		BulletTrailComponent->SetVariableFloat(TEXT("Yaw"), Normal.X);
+		BulletTrailComponent->SetVariableFloat(TEXT("Pitch"), Normal.Y);
+		BulletTrailComponent->SetVariableFloat(TEXT("Roll"), Normal.Z);
 		BulletTrailComponent->Activate(true);
 	}
 }
@@ -64,7 +61,7 @@ void AA_RangeWeapon::PostFetchAsset()
 	ensure
 	(
 		BulletTrailComponent->AttachToComponent(
-			GetSkeletalMeshComponent(),
+			GetPickUpComponent(),
 			FAttachmentTransformRules::SnapToTargetNotIncludingScale,
 			MuzzleSocketName)
 	);

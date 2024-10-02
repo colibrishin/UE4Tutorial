@@ -4,6 +4,7 @@
 #include "C_ThrowWeapon.h"
 
 #include "MyProject/Actors/BaseClass/A_Collectable.h"
+#include "MyProject/Interfaces/PickingUp.h"
 
 
 // Sets default values for this component's properties
@@ -21,16 +22,17 @@ void UC_ThrowWeapon::Server_StopAttack_Implementation()
 {
 	Super::Server_StopAttack_Implementation();
 
+	// Drop grenade first;
+	Cast<IPickingUp>(GetOwner())->Drop(GetOwner()->GetComponentByClass<UC_PickUp>());
+	
 	const FVector Forward = GetOwner()->GetOwner()->GetActorForwardVector();
 	const float CookTimeRatio = CookTimeCounter / CookingTime;
 	const FVector Velocity = Forward * ThrowForce * (CookTimeRatio * ThrowForceMultiplier);
 
-	if (const AA_Collectable* Collectable = Cast<AA_Collectable>(GetOwner()))
+	if (USkeletalMeshComponent* SkeletalMeshComponent = GetOwner()->GetComponentByClass<USkeletalMeshComponent>())
 	{
-		if (USkeletalMeshComponent* SkeletalMeshComponent = Collectable->GetComponentByClass<USkeletalMeshComponent>())
-		{
-			SkeletalMeshComponent->AddImpulse(Velocity);	
-		}
+		// send it;
+		SkeletalMeshComponent->AddImpulse(Velocity);	
 	}
 
 	CookTimeCounter = 0.f;

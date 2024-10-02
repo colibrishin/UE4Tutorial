@@ -35,7 +35,7 @@ protected:
 	
 private:
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
-	FVector RecoiledNormal;
+	FVector_NetQuantize RecoiledNormal;
 	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	bool bAimable;

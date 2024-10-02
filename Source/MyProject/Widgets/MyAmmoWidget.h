@@ -35,7 +35,7 @@ private:
 	void UpdateAmmo(const int32 CurrentAmmoCount, const int32 RemainingAmmoCount, UC_Weapon* InWeapon);
 
 	UFUNCTION()
-	void HandleWeaponChanged(UC_PickUp* InPrevious, UC_PickUp* InNew);
+	void HandleWeaponChanged(AA_Collectable* InNew);
 	
 	
 	UPROPERTY(Meta = (BindWidget))

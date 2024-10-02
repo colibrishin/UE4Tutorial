@@ -90,6 +90,7 @@ AMyGameState::AMyGameState()
 	}
 
 	OnBombStateChanged.AddUniqueDynamic(this, &AMyGameState::HandleBombStateChanged);
+	MatchRoundTime = 240.f;
 }
 
 void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon)
@@ -149,7 +150,7 @@ void AMyGameState::OnRep_AliveT() const
 
 void AMyGameState::Multi_ResetBombIndicator_Implementation()
 {
-	if (const auto& HUD = GetWorld()->GetFirstPlayerController()->GetHUD())
+	if (const auto& HUD = GetWorld()->GetFirstLocalPlayerFromController()->GetPlayerController(GetWorld())->GetHUD())
 	{
 		if (const auto& InGameHUD = Cast<AMyInGameHUD>(HUD))
 		{

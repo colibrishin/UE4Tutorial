@@ -25,20 +25,20 @@ AMyPlayerController::AMyPlayerController()
 void AMyPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (GetNetMode() == NM_Client && GetWorld()->GetFirstPlayerController() == this)
-	{
-		OnPossessedPawnChanged.AddUniqueDynamic(this, &AMyPlayerController::DispatchPlayerCharacter);
-	}
 }
 
 void AMyPlayerController::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
+	if (!IsLocalPlayerController())
+	{
+		return;
+	}
+
 	AsyncTask
 		(
-		 ENamedThreads::AnyHiPriThreadHiPriTask , [this]()
+		 ENamedThreads::AnyNormalThreadHiPriTask , [this]()
 		 {
 			 const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD());
 
@@ -69,23 +69,24 @@ void AMyPlayerController::OnRep_PlayerState()
 		);
 }
 
-void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)
+void AMyPlayerController::OnRep_Pawn()
 {
-	UnPossess();
-	Possess(Spectator);
-}
+	Super::OnRep_Pawn();
 
-void AMyPlayerController::DispatchPlayerCharacter(APawn* /*InOldPawn*/, APawn* /*InNewPawn*/)
-{
+	if (!IsLocalPlayerController())
+	{
+		return;
+	}
+	
 	AsyncTask
 			(
-			 ENamedThreads::AnyHiPriThreadHiPriTask , [this]()
+			 ENamedThreads::AnyNormalThreadHiPriTask , [this]()
 			 {
 				 if (AA_Character* NewCharacter = Cast<AA_Character>(GetCharacter()))
 				 {
 					 if (const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD()))
 					 {
-						 while (!HUD)
+						 while (!HUD || !HUD->GetInGameWidget()->IsValidLowLevelFast())
 						 {
 							 HUD = Cast<AMyInGameHUD>(GetHUD());
 							 FPlatformProcess::YieldThread();
@@ -96,8 +97,8 @@ void AMyPlayerController::DispatchPlayerCharacter(APawn* /*InOldPawn*/, APawn* /
 
 						 // Iterate all widgets and pass the own player state to the widgets that require the character. 
 						 for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
-						      Iterator;
-						      ++Iterator)
+							  Iterator;
+							  ++Iterator)
 						 {
 							 UUserWidget* Widget = Cast<UUserWidget>
 									 (
@@ -113,6 +114,12 @@ void AMyPlayerController::DispatchPlayerCharacter(APawn* /*InOldPawn*/, APawn* /
 				 }
 			 }
 			);
+}
+
+void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)
+{
+	UnPossess();
+	Possess(Spectator);
 }
 
 void AMyPlayerController::Client_SetSpectator_Implementation(AMySpectatorPawn* Spectator)

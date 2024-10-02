@@ -9,7 +9,7 @@
 #include "MyProject/Interfaces/AssetFetchable.h"
 #include "A_Collectable.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnDummyFlagSet);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, InPreviousDummy);
 
 class UC_PickUp;
 class UC_Weapon;
@@ -28,27 +28,16 @@ public:
 
 	FOnDummyFlagSet OnDummyFlagSet;
 
-	template <typename T> requires (std::is_base_of_v<UC_CollectableAsset, T>)
-	T* GetAssetComponent()
+	template <typename T = UC_CollectableAsset> requires (std::is_base_of_v<UC_CollectableAsset, T>)
+	T* GetAssetComponent() const
 	{
 		return Cast<T>(AssetComponent);
 	}
 	
 	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
-	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling)
-	{
-		if (GetNetMode() != NM_Client)
-		{
-			bDummy = InFlag;
-			if (InFlag)
-			{
-				ensure(InSibling);
-			}
-			Sibling = InSibling;
-			OnDummyFlagSet.Broadcast();
-		}
-	}
-	
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
+	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling);
+
 	bool                 IsDummy() const { return bDummy; }
 	AA_Collectable*      GetSibling() const { return Sibling; }
 	
@@ -59,18 +48,21 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UFUNCTION()
-	void OnRep_Dummy() const;
+	void OnRep_Dummy(AA_Collectable* InPreviousDummy) const;
+
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	USkeletalMeshComponent* SkeletalMeshComponent;
 	
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_CollectableAsset* AssetComponent;
 
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_PickUp* PickUpComponent;
 	
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_Dummy, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	bool bDummy;
 
-	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Dummy, meta=(AllowPrivateAccess))
 	AA_Collectable* Sibling;
 	
 public:
