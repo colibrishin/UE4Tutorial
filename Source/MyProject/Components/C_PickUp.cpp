@@ -136,7 +136,7 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 
 			// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
 			AA_Collectable* InObject = Cast<AA_Collectable>(GetOwner());
-			AA_Collectable* Cloned = CloneChildActor
+			AA_Collectable* Cloned = FCollectableUtility::CloneChildActor
 			(
 				InObject,
 				[this, &PickingObject, &RePickPrevention, &ForwardVector](AActor* InCollectable)
@@ -149,8 +149,8 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 						nullptr,
 						ETeleportType::TeleportPhysics
 					);
-					InCollectable->SetReplicates(true);
 
+					InCollectable->SetReplicates(true);
 					InCollectable->SetReplicateMovement(true);
 
 					if (UMeshComponent* MeshComponent = InCollectable->GetComponentByClass<UMeshComponent>())
@@ -161,6 +161,8 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 					}
 				}
 			);
+
+			OnObjectDropSpawned.Broadcast(Cloned);
 
 			// Object destruction should be handled in InCaller's Drop;
 			InCaller->Drop(this);

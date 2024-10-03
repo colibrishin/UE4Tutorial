@@ -12,6 +12,7 @@ class AMyCharacter;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectPickUp, TScriptInterface<IPickingUp>, InCaller, const bool, bCallPickUp);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectDrop, TScriptInterface<IPickingUp>, InCaller, const bool, bCallDrop);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectDropSpawned, AActor*, InSpawnedActor);
 DECLARE_LOG_CATEGORY_EXTERN(LogPickUp, Log, All);
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
@@ -26,6 +27,8 @@ public:
 	FOnObjectPickUp OnObjectPickUp;
 
 	FOnObjectDrop OnObjectDrop;
+
+	FOnObjectDropSpawned OnObjectDropSpawned;
 
 	virtual void SetActive(bool bNewActive, bool bReset = false) override;
 

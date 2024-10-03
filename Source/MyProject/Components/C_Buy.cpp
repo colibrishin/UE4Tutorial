@@ -10,6 +10,7 @@
 #include "MyProject/Private/Utilities.hpp"
 #include "MyProject/Private/CommonBuy.hpp"
 #include "MyProject/Actors/BaseClass/A_Character.h"
+#include "MyProject/Actors/BaseClass/A_ThrowWeapon.h"
 #include "MyProject/Actors/BaseClass/A_Weapon.h"
 #include "MyProject/DataAsset/DA_Weapon.h"
 
@@ -60,7 +61,8 @@ void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) co
 
 	static TMap<EMyWeaponType, TSubclassOf<AA_Weapon>> WeaponClassMap
 	{
-		{EMyWeaponType::Range, AA_RangeWeapon::StaticClass()}
+		{EMyWeaponType::Range, AA_RangeWeapon::StaticClass()},
+		{EMyWeaponType::Throwable, AA_ThrowWeapon::StaticClass()}
 	};
 
 	TSubclassOf<AA_Weapon> WeaponType = AA_Weapon::StaticClass();

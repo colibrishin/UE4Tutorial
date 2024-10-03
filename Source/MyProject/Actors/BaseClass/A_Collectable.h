@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <functional>
+
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
@@ -14,6 +16,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, In
 class UC_PickUp;
 class UC_Weapon;
 class UC_CollectableAsset;
+
+struct FCollectableUtility
+{
+	// Creates a new object and copy the properties of every components;
+	static AA_Collectable* CloneChildActor(AA_Collectable* InObject, const std::function<void(AActor*)>& InDeferredFunction);
+};
+
 
 UCLASS()
 class MYPROJECT_API AA_Collectable : public AActor, public IAssetFetchable
