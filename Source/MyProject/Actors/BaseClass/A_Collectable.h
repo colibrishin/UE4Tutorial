@@ -12,6 +12,7 @@
 #include "A_Collectable.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, InPreviousDummy);
+DECLARE_LOG_CATEGORY_EXTERN(LogCollectable, Log, All);
 
 class UC_PickUp;
 class UC_Weapon;
@@ -46,6 +47,7 @@ public:
 	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
 	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling);
+	void                 SetPhysics(const bool InPhysics);
 
 	bool                 IsDummy() const { return bDummy; }
 	AA_Collectable*      GetSibling() const { return Sibling; }
@@ -59,6 +61,9 @@ protected:
 	UFUNCTION()
 	void OnRep_Dummy(AA_Collectable* InPreviousDummy) const;
 
+	UFUNCTION()
+	void OnRep_Physics() const;
+
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	USkeletalMeshComponent* SkeletalMeshComponent;
 	
@@ -71,10 +76,17 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	bool bDummy;
 
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Physics, meta=(AllowPrivateAccess))
+	bool bPhysics;
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Dummy, meta=(AllowPrivateAccess))
 	AA_Collectable* Sibling;
 	
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	virtual void ApplyPhysics(const bool InPhysics) const;
+
 };

@@ -5,8 +5,11 @@
 
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
+#include "MyProject/Private/Utilities.hpp"
 
 #include "Net/UnrealNetwork.h"
+
+DEFINE_LOG_CATEGORY(LogCollectable);
 
 const FName AA_Collectable::AssetComponentName (TEXT("AssetComponent"));
 
@@ -24,11 +27,12 @@ AA_Collectable* FCollectableUtility::CloneChildActor(
 
 	const auto& PreSpawn = [&InObject, &InDeferredFunction](AActor* InActor)
 	{
-		const AA_Collectable* GeneratedObject = Cast<AA_Collectable>(InActor);
-		
+		const AA_Collectable* InCollectable = Cast<AA_Collectable>(InObject);
+
 		for (UActorComponent* OriginalComponent : InObject->GetComponents())
 		{
 			// todo: use tag? (5.4 introduced)
+
 			UActorComponent* Destination = InActor->FindComponentByClass
 			(
 				OriginalComponent->GetClass()
@@ -37,8 +41,9 @@ AA_Collectable* FCollectableUtility::CloneChildActor(
 			Destination->ReinitializeProperties(OriginalComponent);
 		}
 
+		InCollectable->GetAssetComponent()->SetID(InObject->GetAssetComponent()->GetID());
+
 		InDeferredFunction(InActor);
-		GeneratedObject->GetAssetComponent()->SetID(InObject->GetAssetComponent()->GetID());
 	};
 	
 	FActorSpawnParameters SpawnParameters;
@@ -49,7 +54,7 @@ AA_Collectable* FCollectableUtility::CloneChildActor(
 	AA_Collectable* GeneratedObject = World->SpawnActor<AA_Collectable>(
 		InObject->GetClass(),
 		SpawnParameters);
-		
+
 	return GeneratedObject;
 }
 
@@ -72,15 +77,15 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	AssetComponent->SetNetAddressable();
 	AssetComponent->SetIsReplicated(true);
 
-	AssetComponent->OnAssetIDSet.AddUObject(
-		this, &AA_Collectable::FetchAsset);
-
 	SkeletalMeshComponent->SetCollisionProfileName("MyCollectable");
 
 	bReplicates = true;
 	AActor::SetReplicateMovement(true);
 	bNetLoadOnClient = true;
 	bDummy = false;
+	bPhysics = true;
+
+	AssetComponent->OnAssetIDSet.AddUObject(this, &AA_Collectable::FetchAsset);
 }
 
 void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)
@@ -92,20 +97,24 @@ void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)
 		{
 			ensure(InSibling);
 		}
+
 		AA_Collectable* Previous = Sibling;
 		Sibling = InSibling;
 		
-		// Disable pickup component;
-		PickUpComponent->SetActive(!InFlag);
 		OnDummyFlagSet.Broadcast(Previous);
 	}
+}
+
+void AA_Collectable::SetPhysics(const bool InPhysics)
+{
+	bPhysics = InPhysics;
+	ApplyPhysics(bPhysics);
 }
 
 // Called when the game starts or when spawned
 void AA_Collectable::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -115,6 +124,7 @@ void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AA_Collectable, PickUpComponent);
 	DOREPLIFETIME_CONDITION(AA_Collectable, bDummy, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AA_Collectable, Sibling, COND_OwnerOnly);
+	DOREPLIFETIME(AA_Collectable, bPhysics);
 }
 
 void AA_Collectable::OnRep_Dummy(AA_Collectable* InPreviousDummy) const
@@ -122,9 +132,25 @@ void AA_Collectable::OnRep_Dummy(AA_Collectable* InPreviousDummy) const
 	OnDummyFlagSet.Broadcast(InPreviousDummy);
 }
 
+void AA_Collectable::OnRep_Physics() const
+{
+	ApplyPhysics(bPhysics);
+}
+
 // Called every frame
 void AA_Collectable::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+}
+
+void AA_Collectable::ApplyPhysics(const bool InPhysics) const
+{
+	LOG_FUNC_PRINTF(LogCollectable, Log, "Applying physics flag %d Client? : %d;", InPhysics, GetNetMode() == NM_Client);
+
+	SkeletalMeshComponent->SetSimulatePhysics(InPhysics);
+	SkeletalMeshComponent->SetCollisionEnabled
+	(
+		bPhysics ? ECollisionEnabled::QueryAndPhysics : ECollisionEnabled::NoCollision
+	);
 }
 

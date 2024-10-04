@@ -28,7 +28,7 @@ public:
 
 	FOnObjectDrop OnObjectDrop;
 
-	FOnObjectDropSpawned OnObjectDropSpawned;
+	FOnObjectDropSpawned OnObjectDropPreSpawned;
 
 	virtual void SetActive(bool bNewActive, bool bReset = false) override;
 

@@ -29,6 +29,7 @@ public:
 			ID = InID;
 			FetchAsset();
 			OnAssetIDSet.Broadcast();
+			ApplyAsset();
 		}
 	}
 	

@@ -3,11 +3,17 @@
 
 #include "C_ThrowWeapon.h"
 
+#include "Camera/CameraComponent.h"
+
+#include "GameFramework/ProjectileMovementComponent.h"
+
 #include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Actors/BaseClass/A_Collectable.h"
+#include "MyProject/Actors/BaseClass/A_ThrowWeapon.h"
 #include "MyProject/Interfaces/PickingUp.h"
 
 
+class AA_ThrowWeapon;
 // Sets default values for this component's properties
 UC_ThrowWeapon::UC_ThrowWeapon()
 {
@@ -28,13 +34,13 @@ void UC_ThrowWeapon::BeginPlay()
 
 	OnStopAttack.AddUniqueDynamic(this, &UC_ThrowWeapon::Throw);
 
-	// use the OnObjectDropSpawned instead of OnStopAttack;
+	// use the OnObjectDropPreSpawned instead of OnStopAttack;
 	// new object will be created while in drop, throwing force and setup need to be applied to the new object
-	// note that at OnObjectDropSpawned point, this object is not destroyed yet;
+	// note that at OnObjectDropPreSpawned point, this object is not destroyed yet;
 	UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>();
 	// ensure that pickup component is available;
 	check(PickUpComponent);
-	PickUpComponent->OnObjectDropSpawned.AddUniqueDynamic(this, &UC_ThrowWeapon::SetUpSpawnedObject);
+	PickUpComponent->OnObjectDropPreSpawned.AddUniqueDynamic(this, &UC_ThrowWeapon::SetUpSpawnedObject);
 	
 }
 
@@ -51,14 +57,14 @@ void UC_ThrowWeapon::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 void UC_ThrowWeapon::SetUpSpawnedObject(AActor* InSpawnedActor)
 {
 	const AActor* WeaponOwner = GetOwner()->GetAttachParentActor();
-	const FVector Forward = WeaponOwner->GetActorForwardVector();
+	const FVector Forward = WeaponOwner->GetComponentByClass<UCameraComponent>()->GetForwardVector();
 	const float CookTimeRatio = CookTimeCounter / CookingTime;
-	const FVector Velocity = Forward * ThrowForce * (CookTimeRatio * ThrowForceMultiplier);
+	const FVector Force = Forward * ThrowForce * (CookTimeRatio * ThrowForceMultiplier);
 
-	if (USkeletalMeshComponent* SkeletalMeshComponent = InSpawnedActor->GetComponentByClass<USkeletalMeshComponent>())
+	if (AA_ThrowWeapon* ThrowWeapon = Cast<AA_ThrowWeapon>(InSpawnedActor))
 	{
-		// send it;
-		SkeletalMeshComponent->AddImpulse(Velocity);
+		ThrowWeapon->GetProjectileMovementComponent()->bSimulationEnabled = true;
+		ThrowWeapon->GetProjectileMovementComponent()->Velocity = Force;
 	}
 
 	CookTimeCounter = 0.f;

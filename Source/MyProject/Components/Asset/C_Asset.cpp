@@ -39,6 +39,8 @@ UC_Asset::UC_Asset() : ID(-1)
 
 void UC_Asset::ApplyAsset()
 {
+	LOG_FUNC_PRINTF(LogAssetComponent, Log, "Applying asset to %s with %d; Client? : %d", *GetOwner()->GetName(), GetID(), GetNetMode() == NM_Client);
+
 	if (const AActor* Actor = GetOwner())
 	{
 		bool bCapsule = false;
@@ -97,6 +99,7 @@ void UC_Asset::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 void UC_Asset::OnRep_ID()
 {
 	FetchAsset();
+	ApplyAsset();
 	OnAssetIDSet.Broadcast();
 }
 
@@ -110,11 +113,11 @@ void UC_Asset::FetchAsset()
 	if (GIsEditor)
 	{
 		World = GEditor->GetEditorWorldContext().World();
-	}
 
-	if (AssetData)
-	{
-		AssetData->OnAssetPropertyChanged.RemoveAll(this);
+		if (AssetData)
+		{
+			AssetData->OnAssetPropertyChanged.RemoveAll(this);
+		}
 	}
 #endif
 	
@@ -123,7 +126,10 @@ void UC_Asset::FetchAsset()
 		check(Data->AssetToLink);
 		AssetData = Data->AssetToLink;
 #if WITH_EDITOR
-		AssetData->OnAssetPropertyChanged.AddUObject(this, &UC_Asset::ApplyAsset);
+		if (GIsEditor)
+		{
+			AssetData->OnAssetPropertyChanged.AddUObject(this, &UC_Asset::ApplyAsset);	
+		}
 #endif
 	}
 	else

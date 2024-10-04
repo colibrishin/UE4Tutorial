@@ -6,6 +6,8 @@
 #include "A_Weapon.h"
 #include "A_ThrowWeapon.generated.h"
 
+class UProjectileMovementComponent;
+
 UCLASS()
 class MYPROJECT_API AA_ThrowWeapon : public AA_Weapon
 {
@@ -15,6 +17,8 @@ public:
 	// Sets default values for this actor's properties
 	AA_ThrowWeapon(const FObjectInitializer& ObjectInitializer);
 
+	UProjectileMovementComponent* GetProjectileMovementComponent() const { return ProjectileMovementComponent; }
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
@@ -22,4 +26,8 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	UProjectileMovementComponent* ProjectileMovementComponent;
 };
