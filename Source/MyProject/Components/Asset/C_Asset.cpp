@@ -41,27 +41,31 @@ void UC_Asset::ApplyAsset()
 {
 	LOG_FUNC_PRINTF(LogAssetComponent, Log, "Applying asset to %s with %d; Client? : %d", *GetOwner()->GetName(), GetID(), GetNetMode() == NM_Client);
 
-	if (const AActor* Actor = GetOwner())
+	const AActor* Actor = GetOwner();
+	// cannot determine the owner, move up to the hierarchy (e.g., PreSpawn, Deferred);
+	if ( !Actor )
 	{
-		bool bCapsule = false;
+		Actor = Cast<AActor>( GetOuter() );
+	}
+	check( Actor != nullptr );
 
-		if (UCapsuleComponent* CapsuleComponent = Actor->GetComponentByClass<UCapsuleComponent>())
+	bool bCapsule = false;
+
+	if ( UCapsuleComponent* CapsuleComponent = Actor->GetComponentByClass<UCapsuleComponent>() )
+	{
+		CapsuleComponent->SetWorldScale3D( AssetData->GetSize() );
+		bCapsule = true;
+	}
+
+	if ( USkeletalMeshComponent* SkeletalMeshComponent = Actor->GetComponentByClass<USkeletalMeshComponent>() )
+	{
+		SkeletalMeshComponent->SetSkeletalMesh( AssetData->GetSkeletalMesh() );
+		SkeletalMeshComponent->SetRelativeLocation( AssetData->GetMeshOffset() , false , nullptr , ETeleportType::TeleportPhysics );
+		SkeletalMeshComponent->SetRelativeRotation( AssetData->GetMeshRotation() , false , nullptr , ETeleportType::TeleportPhysics );
+
+		if ( !bCapsule )
 		{
-			CapsuleComponent->SetWorldScale3D(AssetData->GetSize());
-			bCapsule = true;
-		}
-		
-
-		if (USkeletalMeshComponent* SkeletalMeshComponent = Actor->GetComponentByClass<USkeletalMeshComponent>())
-		{
-			SkeletalMeshComponent->SetSkeletalMesh(AssetData->GetSkeletalMesh());
-			SkeletalMeshComponent->SetRelativeLocation(AssetData->GetMeshOffset());
-			SkeletalMeshComponent->SetRelativeRotation(AssetData->GetMeshRotation());
-
-			if (!bCapsule)
-			{
-				SkeletalMeshComponent->SetWorldScale3D(AssetData->GetSize());
-			}
+			SkeletalMeshComponent->SetWorldScale3D( AssetData->GetSize() );
 		}
 	}
 }

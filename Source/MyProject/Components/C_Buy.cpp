@@ -78,13 +78,13 @@ void UC_Buy::ProcessBuy(AA_Character* RequestCharacter, const int32 WeaponID) co
 	AA_Weapon* GeneratedWeapon = GetWorld()->SpawnActorDeferred<AA_Weapon>(
 		WeaponType,
 		Transform,
-		RequestCharacter->GetController(),
+		RequestCharacter,
 		RequestCharacter,
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn,
 		ESpawnActorScaleMethod::OverrideRootScale);
 
-	GeneratedWeapon->GetAssetComponent<UC_WeaponAsset>()->SetID(WeaponID);
-	GeneratedWeapon->FetchAsset<UC_WeaponAsset>();
+	GeneratedWeapon->GetAssetComponent()->SetID(WeaponID);
+	GeneratedWeapon->FetchAsset();
 	UGameplayStatics::FinishSpawningActor(GeneratedWeapon, Transform);
 	
 	if (const UC_PickUp* PickUpComponent = GeneratedWeapon->GetPickUpComponent())

@@ -21,7 +21,7 @@ class UC_CollectableAsset;
 struct FCollectableUtility
 {
 	// Creates a new object and copy the properties of every components;
-	static AA_Collectable* CloneChildActor(AA_Collectable* InObject, const std::function<void(AActor*)>& InDeferredFunction);
+	static AA_Collectable* CloneChildActor(AA_Collectable* InObject, const FTransform& InTransform, const std::function<void(AActor*)>& InDeferredFunction);
 };
 
 

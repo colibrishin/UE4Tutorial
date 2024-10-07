@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "MyProject/Interfaces/AssetFetchable.h"
+#include "MyProject/Private/Utilities.hpp"
 
 #include "C_Asset.generated.h"
 
@@ -16,6 +18,7 @@ class MYPROJECT_API UC_Asset : public UActorComponent
 {
 	GENERATED_BODY()
 
+	friend class IAssetFetchable;
 public:
 	// Sets default values for this component's properties
 	UC_Asset();
@@ -24,13 +27,8 @@ public:
 
 	void SetID(const uint32 InID)
 	{
-		if (GetNetMode() != NM_Client)
-		{
-			ID = InID;
-			FetchAsset();
-			OnAssetIDSet.Broadcast();
-			ApplyAsset();
-		}
+		ID = InID;
+		OnAssetIDSet.Broadcast();
 	}
 	
 	uint32 GetID() const { return ID; }
@@ -40,9 +38,6 @@ public:
 	{
 		return Cast<T>(AssetData);
 	}
-
-	UFUNCTION()
-	virtual void ApplyAsset();
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -56,6 +51,9 @@ protected:
 
 	UFUNCTION()
 	void OnRep_ID();
+
+	UFUNCTION()
+	virtual void ApplyAsset();
 	
 	void FetchAsset();
 

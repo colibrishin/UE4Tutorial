@@ -79,10 +79,10 @@ protected:
 	virtual void PostFetchAsset() override;
 
 	UFUNCTION(Server, Reliable)
-	virtual void Server_PickUp();
+	void Server_PickUp();
 
 	UFUNCTION(Server, Reliable)
-	virtual void Server_Drop();
+	void Server_Drop();
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bHandBusy;

@@ -3,6 +3,8 @@
 
 #include "A_Collectable.h"
 
+#include "Components/BoxComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
 #include "MyProject/Private/Utilities.hpp"
@@ -12,9 +14,13 @@
 DEFINE_LOG_CATEGORY(LogCollectable);
 
 const FName AA_Collectable::AssetComponentName (TEXT("AssetComponent"));
+const FName AA_Collectable::RootSceneComponentName (TEXT("RootSceneComponent"));
 
-AA_Collectable* FCollectableUtility::CloneChildActor(
-	AA_Collectable* InObject, const std::function<void(AActor*)>& InDeferredFunction
+AA_Collectable* FCollectableUtility::CloneChildActor
+(
+	AA_Collectable* InObject,
+	const FTransform& InTransform,
+	const std::function<void(AActor*)>& InDeferredFunction
 )
 {
 	if (!InObject)
@@ -25,37 +31,41 @@ AA_Collectable* FCollectableUtility::CloneChildActor(
 	UWorld* World = InObject->GetWorld();
 	check(World);
 
-	const auto& PreSpawn = [&InObject, &InDeferredFunction](AActor* InActor)
+	// Instigator will be nullptr if cast failed.
+	APawn* Pawn = Cast<APawn>(InObject->GetOwner());
+	AA_Collectable* ClonedObject = World->SpawnActorDeferred<AA_Collectable>
+	(
+		InObject->GetClass(),
+		FTransform::Identity,
+		InObject->GetOwner(),
+		Pawn,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
+	);
+
+	for (UActorComponent* OriginalComponent : InObject->GetComponents())
 	{
-		const AA_Collectable* InCollectable = Cast<AA_Collectable>(InObject);
+		// todo: use tag? (5.4 introduced)
 
-		for (UActorComponent* OriginalComponent : InObject->GetComponents())
+		if ( OriginalComponent->IsA<USceneComponent>() )
 		{
-			// todo: use tag? (5.4 introduced)
-
-			UActorComponent* Destination = InActor->FindComponentByClass
-			(
-				OriginalComponent->GetClass()
-			);
-
-			Destination->ReinitializeProperties(OriginalComponent);
+			continue;
 		}
 
-		InCollectable->GetAssetComponent()->SetID(InObject->GetAssetComponent()->GetID());
+		UActorComponent* Destination = ClonedObject->FindComponentByClass
+		(
+			OriginalComponent->GetClass()
+		);
 
-		InDeferredFunction(InActor);
-	};
-	
-	FActorSpawnParameters SpawnParameters;
-	SpawnParameters.CustomPreSpawnInitalization = PreSpawn;
-	SpawnParameters.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnParameters.bNoFail = true;
-	
-	AA_Collectable* GeneratedObject = World->SpawnActor<AA_Collectable>(
-		InObject->GetClass(),
-		SpawnParameters);
+		Destination->ReinitializeProperties(OriginalComponent);
+	}
 
-	return GeneratedObject;
+	ClonedObject->GetAssetComponent()->SetID(InObject->GetAssetComponent()->GetID());
+	ClonedObject->FetchAsset();
+
+	InDeferredFunction(ClonedObject);
+	
+	UGameplayStatics::FinishSpawningActor(ClonedObject, InTransform);
+	return ClonedObject;
 }
 
 // Sets default values

@@ -30,9 +30,16 @@ void UC_WeaponAsset::ApplyAsset()
 	Super::ApplyAsset();
 
 	const UDA_Weapon* WeaponAsset = GetAsset<UDA_Weapon>();
-	ensure(WeaponAsset);
+	check(WeaponAsset);
+
+	const AActor* Actor = GetOwner();
+	if ( !Actor )
+	{
+		Actor = Cast<AActor>(GetOuter());
+	}
+	check( Actor != nullptr );
 	
-	if (UC_Weapon* WeaponComponent = GetOwner()->GetComponentByClass<UC_Weapon>())
+	if (UC_Weapon* WeaponComponent = Actor->GetComponentByClass<UC_Weapon>())
 	{
 		WeaponComponent->WeaponType = WeaponAsset->GetWeaponType();
 		WeaponComponent->AttackSound = WeaponAsset->GetAttackSound();
