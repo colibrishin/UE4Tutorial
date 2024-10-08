@@ -31,48 +31,53 @@ void UC_CharacterAsset::ApplyAsset()
 
 	if (const UDA_Character* CharacterAsset = GetAsset<UDA_Character>())
 	{
-		if (AA_Character* Character = Cast<AA_Character>(GetOwner()))
+		AA_Character* Character = Cast<AA_Character>( GetOwner() );
+
+		if (Character == nullptr)
 		{
-			Character->GetMesh()->SetSkeletalMesh(CharacterAsset->GetSkeletalMesh());
-			Character->GetMesh()->SetRelativeLocation(CharacterAsset->GetMeshOffset());
-			Character->GetMesh()->SetRelativeRotation(CharacterAsset->GetMeshRotation());
-			Character->GetMesh()->SetOwnerNoSee(CharacterAsset->GetOwnerNoSee());
-			Character->GetMesh()->SetGenerateOverlapEvents(CharacterAsset->GetMeshOverlapEvent());
-			Character->GetMesh()->SetAnimInstanceClass(CharacterAsset->GetAnimInstance());
-			
-			Character->GetArmMesh()->SetSkeletalMesh(CharacterAsset->GetArmMesh());
-			Character->GetArmMesh()->SetAnimInstanceClass(CharacterAsset->GetArmAnimInstance());
-
-			Character->GetArmMesh()->SetRelativeLocation(CharacterAsset->GetArmOffset());
-			Character->GetArmMesh()->SetRelativeRotation(CharacterAsset->GetArmRotation());
-
-			if (!Character->GetComponentByClass<UCapsuleComponent>())
-			{
-				Character->GetArmMesh()->SetWorldScale3D(CharacterAsset->GetSize());
-			}
-
-			if (USpringArmComponent* SpringArmComponent = Character->GetComponentByClass<USpringArmComponent>())
-			{
-				SpringArmComponent->SetRelativeLocation(CharacterAsset->GetCameraOffset());
-				SpringArmComponent->SetRelativeRotation(CharacterAsset->GetCameraRotation());
-				SpringArmComponent->TargetOffset = CharacterAsset->GetCameraArmTargetOffset();
-				SpringArmComponent->SocketOffset = CharacterAsset->GetCameraArmSocketOffset();
-				SpringArmComponent->TargetArmLength = CharacterAsset->GetCameraArmLength();
-				SpringArmComponent->ProbeSize = CharacterAsset->GetCollisionProbeSize();
-			}
-			
-			if (const AMyPlayerState* PlayerState = Character->GetPlayerState<AMyPlayerState>())
-			{
-				if (UC_Health* HealthComponent = PlayerState->GetHealthComponent())
-				{
-					HealthComponent->MaxHealth = CharacterAsset->GetMaxHealth();
-				}
-			}
-
-			// note: Replication Mesh offset setup
-			Character->CacheInitialMeshOffset(
-				CharacterAsset->GetMeshOffset(), CharacterAsset->GetMeshRotation());
+			Character = Cast<AA_Character>( GetOuter() );
 		}
+		check( Character != nullptr );
+
+		Character->GetMesh()->SetSkeletalMesh( CharacterAsset->GetSkeletalMesh() );
+		Character->GetMesh()->SetRelativeLocation( CharacterAsset->GetMeshOffset() );
+		Character->GetMesh()->SetRelativeRotation( CharacterAsset->GetMeshRotation() );
+		Character->GetMesh()->SetOwnerNoSee( CharacterAsset->GetOwnerNoSee() );
+		Character->GetMesh()->SetGenerateOverlapEvents( CharacterAsset->GetMeshOverlapEvent() );
+		Character->GetMesh()->SetAnimInstanceClass( CharacterAsset->GetAnimInstance() );
+
+		Character->GetArmMesh()->SetSkeletalMesh( CharacterAsset->GetArmMesh() );
+		Character->GetArmMesh()->SetAnimInstanceClass( CharacterAsset->GetArmAnimInstance() );
+
+		Character->GetArmMesh()->SetRelativeLocation( CharacterAsset->GetArmOffset() );
+		Character->GetArmMesh()->SetRelativeRotation( CharacterAsset->GetArmRotation() );
+
+		if ( !Character->GetComponentByClass<UCapsuleComponent>() )
+		{
+			Character->GetArmMesh()->SetWorldScale3D( CharacterAsset->GetSize() );
+		}
+
+		if ( USpringArmComponent* SpringArmComponent = Character->GetComponentByClass<USpringArmComponent>() )
+		{
+			SpringArmComponent->SetRelativeLocation( CharacterAsset->GetCameraOffset() );
+			SpringArmComponent->SetRelativeRotation( CharacterAsset->GetCameraRotation() );
+			SpringArmComponent->TargetOffset = CharacterAsset->GetCameraArmTargetOffset();
+			SpringArmComponent->SocketOffset = CharacterAsset->GetCameraArmSocketOffset();
+			SpringArmComponent->TargetArmLength = CharacterAsset->GetCameraArmLength();
+			SpringArmComponent->ProbeSize = CharacterAsset->GetCollisionProbeSize();
+		}
+
+		if ( const AMyPlayerState* PlayerState = Character->GetPlayerState<AMyPlayerState>() )
+		{
+			if ( UC_Health* HealthComponent = PlayerState->GetHealthComponent() )
+			{
+				HealthComponent->MaxHealth = CharacterAsset->GetMaxHealth();
+			}
+		}
+
+		// note: Replication Mesh offset setup
+		Character->CacheInitialMeshOffset(
+			CharacterAsset->GetMeshOffset() , CharacterAsset->GetMeshRotation() );
 	}
 }
 

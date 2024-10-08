@@ -3,6 +3,10 @@
 
 #include "C_CollectableAsset.h"
 
+#include "Components/BoxComponent.h"
+#include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
+#include "MyProject/Actors/BaseClass/A_Collectable.h"
 #include "MyProject/DataAsset/DA_Collectable.h"
 
 
@@ -39,6 +43,63 @@ FString UC_CollectableAsset::GetAssetName() const
 void UC_CollectableAsset::ApplyAsset()
 {
 	Super::ApplyAsset();
+
+	AActor* Actor = GetOwner();
+	// cannot determine the owner, move up to the hierarchy (e.g., PreSpawn, Deferred);
+	if ( !Actor )
+	{
+		Actor = Cast<AActor>( GetOuter() );
+	}
+	check( Actor != nullptr );
+
+	const UDA_Collectable* Collectable = GetAsset<UDA_Collectable>();
+	check(Collectable);
+	
+	if ( AA_Collectable* TargetActor = Cast<AA_Collectable>(Actor) )
+	{
+		const USkeletalMeshComponent* MeshComponent = TargetActor->GetComponentByClass<USkeletalMeshComponent>();
+		const FBoxSphereBounds Bounds = MeshComponent->GetLocalBounds();
+		
+		switch (Collectable->GetCollisionType())
+		{
+		case EMultiShapeType::Box:
+			{
+				TargetActor->CollisionComponent = NewObject<UBoxComponent>(Actor, TEXT("CollisionComponent"));
+				Cast<UBoxComponent>(TargetActor->CollisionComponent)->InitBoxExtent(Bounds.BoxExtent);
+				break;
+			}
+		case EMultiShapeType::Sphere:
+			{
+				TargetActor->CollisionComponent = NewObject<USphereComponent>(Actor, TEXT("CollisionComponent"));
+				Cast<USphereComponent>(TargetActor->CollisionComponent)->InitSphereRadius(Bounds.BoxExtent.GetMax());
+				break;
+			}
+		case EMultiShapeType::Capsule:
+			{
+				// todo: accurate estimation
+				TargetActor->CollisionComponent = NewObject<UCapsuleComponent>(Actor, TEXT("CollisionComponent"));
+				Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->InitCapsuleSize
+				(
+					Bounds.BoxExtent.X,
+					Bounds.BoxExtent.Y
+				);
+				break;
+			}
+		default: ;
+		}
+
+		TargetActor->SetRootComponent(TargetActor->CollisionComponent);
+		TargetActor->SkeletalMeshComponent->AttachToComponent
+		(
+			TargetActor->GetRootComponent(),
+			FAttachmentTransformRules::SnapToTargetNotIncludingScale
+		);
+
+		TargetActor->CollisionComponent->SetCollisionProfileName("MyCollectable");
+		TargetActor->CollisionComponent->SetSimulatePhysics(false);
+		TargetActor->CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		TargetActor->CollisionComponent->SetAllUseCCD(true);
+	}
 }
 
 

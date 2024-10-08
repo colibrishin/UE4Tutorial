@@ -2,18 +2,32 @@
 
 #pragma once
 
+#include <functional>
+
 #include "CoreMinimal.h"
+#include "Components/ShapeComponent.h"
 #include "GameFramework/Actor.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
 
 #include "MyProject/Interfaces/AssetFetchable.h"
 #include "A_Collectable.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, InPreviousDummy);
+class UC_ShapeProxy;
+class UCapsuleComponent;
+class USphereComponent;
+class UBoxComponent;DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, InPreviousDummy);
+DECLARE_LOG_CATEGORY_EXTERN(LogCollectable, Log, All);
 
 class UC_PickUp;
 class UC_Weapon;
 class UC_CollectableAsset;
+
+struct FCollectableUtility
+{
+	// Creates a new object and copy the properties of every components;
+	static AA_Collectable* CloneChildActor(AA_Collectable* InObject, const FTransform& InTransform, const std::function<void(AActor*)>& InDeferredFunction);
+};
+
 
 UCLASS()
 class MYPROJECT_API AA_Collectable : public AActor, public IAssetFetchable
@@ -21,8 +35,10 @@ class MYPROJECT_API AA_Collectable : public AActor, public IAssetFetchable
 	GENERATED_BODY()
 
 public:
+	friend class UC_CollectableAsset;
 	static const FName AssetComponentName;
-	
+	static const FName RootSceneComponentName;
+
 	// Sets default values for this actor's properties
 	AA_Collectable(const FObjectInitializer& ObjectInitializer);
 
@@ -37,6 +53,7 @@ public:
 	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
 	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling);
+	void                 SetPhysics(const bool InPhysics);
 
 	bool                 IsDummy() const { return bDummy; }
 	AA_Collectable*      GetSibling() const { return Sibling; }
@@ -47,9 +64,14 @@ protected:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void PostFetchAsset() override;
+	
 	UFUNCTION()
 	void OnRep_Dummy(AA_Collectable* InPreviousDummy) const;
 
+	UPROPERTY(VisibleAnywhere)
+	UShapeComponent* CollisionComponent;
+	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	USkeletalMeshComponent* SkeletalMeshComponent;
 	
@@ -68,4 +90,8 @@ protected:
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
+private:
+	virtual void ApplyPhysics(const bool InPhysics) const;
+	
 };

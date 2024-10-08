@@ -5,6 +5,10 @@
 
 #include "..\Interfaces\PickingUp.h"
 
+#include "Camera/CameraComponent.h"
+
+#include "GameFramework/MovementComponent.h"
+
 #include "MyProject/Actors/BaseClass/A_Collectable.h"
 #include "MyProject/Private/Utilities.hpp"
 
@@ -131,34 +135,49 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 			FVector Origin, Extents;
 			PickingObject->GetActorBounds(true, Origin, Extents);
 
-			const FVector ForwardVector = PickingObject->GetActorForwardVector();
-			const FVector RePickPrevention = Extents + ForwardVector;
+			FVector DropLocation = PickingObject->GetActorLocation();
+			FVector ForwardVector = PickingObject->GetActorForwardVector();
 
+			if (const UCameraComponent* CameraComponent = PickingObject->GetComponentByClass<UCameraComponent>())
+			{
+				ForwardVector = CameraComponent->GetForwardVector();
+			}
+
+			const FRotator ForwardRotator = ForwardVector.Rotation();
+			const FVector RotatedExtent = ForwardRotator.RotateVector(Extents);
+			const FVector RePickPrevention = {RotatedExtent.X, RotatedExtent.Y, Extents.Z};
+
+			const FTransform Transform
+			{
+				FQuat::Identity,
+				DropLocation + RePickPrevention,
+				FVector::OneVector
+			};
+			
 			// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
 			AA_Collectable* InObject = Cast<AA_Collectable>(GetOwner());
-			AA_Collectable* Cloned = CloneChildActor
+			AA_Collectable* Cloned = FCollectableUtility::CloneChildActor
 			(
 				InObject,
-				[this, &PickingObject, &RePickPrevention, &ForwardVector](AActor* InCollectable)
+				Transform,
+				[this, &ForwardVector](AActor* InActor)
 				{
+					AA_Collectable* InCollectable = Cast<AA_Collectable>(InActor); 
+					
 					InCollectable->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-					InCollectable->SetActorLocation
-					(
-						PickingObject->GetActorLocation() + RePickPrevention,
-						false,
-						nullptr,
-						ETeleportType::TeleportPhysics
-					);
+					InCollectable->SetPhysics(true);
 					InCollectable->SetReplicates(true);
-
 					InCollectable->SetReplicateMovement(true);
 
+					// Reset velocity;
 					if (UMeshComponent* MeshComponent = InCollectable->GetComponentByClass<UMeshComponent>())
 					{
-						MeshComponent->AddImpulse(ForwardVector * 50.f);
-						MeshComponent->SetSimulatePhysics(true);
-						MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+						MeshComponent->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
+						MeshComponent->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+						MeshComponent->AddForce(ForwardVector * 50.f);
 					}
+
+					OnObjectDropPreSpawned.Broadcast(InActor);
 				}
 			);
 

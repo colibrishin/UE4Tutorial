@@ -6,6 +6,7 @@
 #include "Engine/DataAsset.h"
 #include "DA_AssetBase.generated.h"
 
+enum class EMultiShapeType : uint8;
 class IAssetFetchable;
 /**
  * 
@@ -23,7 +24,7 @@ public:
 	FVector     GetMeshOffset() const { return MeshOffset; }
 	FRotator    GetMeshRotation() const { return MeshRotation; }
 	FVector     GetSize() const { return Size; }
-
+	
 #if WITH_EDITOR
 	DECLARE_MULTICAST_DELEGATE(FOnAssetPropertyChanged);
 	FOnAssetPropertyChanged OnAssetPropertyChanged;

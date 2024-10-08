@@ -164,14 +164,6 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	HandChild->SetOwner(this);
 	ArmChild->SetOwner(this);
 
-	Cast<AA_Collectable>(HandChild)->SetDummy(false, nullptr);
-	Cast<AA_Collectable>(ArmChild)->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
-
-	// Replicates the hand child actor to everyone;
-	HandChild->bAlwaysRelevant = true;
-	// Replicates the arm hand child actor to owner only;
-	ArmChild->bOnlyRelevantToOwner = true;
-	
 	const int32 InPickUpID = Collectable->GetComponentByClass<UC_Asset>()->GetID();
 	UC_Asset* CollectableAsset = Hand->GetChildActor()->GetComponentByClass<UC_Asset>();
 	UC_Asset* ArmCollectableAsset = ArmHand->GetChildActor()->GetComponentByClass<UC_Asset>();
@@ -179,15 +171,16 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	CollectableAsset->SetID(InPickUpID);
 	ArmCollectableAsset->SetID(InPickUpID);
 
-	if (UMeshComponent* MeshComponent = HandChild->GetComponentByClass<UMeshComponent>())
-	{
-		MeshComponent->SetOwnerNoSee(true);
-	}
+	HandChild->SetPhysics(false);
+	ArmChild->SetPhysics(false);
 
-	if (UMeshComponent* MeshComponent = ArmChild->GetComponentByClass<UMeshComponent>())
-	{
-		MeshComponent->SetOnlyOwnerSee(true);
-	}
+	Cast<AA_Collectable>(HandChild)->SetDummy(false, nullptr);
+	Cast<AA_Collectable>(ArmChild)->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
+
+	// Replicates the hand child actor to everyone;
+	HandChild->bAlwaysRelevant = true;
+	// Replicates the arm hand child actor to owner only;
+	ArmChild->bOnlyRelevantToOwner = true;
 	
 	// Broadcast the pick up component to trigger any pick up event dependent listeners;
 	HandChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
@@ -291,7 +284,7 @@ void AA_Character::OnRep_Hand() const
 
 void AA_Character::SyncHandProperties() const
 {
-	const auto& SyncProperties = [this](const AA_Collectable* InChild)
+	const auto& SyncProperties = [this](AA_Collectable* InChild)
 	{
 		// Since resetting Hand with nullptr exists, validity should be checked; 
 		if (!IsValid(InChild))
@@ -304,7 +297,6 @@ void AA_Character::SyncHandProperties() const
 		if (UMeshComponent* MeshComponent = InChild->GetComponentByClass<UMeshComponent>())
 		{
 			MeshComponent->SetCastShadow(false);
-			MeshComponent->SetSimulatePhysics(false);
 			MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	};
