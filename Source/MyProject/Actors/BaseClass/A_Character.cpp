@@ -164,6 +164,13 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	HandChild->SetOwner(this);
 	ArmChild->SetOwner(this);
 
+	const int32 InPickUpID = Collectable->GetComponentByClass<UC_Asset>()->GetID();
+	UC_Asset* CollectableAsset = Hand->GetChildActor()->GetComponentByClass<UC_Asset>();
+	UC_Asset* ArmCollectableAsset = ArmHand->GetChildActor()->GetComponentByClass<UC_Asset>();
+	
+	CollectableAsset->SetID(InPickUpID);
+	ArmCollectableAsset->SetID(InPickUpID);
+
 	HandChild->SetPhysics(false);
 	ArmChild->SetPhysics(false);
 
@@ -174,13 +181,6 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	HandChild->bAlwaysRelevant = true;
 	// Replicates the arm hand child actor to owner only;
 	ArmChild->bOnlyRelevantToOwner = true;
-	
-	const int32 InPickUpID = Collectable->GetComponentByClass<UC_Asset>()->GetID();
-	UC_Asset* CollectableAsset = Hand->GetChildActor()->GetComponentByClass<UC_Asset>();
-	UC_Asset* ArmCollectableAsset = ArmHand->GetChildActor()->GetComponentByClass<UC_Asset>();
-	
-	CollectableAsset->SetID(InPickUpID);
-	ArmCollectableAsset->SetID(InPickUpID);
 	
 	// Broadcast the pick up component to trigger any pick up event dependent listeners;
 	HandChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
@@ -297,6 +297,7 @@ void AA_Character::SyncHandProperties() const
 		if (UMeshComponent* MeshComponent = InChild->GetComponentByClass<UMeshComponent>())
 		{
 			MeshComponent->SetCastShadow(false);
+			MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	};
 

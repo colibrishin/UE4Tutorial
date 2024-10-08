@@ -4,6 +4,7 @@
 #include "C_Asset.h"
 
 #include "Components/CapsuleComponent.h"
+#include "MyProject/Actors/BaseClass/A_Collectable.h"
 
 #include "MyProject/DataAsset/DA_AssetBase.h"
 #include "MyProject/Frameworks/Subsystems/SS_World.h"
@@ -60,8 +61,12 @@ void UC_Asset::ApplyAsset()
 	if ( USkeletalMeshComponent* SkeletalMeshComponent = Actor->GetComponentByClass<USkeletalMeshComponent>() )
 	{
 		SkeletalMeshComponent->SetSkeletalMesh( AssetData->GetSkeletalMesh() );
-		SkeletalMeshComponent->SetRelativeLocation( AssetData->GetMeshOffset() , false , nullptr , ETeleportType::TeleportPhysics );
-		SkeletalMeshComponent->SetRelativeRotation( AssetData->GetMeshRotation() , false , nullptr , ETeleportType::TeleportPhysics );
+
+		if (SkeletalMeshComponent->GetAttachParentActor())
+		{
+			SkeletalMeshComponent->SetRelativeLocation( AssetData->GetMeshOffset() , false , nullptr , ETeleportType::ResetPhysics );
+			SkeletalMeshComponent->SetRelativeRotation( AssetData->GetMeshRotation() , false , nullptr , ETeleportType::ResetPhysics );
+		}
 
 		if ( !bCapsule )
 		{

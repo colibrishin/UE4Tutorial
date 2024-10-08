@@ -6,6 +6,7 @@
 #include "A_Weapon.h"
 #include "A_ThrowWeapon.generated.h"
 
+class USphereComponent;
 class UProjectileMovementComponent;
 
 UCLASS()
@@ -23,6 +24,8 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	virtual void PostFetchAsset() override;
+	
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

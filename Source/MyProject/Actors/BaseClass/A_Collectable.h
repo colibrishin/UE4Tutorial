@@ -5,13 +5,17 @@
 #include <functional>
 
 #include "CoreMinimal.h"
+#include "Components/ShapeComponent.h"
 #include "GameFramework/Actor.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
 
 #include "MyProject/Interfaces/AssetFetchable.h"
 #include "A_Collectable.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, InPreviousDummy);
+class UC_ShapeProxy;
+class UCapsuleComponent;
+class USphereComponent;
+class UBoxComponent;DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, InPreviousDummy);
 DECLARE_LOG_CATEGORY_EXTERN(LogCollectable, Log, All);
 
 class UC_PickUp;
@@ -31,8 +35,10 @@ class MYPROJECT_API AA_Collectable : public AActor, public IAssetFetchable
 	GENERATED_BODY()
 
 public:
+	friend class UC_CollectableAsset;
 	static const FName AssetComponentName;
-	
+	static const FName RootSceneComponentName;
+
 	// Sets default values for this actor's properties
 	AA_Collectable(const FObjectInitializer& ObjectInitializer);
 
@@ -58,12 +64,14 @@ protected:
 	
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void PostFetchAsset() override;
+	
 	UFUNCTION()
 	void OnRep_Dummy(AA_Collectable* InPreviousDummy) const;
 
-	UFUNCTION()
-	void OnRep_Physics() const;
-
+	UPROPERTY(VisibleAnywhere)
+	UShapeComponent* CollisionComponent;
+	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	USkeletalMeshComponent* SkeletalMeshComponent;
 	
@@ -76,9 +84,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	bool bDummy;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Physics, meta=(AllowPrivateAccess))
-	bool bPhysics;
-
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Dummy, meta=(AllowPrivateAccess))
 	AA_Collectable* Sibling;
 	
@@ -88,5 +93,5 @@ public:
 
 private:
 	virtual void ApplyPhysics(const bool InPhysics) const;
-
+	
 };

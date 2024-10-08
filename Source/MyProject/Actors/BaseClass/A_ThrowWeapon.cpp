@@ -7,27 +7,36 @@
 
 #include "MyProject/Components/Weapon/C_ThrowWeapon.h"
 
-#include "Net/UnrealNetwork.h"
-
 AA_ThrowWeapon::AA_ThrowWeapon(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UC_ThrowWeapon>(WeaponComponentName))
 {
 	PrimaryActorTick.bCanEverTick = false;
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
-
+	
 	// Update projectile movement to mesh component
-	ProjectileMovementComponent->SetUpdatedComponent(SkeletalMeshComponent);
+	ProjectileMovementComponent->SetUpdatedComponent(RootComponent);
 
 	// do not simulate yet;
 	ProjectileMovementComponent->bSimulationEnabled = false;
 	ProjectileMovementComponent->bShouldBounce = true;
+	ProjectileMovementComponent->bInitialVelocityInLocalSpace = false;
+
+	ProjectileMovementComponent->bInterpMovement = true;
+	ProjectileMovementComponent->bInterpRotation = true;
 }
 
 // Called when the game starts or when spawned
 void AA_ThrowWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+}
+
+void AA_ThrowWeapon::PostFetchAsset()
+{
+	Super::PostFetchAsset();
+
+	//SphereComponent->SetSphereRadius(SkeletalMeshComponent->GetLocalBounds().BoxExtent.GetMax());
 }
 
 // Called every frame

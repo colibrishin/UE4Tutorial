@@ -147,25 +147,25 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 			const FVector RotatedExtent = ForwardRotator.RotateVector(Extents);
 			const FVector RePickPrevention = {RotatedExtent.X, RotatedExtent.Y, Extents.Z};
 
+			const FTransform Transform
+			{
+				FQuat::Identity,
+				DropLocation + RePickPrevention,
+				FVector::OneVector
+			};
+			
 			// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
 			AA_Collectable* InObject = Cast<AA_Collectable>(GetOwner());
 			AA_Collectable* Cloned = FCollectableUtility::CloneChildActor
 			(
 				InObject,
-				[this, &RePickPrevention, &ForwardVector, &DropLocation](AActor* InActor)
+				Transform,
+				[this, &ForwardVector](AActor* InActor)
 				{
 					AA_Collectable* InCollectable = Cast<AA_Collectable>(InActor); 
-
-					InCollectable->SetPhysics(true);
+					
 					InCollectable->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-					InCollectable->SetActorLocation
-					(
-						DropLocation + RePickPrevention,
-						false,
-						nullptr,
-						ETeleportType::ResetPhysics
-					);
-
+					InCollectable->SetPhysics(true);
 					InCollectable->SetReplicates(true);
 					InCollectable->SetReplicateMovement(true);
 
