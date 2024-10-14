@@ -55,7 +55,8 @@ void UC_CollectableAsset::ApplyAsset()
 	const UDA_Collectable* Collectable = GetAsset<UDA_Collectable>();
 	check(Collectable);
 	
-	if ( AA_Collectable* TargetActor = Cast<AA_Collectable>(Actor) )
+	if ( AA_Collectable* TargetActor = Cast<AA_Collectable>(Actor);
+		TargetActor && !TargetActor->CollisionComponent )
 	{
 		const USkeletalMeshComponent* MeshComponent = TargetActor->GetComponentByClass<USkeletalMeshComponent>();
 		const FBoxSphereBounds Bounds = MeshComponent->GetLocalBounds();
@@ -64,20 +65,20 @@ void UC_CollectableAsset::ApplyAsset()
 		{
 		case EMultiShapeType::Box:
 			{
-				TargetActor->CollisionComponent = NewObject<UBoxComponent>(Actor, TEXT("CollisionComponent"));
+				TargetActor->CollisionComponent = NewObject<UBoxComponent>(GetOuter(), TEXT("CollisionComponent"));
 				Cast<UBoxComponent>(TargetActor->CollisionComponent)->InitBoxExtent(Bounds.BoxExtent);
 				break;
 			}
 		case EMultiShapeType::Sphere:
 			{
-				TargetActor->CollisionComponent = NewObject<USphereComponent>(Actor, TEXT("CollisionComponent"));
+				TargetActor->CollisionComponent = NewObject<USphereComponent>(GetOuter(), TEXT("CollisionComponent"));
 				Cast<USphereComponent>(TargetActor->CollisionComponent)->InitSphereRadius(Bounds.BoxExtent.GetMax());
 				break;
 			}
 		case EMultiShapeType::Capsule:
 			{
 				// todo: accurate estimation
-				TargetActor->CollisionComponent = NewObject<UCapsuleComponent>(Actor, TEXT("CollisionComponent"));
+				TargetActor->CollisionComponent = NewObject<UCapsuleComponent>(GetOuter(), TEXT("CollisionComponent"));
 				Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->InitCapsuleSize
 				(
 					Bounds.BoxExtent.X,
@@ -85,16 +86,43 @@ void UC_CollectableAsset::ApplyAsset()
 				);
 				break;
 			}
-		default: ;
+		default: check(false);
+		}
+		
+		TargetActor->AddOwnedComponent(TargetActor->CollisionComponent);
+		// allows to replicates the client created object by the server object;
+		TargetActor->CollisionComponent->SetNetAddressable();
+		TargetActor->CollisionComponent->SetIsReplicated(true);
+
+		// possible other actor's component (e.g., child actor component) 
+		USceneComponent* AttachedComponent = TargetActor->GetRootComponent()->GetAttachParent();
+		USceneComponent* CurrentRootComponent = TargetActor->GetRootComponent();
+		USceneComponent* NewRootComponent = TargetActor->GetCollisionComponent();
+		
+		if (CurrentRootComponent != TargetActor->GetCollisionComponent())
+		{
+			CurrentRootComponent->DetachFromComponent(FDetachmentTransformRules::KeepWorldTransform);
+			TargetActor->SetRootComponent(NewRootComponent);
+
+			if (AttachedComponent)
+			{
+				LOG_FUNC_PRINTF(LogAssetComponent, Log, "Collectable was previously attached to %s;", *AttachedComponent->GetName());
+				check(
+					NewRootComponent->AttachToComponent
+					(
+						AttachedComponent,
+						FAttachmentTransformRules::SnapToTargetNotIncludingScale
+					));
+			}
+
+			CurrentRootComponent->AttachToComponent
+			(
+				NewRootComponent,
+				FAttachmentTransformRules::SnapToTargetNotIncludingScale
+			);
 		}
 
-		TargetActor->SetRootComponent(TargetActor->CollisionComponent);
-		TargetActor->SkeletalMeshComponent->AttachToComponent
-		(
-			TargetActor->GetRootComponent(),
-			FAttachmentTransformRules::SnapToTargetNotIncludingScale
-		);
-
+		// lazy initialization of collision component;
 		TargetActor->CollisionComponent->SetCollisionProfileName("MyCollectable");
 		TargetActor->CollisionComponent->SetSimulatePhysics(false);
 		TargetActor->CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);

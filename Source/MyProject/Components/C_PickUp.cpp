@@ -170,11 +170,11 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 					InCollectable->SetReplicateMovement(true);
 
 					// Reset velocity;
-					if (UMeshComponent* MeshComponent = InCollectable->GetComponentByClass<UMeshComponent>())
+					if (UShapeComponent* CollisionComponent = InCollectable->GetCollisionComponent())
 					{
-						MeshComponent->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
-						MeshComponent->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
-						MeshComponent->AddForce(ForwardVector * 50.f);
+						CollisionComponent->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
+						CollisionComponent->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
+						CollisionComponent->AddForce(ForwardVector * 50.f);
 					}
 
 					OnObjectDropPreSpawned.Broadcast(InActor);

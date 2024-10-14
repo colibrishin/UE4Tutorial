@@ -158,11 +158,11 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	Hand->SetChildActorClass(Collectable->GetClass());
 	ArmHand->SetChildActorClass(Collectable->GetClass());
 	
-	AA_Collectable* HandChild = Cast<AA_Collectable>(Hand->GetChildActor());
-	AA_Collectable* ArmChild = Cast<AA_Collectable>(ArmHand->GetChildActor());
+	HandActor = Cast<AA_Collectable>(Hand->GetChildActor());
+	ArmHandActor = Cast<AA_Collectable>(ArmHand->GetChildActor());
 
-	HandChild->SetOwner(this);
-	ArmChild->SetOwner(this);
+	HandActor->SetOwner(this);
+	ArmHandActor->SetOwner(this);
 
 	const int32 InPickUpID = Collectable->GetComponentByClass<UC_Asset>()->GetID();
 	UC_Asset* CollectableAsset = Hand->GetChildActor()->GetComponentByClass<UC_Asset>();
@@ -171,23 +171,23 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	CollectableAsset->SetID(InPickUpID);
 	ArmCollectableAsset->SetID(InPickUpID);
 
-	HandChild->SetPhysics(false);
-	ArmChild->SetPhysics(false);
+	//HandActor->FetchAsset();
+	//ArmHandActor->FetchAsset();
+	
+	HandActor->SetPhysics(false);
+	ArmHandActor->SetPhysics(false);
 
-	Cast<AA_Collectable>(HandChild)->SetDummy(false, nullptr);
-	Cast<AA_Collectable>(ArmChild)->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
+	HandActor->SetDummy(false, nullptr);
+	ArmHandActor->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
 
 	// Replicates the hand child actor to everyone;
-	HandChild->bAlwaysRelevant = true;
+	HandActor->bAlwaysRelevant = true;
 	// Replicates the arm hand child actor to owner only;
-	ArmChild->bOnlyRelevantToOwner = true;
+	ArmHandActor->bOnlyRelevantToOwner = true;
 	
 	// Broadcast the pick up component to trigger any pick up event dependent listeners;
-	HandChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
-	ArmChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
-	
-	HandActor = Cast<AA_Collectable>(HandChild);
-	ArmHandActor = Cast<AA_Collectable>(ArmChild);
+	HandActor->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
+	ArmHandActor->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
 	SyncHandProperties();
 
 	OnHandChanged.Broadcast(HandActor);
@@ -297,7 +297,11 @@ void AA_Character::SyncHandProperties() const
 		if (UMeshComponent* MeshComponent = InChild->GetComponentByClass<UMeshComponent>())
 		{
 			MeshComponent->SetCastShadow(false);
-			MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+
+		if (UShapeComponent* CollisionComponent = InChild->GetCollisionComponent())
+		{
+			CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	};
 

@@ -57,11 +57,12 @@ AA_Collectable* FCollectableUtility::CloneChildActor
 
 		Destination->ReinitializeProperties(OriginalComponent);
 	}
-	
+
+	// fixme: inconsistent fetching (delegation);
 	ClonedObject->GetAssetComponent()->SetID(InObject->GetAssetComponent()->GetID());
 	ClonedObject->FetchAsset();
 	InDeferredFunction(ClonedObject);
-	
+
 	UGameplayStatics::FinishSpawningActor(ClonedObject, InTransform);
 	return ClonedObject;
 }
@@ -72,17 +73,18 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 {
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	
+
+	// null by default;
+	CollisionComponent = CreateDefaultSubobject<UShapeComponent>(TEXT("CollisionComponent"));
 	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
 	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(AssetComponentName);
 	PickUpComponent = CreateDefaultSubobject<UC_PickUp>(TEXT("PickUpComponent"));
-
-	// RootSceneComponent initialized by asset component;
-	// set the skeletal mesh component as root component temporarily;
-	SetRootComponent(SkeletalMeshComponent);
-
+	
 	SkeletalMeshComponent->SetSimulatePhysics(false);
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	
+	// set the skeletal mesh component as temporary root component;
+	SetRootComponent(SkeletalMeshComponent);
 	
 	SkeletalMeshComponent->SetNetAddressable();
 	SkeletalMeshComponent->SetIsReplicated(true);
@@ -92,7 +94,7 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 
 	AssetComponent->SetNetAddressable();
 	AssetComponent->SetIsReplicated(true);
-
+	
 	bReplicates = true;
 	AActor::SetReplicateMovement(true);
 	bNetLoadOnClient = true;
@@ -127,12 +129,13 @@ void AA_Collectable::SetPhysics(const bool InPhysics)
 void AA_Collectable::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 }
 
 void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AA_Collectable, CollisionComponent);
 	DOREPLIFETIME(AA_Collectable, AssetComponent);
 	DOREPLIFETIME(AA_Collectable, PickUpComponent);
 	DOREPLIFETIME_CONDITION(AA_Collectable, bDummy, COND_OwnerOnly);

@@ -52,6 +52,7 @@ public:
 	
 	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
+	UShapeComponent*	 GetCollisionComponent() const { return CollisionComponent; }
 	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling);
 	void                 SetPhysics(const bool InPhysics);
 
@@ -68,8 +69,8 @@ protected:
 	
 	UFUNCTION()
 	void OnRep_Dummy(AA_Collectable* InPreviousDummy) const;
-
-	UPROPERTY(VisibleAnywhere)
+	
+	UPROPERTY(VisibleAnywhere, Replicated)
 	UShapeComponent* CollisionComponent;
 	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
