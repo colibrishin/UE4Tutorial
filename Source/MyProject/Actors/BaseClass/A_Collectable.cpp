@@ -3,6 +3,8 @@
 
 #include "A_Collectable.h"
 
+#include "Components/BoxComponent.h"
+
 #include "Kismet/GameplayStatics.h"
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
@@ -74,20 +76,16 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// null by default;
-	CollisionComponent = CreateDefaultSubobject<UShapeComponent>(TEXT("CollisionComponent"));
+	CollisionComponent = CreateDefaultSubobject<UBoxComponent>(TEXT("CollisionComponent"));
 	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComponent"));
 	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(AssetComponentName);
 	PickUpComponent = CreateDefaultSubobject<UC_PickUp>(TEXT("PickUpComponent"));
+
+	SetRootComponent(CollisionComponent);
 	
+	SkeletalMeshComponent->SetupAttachment(CollisionComponent);
 	SkeletalMeshComponent->SetSimulatePhysics(false);
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
-	// set the skeletal mesh component as temporary root component;
-	SetRootComponent(SkeletalMeshComponent);
-	
-	SkeletalMeshComponent->SetNetAddressable();
-	SkeletalMeshComponent->SetIsReplicated(true);
 	
 	PickUpComponent->SetNetAddressable();
 	PickUpComponent->SetIsReplicated(true);
@@ -135,7 +133,6 @@ void AA_Collectable::BeginPlay()
 void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(AA_Collectable, CollisionComponent);
 	DOREPLIFETIME(AA_Collectable, AssetComponent);
 	DOREPLIFETIME(AA_Collectable, PickUpComponent);
 	DOREPLIFETIME_CONDITION(AA_Collectable, bDummy, COND_OwnerOnly);
@@ -145,8 +142,6 @@ void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 void AA_Collectable::PostFetchAsset()
 {
 	IAssetFetchable::PostFetchAsset();
-	
-	//BoxComponent->InitBoxExtent(SkeletalMeshComponent->GetLocalBounds().BoxExtent);
 }
 
 void AA_Collectable::OnRep_Dummy(AA_Collectable* InPreviousDummy) const

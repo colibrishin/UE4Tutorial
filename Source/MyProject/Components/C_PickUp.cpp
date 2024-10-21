@@ -170,7 +170,7 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 					InCollectable->SetReplicateMovement(true);
 
 					// Reset velocity;
-					if (UShapeComponent* CollisionComponent = InCollectable->GetCollisionComponent())
+					if (UPrimitiveComponent* CollisionComponent = InCollectable->GetCollisionComponent())
 					{
 						CollisionComponent->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
 						CollisionComponent->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);

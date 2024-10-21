@@ -5,7 +5,6 @@
 #include <functional>
 
 #include "CoreMinimal.h"
-#include "Components/ShapeComponent.h"
 #include "GameFramework/Actor.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
 
@@ -49,15 +48,15 @@ public:
 	{
 		return Cast<T>(AssetComponent);
 	}
-	
-	UC_PickUp*           GetPickUpComponent() const { return PickUpComponent; }
-	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
-	UShapeComponent*	 GetCollisionComponent() const { return CollisionComponent; }
-	void                 SetDummy(const bool InFlag, AA_Collectable* InSibling);
-	void                 SetPhysics(const bool InPhysics);
 
-	bool                 IsDummy() const { return bDummy; }
-	AA_Collectable*      GetSibling() const { return Sibling; }
+	UC_PickUp*              GetPickUpComponent() const { return PickUpComponent; }
+	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
+	UPrimitiveComponent*    GetCollisionComponent() const { return CollisionComponent; }
+	void                    SetDummy(const bool InFlag , AA_Collectable* InSibling);
+	void                    SetPhysics(const bool InPhysics);
+
+	bool            IsDummy() const { return bDummy; }
+	AA_Collectable* GetSibling() const { return Sibling; }
 	
 protected:
 	// Called when the game starts or when spawned
@@ -70,8 +69,8 @@ protected:
 	UFUNCTION()
 	void OnRep_Dummy(AA_Collectable* InPreviousDummy) const;
 	
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UShapeComponent* CollisionComponent;
+	UPROPERTY(VisibleAnywhere)
+	UPrimitiveComponent* CollisionComponent;
 	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	USkeletalMeshComponent* SkeletalMeshComponent;

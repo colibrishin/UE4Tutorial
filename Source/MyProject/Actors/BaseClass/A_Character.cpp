@@ -20,11 +20,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
-#include "Kismet/GameplayStatics.h"
-
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
-#include "MyProject/Components/Asset/C_WeaponAsset.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -299,7 +296,7 @@ void AA_Character::SyncHandProperties() const
 			MeshComponent->SetCastShadow(false);
 		}
 
-		if (UShapeComponent* CollisionComponent = InChild->GetCollisionComponent())
+		if (UPrimitiveComponent* CollisionComponent = InChild->GetCollisionComponent())
 		{
 			CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
