@@ -97,6 +97,7 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	AActor::SetReplicateMovement(true);
 	bNetLoadOnClient = true;
 	bDummy = false;
+	bPhysicsInClient = false;
 
 	AssetComponent->OnAssetIDSet.AddUObject(this, &AA_Collectable::FetchAsset);
 }
@@ -118,9 +119,10 @@ void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)
 	}
 }
 
-void AA_Collectable::SetPhysics(const bool InPhysics)
+void AA_Collectable::SetPhysicsInClient(const bool InPhysics)
 {
 	ApplyPhysics(InPhysics);
+	bPhysicsInClient = InPhysics;
 }
 
 // Called when the game starts or when spawned
@@ -133,8 +135,10 @@ void AA_Collectable::BeginPlay()
 void AA_Collectable::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME(AA_Collectable, CollisionComponent);
 	DOREPLIFETIME(AA_Collectable, AssetComponent);
 	DOREPLIFETIME(AA_Collectable, PickUpComponent);
+	DOREPLIFETIME(AA_Collectable, bPhysicsInClient);
 	DOREPLIFETIME_CONDITION(AA_Collectable, bDummy, COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(AA_Collectable, Sibling, COND_OwnerOnly);
 }
@@ -147,6 +151,11 @@ void AA_Collectable::PostFetchAsset()
 void AA_Collectable::OnRep_Dummy(AA_Collectable* InPreviousDummy) const
 {
 	OnDummyFlagSet.Broadcast(InPreviousDummy);
+}
+
+void AA_Collectable::OnRep_PhysicsInClient() const
+{
+	ApplyPhysics(bPhysicsInClient);
 }
 
 // Called every frame

@@ -171,8 +171,8 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	//HandActor->FetchAsset();
 	//ArmHandActor->FetchAsset();
 	
-	HandActor->SetPhysics(false);
-	ArmHandActor->SetPhysics(false);
+	HandActor->SetPhysicsInClient(false);
+	ArmHandActor->SetPhysicsInClient(false);
 
 	HandActor->SetDummy(false, nullptr);
 	ArmHandActor->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));

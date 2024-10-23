@@ -165,7 +165,7 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 					AA_Collectable* InCollectable = Cast<AA_Collectable>(InActor); 
 					
 					InCollectable->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-					InCollectable->SetPhysics(true);
+					InCollectable->SetPhysicsInClient(true);
 					InCollectable->SetReplicates(true);
 					InCollectable->SetReplicateMovement(true);
 

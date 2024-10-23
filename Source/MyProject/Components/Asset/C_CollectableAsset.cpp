@@ -58,50 +58,58 @@ void UC_CollectableAsset::ApplyAsset()
 	if ( AA_Collectable* TargetActor = Cast<AA_Collectable>(Actor);
 		TargetActor )
 	{
-		const USkeletalMeshComponent* MeshComponent = TargetActor->GetComponentByClass<USkeletalMeshComponent>();
-		const FBoxSphereBounds Bounds = MeshComponent->GetLocalBounds();
-
-		const USceneComponent* PreviousRootComponent = TargetActor->GetRootComponent();
-		USceneComponent* PreviousAttachParent = PreviousRootComponent->GetAttachParent();
-		
-		switch (Collectable->GetCollisionType())
+		if (GetNetMode() != NM_Client)
 		{
-		case EMultiShapeType::Box:
-			{
-				TargetActor->CollisionComponent = NewObject<UBoxComponent>(TargetActor, TEXT("CollisionComponent"));
-				Cast<UBoxComponent>(TargetActor->CollisionComponent)->SetBoxExtent(Bounds.BoxExtent);
-				break;
-			}
-		case EMultiShapeType::Sphere:
-			{
-				TargetActor->CollisionComponent = NewObject<USphereComponent>(TargetActor, TEXT("CollisionComponent"));
-				Cast<USphereComponent>(TargetActor->CollisionComponent)->SetSphereRadius(Bounds.BoxExtent.GetMax());
-				break;
-			}
-		case EMultiShapeType::Capsule:
-			{
-				// todo: accurate estimation
-				TargetActor->CollisionComponent = NewObject<UCapsuleComponent>(TargetActor, TEXT("CollisionComponent"));
-				Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleRadius(Bounds.SphereRadius);
-				Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleHalfHeight(Bounds.BoxExtent.Z);
-				break;
-			}
-		default: check(false);
-		}
-		
-		TargetActor->SetRootComponent(TargetActor->CollisionComponent);
-		TargetActor->CollisionComponent->RegisterComponent();
-		TargetActor->CollisionComponent->AttachToComponent
-		(
-			PreviousAttachParent,
-			FAttachmentTransformRules::KeepRelativeTransform
-		);
+			const USkeletalMeshComponent* MeshComponent = TargetActor->GetComponentByClass<USkeletalMeshComponent>();
+			const FBoxSphereBounds Bounds = MeshComponent->GetLocalBounds();
 
-		TargetActor->SkeletalMeshComponent->AttachToComponent
-		(
-			TargetActor->CollisionComponent,
-			FAttachmentTransformRules::KeepRelativeTransform
-		);
+			const USceneComponent* PreviousRootComponent = TargetActor->GetRootComponent();
+			USceneComponent* PreviousAttachParent = PreviousRootComponent->GetAttachParent();
+		
+			switch (Collectable->GetCollisionType())
+			{
+			case EMultiShapeType::Box:
+				{
+					TargetActor->CollisionComponent = NewObject<UBoxComponent>(TargetActor, TEXT("CollisionComponent"));
+					Cast<UBoxComponent>(TargetActor->CollisionComponent)->SetBoxExtent(Bounds.BoxExtent);
+					break;
+				}
+			case EMultiShapeType::Sphere:
+				{
+					TargetActor->CollisionComponent = NewObject<USphereComponent>(TargetActor, TEXT("CollisionComponent"));
+					Cast<USphereComponent>(TargetActor->CollisionComponent)->SetSphereRadius(Bounds.BoxExtent.GetMax());
+					break;
+				}
+			case EMultiShapeType::Capsule:
+				{
+					// todo: accurate estimation
+					TargetActor->CollisionComponent = NewObject<UCapsuleComponent>(TargetActor, TEXT("CollisionComponent"));
+					Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleRadius(Bounds.SphereRadius);
+					Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleHalfHeight(Bounds.BoxExtent.Z);
+					break;
+				}
+			default: check(false);
+			}
+		
+			TargetActor->SetRootComponent(TargetActor->CollisionComponent);
+			TargetActor->CollisionComponent->SetIsReplicated(true);
+			TargetActor->CollisionComponent->RegisterComponent();
+
+			if (PreviousAttachParent)
+			{
+				TargetActor->CollisionComponent->AttachToComponent
+				(
+					PreviousAttachParent,
+					FAttachmentTransformRules::KeepRelativeTransform
+				);
+			}
+		
+			TargetActor->SkeletalMeshComponent->AttachToComponent
+			(
+				TargetActor->CollisionComponent,
+				FAttachmentTransformRules::KeepRelativeTransform
+			);
+		}
 		
 		// lazy initialization of collision component;
 		TargetActor->CollisionComponent->SetCollisionProfileName("MyCollectable");

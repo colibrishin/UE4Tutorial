@@ -53,7 +53,7 @@ public:
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
 	UPrimitiveComponent*    GetCollisionComponent() const { return CollisionComponent; }
 	void                    SetDummy(const bool InFlag , AA_Collectable* InSibling);
-	void                    SetPhysics(const bool InPhysics);
+	void                    SetPhysicsInClient(const bool InPhysics);
 
 	bool            IsDummy() const { return bDummy; }
 	AA_Collectable* GetSibling() const { return Sibling; }
@@ -68,8 +68,11 @@ protected:
 	
 	UFUNCTION()
 	void OnRep_Dummy(AA_Collectable* InPreviousDummy) const;
+
+	UFUNCTION()
+	void OnRep_PhysicsInClient() const;
 	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Replicated)
 	UPrimitiveComponent* CollisionComponent;
 	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
@@ -83,6 +86,9 @@ protected:
 	
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	bool bDummy;
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_PhysicsInClient, meta=(AllowPrivateAccess))
+	bool bPhysicsInClient;
 
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Dummy, meta=(AllowPrivateAccess))
 	AA_Collectable* Sibling;
