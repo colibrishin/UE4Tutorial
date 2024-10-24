@@ -4,6 +4,7 @@
 #include "C_Asset.h"
 
 #include "Components/CapsuleComponent.h"
+#include "MyProject/Actors/BaseClass/A_Collectable.h"
 
 #include "MyProject/DataAsset/DA_AssetBase.h"
 #include "MyProject/Frameworks/Subsystems/SS_World.h"
@@ -39,27 +40,37 @@ UC_Asset::UC_Asset() : ID(-1)
 
 void UC_Asset::ApplyAsset()
 {
-	if (const AActor* Actor = GetOwner())
+	LOG_FUNC_PRINTF(LogAssetComponent, Log, "Applying asset to %s with %d; Client? : %d", *GetOwner()->GetName(), GetID(), GetNetMode() == NM_Client);
+
+	const AActor* Actor = GetOwner();
+	// cannot determine the owner, move up to the hierarchy (e.g., PreSpawn, Deferred);
+	if ( !Actor )
 	{
-		bool bCapsule = false;
+		Actor = Cast<AActor>( GetOuter() );
+	}
+	check( Actor != nullptr );
 
-		if (UCapsuleComponent* CapsuleComponent = Actor->GetComponentByClass<UCapsuleComponent>())
+	bool bCapsule = false;
+
+	if ( UCapsuleComponent* CapsuleComponent = Actor->GetComponentByClass<UCapsuleComponent>() )
+	{
+		CapsuleComponent->SetWorldScale3D( AssetData->GetSize() );
+		bCapsule = true;
+	}
+
+	if ( USkeletalMeshComponent* SkeletalMeshComponent = Actor->GetComponentByClass<USkeletalMeshComponent>() )
+	{
+		SkeletalMeshComponent->SetSkeletalMesh( AssetData->GetSkeletalMesh() );
+
+		if (SkeletalMeshComponent->GetAttachParentActor())
 		{
-			CapsuleComponent->SetWorldScale3D(AssetData->GetSize());
-			bCapsule = true;
+			SkeletalMeshComponent->SetRelativeLocation( AssetData->GetMeshOffset() , false , nullptr , ETeleportType::ResetPhysics );
+			SkeletalMeshComponent->SetRelativeRotation( AssetData->GetMeshRotation() , false , nullptr , ETeleportType::ResetPhysics );
 		}
-		
 
-		if (USkeletalMeshComponent* SkeletalMeshComponent = Actor->GetComponentByClass<USkeletalMeshComponent>())
+		if ( !bCapsule )
 		{
-			SkeletalMeshComponent->SetSkeletalMesh(AssetData->GetSkeletalMesh());
-			SkeletalMeshComponent->SetRelativeLocation(AssetData->GetMeshOffset());
-			SkeletalMeshComponent->SetRelativeRotation(AssetData->GetMeshRotation());
-
-			if (!bCapsule)
-			{
-				SkeletalMeshComponent->SetWorldScale3D(AssetData->GetSize());
-			}
+			SkeletalMeshComponent->SetWorldScale3D( AssetData->GetSize() );
 		}
 	}
 }
@@ -97,6 +108,7 @@ void UC_Asset::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 void UC_Asset::OnRep_ID()
 {
 	FetchAsset();
+	ApplyAsset();
 	OnAssetIDSet.Broadcast();
 }
 
@@ -110,11 +122,11 @@ void UC_Asset::FetchAsset()
 	if (GIsEditor)
 	{
 		World = GEditor->GetEditorWorldContext().World();
-	}
 
-	if (AssetData)
-	{
-		AssetData->OnAssetPropertyChanged.RemoveAll(this);
+		if (AssetData)
+		{
+			AssetData->OnAssetPropertyChanged.RemoveAll(this);
+		}
 	}
 #endif
 	
@@ -123,7 +135,10 @@ void UC_Asset::FetchAsset()
 		check(Data->AssetToLink);
 		AssetData = Data->AssetToLink;
 #if WITH_EDITOR
-		AssetData->OnAssetPropertyChanged.AddUObject(this, &UC_Asset::ApplyAsset);
+		if (GIsEditor)
+		{
+			AssetData->OnAssetPropertyChanged.AddUObject(this, &UC_Asset::ApplyAsset);	
+		}
 #endif
 	}
 	else

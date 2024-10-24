@@ -10,7 +10,7 @@ public class MyProject: ModuleRules
 		//PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		//PrivatePCHHeaderFile = "ProjectPrecompiled.h";
 		//MinFilesUsingPrecompiledHeaderOverride = 1;
-		bUseUnity = true;
+		//bUseUnity = true;
 		CppStandard = CppStandardVersion.Default;
 
 		PublicDependencyModuleNames.AddRange(new string[] 
@@ -30,7 +30,15 @@ public class MyProject: ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[]
         {
-			"InputCore", "EnhancedInput", "NavigationSystem", "UnrealEd"
+			"InputCore", "EnhancedInput", "NavigationSystem"
         });
+		
+		if (Target.bBuildEditor) 
+		{
+			PrivateDependencyModuleNames.AddRange(new string[]
+			{
+				"UnrealEd"
+			});
+		}
 	}
 }
