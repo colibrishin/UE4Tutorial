@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"
 
+class AMyPlayerState;
+class AA_Character;
 class UC_Buy;
 /**
  * 
@@ -20,12 +22,18 @@ public:
 
 	virtual void BeginPlay() override;
 
+	virtual void OnRep_Pawn() override;
+
 	virtual void OnRep_PlayerState() override;
 
-	virtual void OnRep_Pawn() override;
-	
-	void SetSpectator(class AMySpectatorPawn* Spectator);
+	virtual void ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass) override;
 
+	void UpdateHUDForPlayerState() const;
+
+	void UpdateHUDForPawn() const;
+
+	void SetSpectator(class AMySpectatorPawn* Spectator);
+	
 	UFUNCTION(Client, Reliable)
 	void Client_SetSpectator(AMySpectatorPawn* Spectator);
 

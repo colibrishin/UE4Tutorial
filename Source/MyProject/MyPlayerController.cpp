@@ -8,7 +8,11 @@
 #include "MyProject/Widgets/MyInGameWidget.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
+
+#include "Actors/BaseClass/A_Character.h"
+
 #include "MyProject/Private/Utilities.hpp"
+#include "Actors/BaseClass/A_Character.h"
 
 #include "Components/Asset/C_CharacterAsset.h"
 
@@ -27,93 +31,79 @@ void AMyPlayerController::BeginPlay()
 	Super::BeginPlay();
 }
 
-void AMyPlayerController::OnRep_PlayerState()
-{
-	Super::OnRep_PlayerState();
-
-	if (!IsLocalPlayerController())
-	{
-		return;
-	}
-
-	AsyncTask
-		(
-		 ENamedThreads::AnyNormalThreadHiPriTask , [this]()
-		 {
-			 const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD());
-
-			 while (HUD == nullptr || !HUD->GetInGameWidget()->IsValidLowLevelFast())
-			 {
-				 HUD = Cast<AMyInGameHUD>(GetHUD());
-				 FPlatformProcess::YieldThread();
-			 }
-
-			 // Iterate all widgets and pass the own player state to the widgets that require the player state. 
-			 for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
-			      Iterator;
-			      ++Iterator)
-			 {
-				 UUserWidget* Widget = Cast<UUserWidget>
-					 (
-					  Iterator->GetObjectPropertyValue
-					  (
-					   Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget() , 0)
-					  )
-					 );
-				 if (IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>(Widget))
-				 {
-					 Interface->DispatchPlayerState(Cast<AMyPlayerState>(PlayerState));
-				 }
-			 }
-		 }
-		);
-}
-
 void AMyPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
+}
 
-	if (!IsLocalPlayerController())
+void AMyPlayerController::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+}
+
+void AMyPlayerController::ClientSetHUD_Implementation( TSubclassOf<AHUD> NewHUDClass )
+{
+	Super::ClientSetHUD_Implementation( NewHUDClass );
+
+	if (GetCharacter())
 	{
-		return;
+		UpdateHUDForPawn();
 	}
-	
-	AsyncTask
-			(
-			 ENamedThreads::AnyNormalThreadHiPriTask , [this]()
-			 {
-				 if (AA_Character* NewCharacter = Cast<AA_Character>(GetCharacter()))
-				 {
-					 if (const AMyInGameHUD* HUD = Cast<AMyInGameHUD>(GetHUD()))
-					 {
-						 while (!HUD || !HUD->GetInGameWidget()->IsValidLowLevelFast())
-						 {
-							 HUD = Cast<AMyInGameHUD>(GetHUD());
-							 FPlatformProcess::YieldThread();
-						 }
 
-						 LOG_FUNC_PRINTF
-						 (LogPlayerController , Log , "Dispatch character %s to HUD" , *NewCharacter->GetName());
+	if (GetPlayerState<AMyPlayerState>())
+	{
+		UpdateHUDForPlayerState();
+	}
+}
 
-						 // Iterate all widgets and pass the own player state to the widgets that require the character. 
-						 for (TFieldIterator<FObjectProperty> Iterator(UMyInGameWidget::StaticClass());
-							  Iterator;
-							  ++Iterator)
-						 {
-							 UUserWidget* Widget = Cast<UUserWidget>
-									 (
-									  Iterator->GetObjectPropertyValue
-									  (Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget() , 0))
-									 );
-							 if (ICharacterRequiredWidget* Interface = Cast<ICharacterRequiredWidget>(Widget))
-							 {
-								 Interface->DispatchCharacter(NewCharacter);
-							 }
-						 }
-					 }
-				 }
-			 }
-			);
+void AMyPlayerController::UpdateHUDForPlayerState() const
+{
+	if ( AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>() )
+	{
+		if ( const AMyInGameHUD* HUD = Cast<AMyInGameHUD>( GetHUD() ) )
+		{
+			// Iterate all widgets and pass the own player state to the widgets that require the player state. 
+			for ( TFieldIterator<FObjectProperty> Iterator( UMyInGameWidget::StaticClass() );
+				  Iterator;
+				  ++Iterator )
+			{
+				UUserWidget* Widget = Cast<UUserWidget>(
+					Iterator->GetObjectPropertyValue(
+						Iterator->ContainerPtrToValuePtr<void>( HUD->GetInGameWidget() , 0 )
+					)
+				);
+				if ( IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>( Widget ) )
+				{
+					Interface->DispatchPlayerState( Cast<AMyPlayerState>( MyPlayerState ) );
+				}
+			}
+		}
+	}
+}
+
+void AMyPlayerController::UpdateHUDForPawn() const
+{
+	if ( AA_Character* MyCharacter = Cast<AA_Character>( GetCharacter() ) )
+	{
+		LOG_FUNC_PRINTF( LogPlayerController , Log , "Dispatch character %s to HUD" , *GetCharacter()->GetName() );
+
+		if ( const AMyInGameHUD* HUD = Cast<AMyInGameHUD>( GetHUD() ) )
+		{
+			// Iterate all widgets and pass the own player state to the widgets that require the character. 
+			for ( TFieldIterator<FObjectProperty> Iterator( UMyInGameWidget::StaticClass() );
+				  Iterator;
+				  ++Iterator )
+			{
+				UUserWidget* Widget = Cast<UUserWidget>(
+					Iterator->GetObjectPropertyValue( Iterator->ContainerPtrToValuePtr<void>( HUD->GetInGameWidget() , 0 ) )
+				);
+				if ( ICharacterRequiredWidget* Interface = Cast<ICharacterRequiredWidget>( Widget ) )
+				{
+					Interface->DispatchCharacter( MyCharacter );
+				}
+			}
+		}
+	}
 }
 
 void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)

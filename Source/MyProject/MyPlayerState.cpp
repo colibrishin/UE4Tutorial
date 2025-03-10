@@ -38,6 +38,7 @@ AMyPlayerState::AMyPlayerState()
 void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
+
 }
 
 void AMyPlayerState::UpdateCharacterAsset(APlayerState* /*InPlayerState*/, APawn* InNewCharacter, APawn* /*InOldCharacter*/)
