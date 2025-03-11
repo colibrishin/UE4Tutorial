@@ -167,9 +167,6 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	
 	CollectableAsset->SetID(InPickUpID);
 	ArmCollectableAsset->SetID(InPickUpID);
-
-	//HandActor->FetchAsset();
-	//ArmHandActor->FetchAsset();
 	
 	HandActor->SetPhysicsInClient(false);
 	ArmHandActor->SetPhysicsInClient(false);
@@ -182,9 +179,8 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	// Replicates the arm hand child actor to owner only;
 	ArmHandActor->bOnlyRelevantToOwner = true;
 	
-	// Broadcast the pick up component to trigger any pick up event dependent listeners;
-	HandActor->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
-	ArmHandActor->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
+	HandActor->GetComponentByClass<UC_PickUp>()->AttachEventHandlers( true , EPickUp::Drop );
+	ArmHandActor->GetComponentByClass<UC_PickUp>()->AttachEventHandlers( false , EPickUp::Drop );
 	SyncHandProperties();
 
 	OnHandChanged.Broadcast(HandActor);
@@ -321,12 +317,11 @@ void AA_Character::PostFetchAsset()
 
 void AA_Character::Server_PickUp_Implementation()
 {
-	TArray<FOverlapResult> OutResult;
 	FVector Center, Extents;
 	GetActorBounds(true, Center, Extents);
 
 	// Ignore the character just in case;
-	FCollisionQueryParams Params{NAME_None, false, this};
+	FCollisionQueryParams Params{ NAME_None, false };
 	
 	// Ignore hand collectable objects;
 	if (HandActor)
@@ -334,39 +329,54 @@ void AA_Character::Server_PickUp_Implementation()
 		Params.AddIgnoredActor(HandActor);
 		Params.AddIgnoredActor(ArmHandActor);
 	}
+
+	FVector TestLocation = GetActorLocation();
+
+	// Find the floor.
+	if ( FHitResult OutResult;
+		 GetWorld()->LineTraceSingleByChannel( OutResult , GetActorLocation() , GetActorLocation() + FVector::DownVector * 1000.f , ECC_WorldStatic , Params ) )
+	{
+		DrawDebugLine( GetWorld() , TestLocation , OutResult.Location , FColor::Red , false , 2.f );
+		TestLocation = OutResult.Location;
+	}
 	
-	if (!GetWorld()->OverlapMultiByChannel
-		(
-		 OutResult ,
-		 GetActorLocation() ,
-		 FQuat::Identity ,
-		 ECC_GameTraceChannel9 ,
-		 FCollisionShape::MakeSphere(Extents.GetMax()) ,
-		 Params
-		))
+	if ( TArray<FOverlapResult> OutResults;
+		 !GetWorld()->OverlapMultiByChannel
+		 (
+			 OutResults ,
+			 TestLocation ,
+			 FQuat::Identity ,
+			 ECC_GameTraceChannel9 ,
+			 FCollisionShape::MakeSphere( Extents.GetMax() * 1.5f ) ,
+			 Params
+		 ) )
 	{
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Found nothing to pick up of %s" , *GetName() );
 		return;
 	}
-
-	// Sort the objects in distance wise;
-	OutResult.Sort([this](const FOverlapResult& InLeft, const FOverlapResult& InRight)
+	else 
 	{
-		const float& LeftDistance = FVector::Distance(GetActorLocation(), InLeft.GetActor()->GetActorLocation());
-		const float& RightDistance = FVector::Distance(GetActorLocation(), InRight.GetActor()->GetActorLocation());
-		return LeftDistance < RightDistance; 
-	});
+		// Sort the objects in distance wise;
+		OutResults.Sort( [this]( const FOverlapResult& InLeft , const FOverlapResult& InRight )
+		{
+				const float& LeftDistance = FVector::Distance( GetActorLocation() , InLeft.GetActor()->GetActorLocation() );
+				const float& RightDistance = FVector::Distance( GetActorLocation() , InRight.GetActor()->GetActorLocation() );
+				return LeftDistance < RightDistance;
+		} );
 
-	const AA_Collectable* Collectable = Cast<AA_Collectable>((*OutResult.begin()).GetActor());
-	check(Collectable);
+		const AA_Collectable* Collectable = Cast<AA_Collectable>( ( *OutResults.begin() ).GetActor() );
+		check( Collectable );
 
-	// todo: inventory;
-	if (bHandBusy)
-	{
-		LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, ignore pick up request", *Collectable->GetOwner()->GetName());
-		return;
+		// todo: inventory;
+		if ( bHandBusy )
+		{
+			LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, ignore pick up request" , *Collectable->GetOwner()->GetName() );
+			return;
+		}
+
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Picking up object %s" , *Collectable->GetName() );
+		Collectable->GetPickUpComponent()->OnObjectPickUp.Broadcast( this , true );
 	}
-
-	Collectable->GetPickUpComponent()->OnObjectPickUp.Broadcast(this, true);
 }
 
 void AA_Character::Server_Drop_Implementation()

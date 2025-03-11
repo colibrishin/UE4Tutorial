@@ -83,6 +83,7 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 
 	SetRootComponent(CollisionComponent);
 	
+	CollisionComponent->SetCollisionProfileName( "MyCollectable" );
 	SkeletalMeshComponent->SetupAttachment(CollisionComponent);
 	SkeletalMeshComponent->SetSimulatePhysics(false);
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -104,7 +105,7 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 
 void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)
 {
-	if (GetNetMode() != NM_Client)
+	if ( HasAuthority() )
 	{
 		bDummy = InFlag;
 		if (InFlag)

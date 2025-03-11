@@ -8,7 +8,7 @@
 #include "InputMappingContext.h"
 #include "MyProject/Components/C_PickUp.h"
 
-#include "../../../../../UnrealEngine/Engine/Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
+#include "Net/UnrealNetwork.h"
 #include "MyProject/Actors/BaseClass/A_Character.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -186,6 +186,11 @@ void UC_Weapon::Server_Reload_Implementation()
 
 void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCharacter)
 {
+	if ( GetNetMode() != NM_Client )
+	{
+		return;
+	}
+
 	if (const APlayerController* PlayerController = Cast<APlayerController>(InCharacter->GetController()))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
@@ -208,7 +213,7 @@ void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCha
 		{
 			LOG_FUNC(LogWeaponComponent , Error , "Unable to bind the key binding");
 		}
-	}	
+	}
 }
 
 void UC_Weapon::Client_SetupDropInput_Implementation(const AA_Character* InCharacter)
@@ -453,14 +458,11 @@ void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const 
 
 	if (const AA_Character* Character = Cast<AA_Character>(InPickUpObject.GetInterface()))
 	{
-		if (!IsDummy())
-		{
-			Client_SetupPickupInput(Character);	
-		}
+		Client_SetupPickupInput( Character );
 
 		if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 		{
-			PickUpComponent->OnObjectPickUp.RemoveAll(this);
+			PickUpComponent->OnObjectPickUp.Remove(this, "HandlePickUp");
 			PickUpComponent->OnObjectDrop.AddUniqueDynamic(this , &UC_Weapon::HandleDrop);
 		}
 	}
@@ -486,7 +488,7 @@ void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject, const bo
 		if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 		{
 			PickUpComponent->OnObjectPickUp.AddUniqueDynamic(this , &UC_Weapon::HandlePickUp);
-			PickUpComponent->OnObjectDrop.RemoveAll(this);
+			PickUpComponent->OnObjectDrop.Remove(this, "HandleDrop");
 		}
 	}
 }
@@ -514,22 +516,20 @@ void UC_Weapon::ReloadClip()
 }
 
 void UC_Weapon::HandleDummy(AA_Collectable* InPreviousDummy)
-{
-	SetIsReplicated(!IsDummy());
-	
+{	
 	if (IsDummy())
 	{
-		UC_Weapon* Sibling = GetSiblingComponent();
-		check(Sibling);
-			
-		if (IAttackObject* AttackObject = Cast<IAttackObject>(GetOwner()))
+		if ( UC_Weapon* Sibling = GetSiblingComponent() )
 		{
-			Sibling->OnAttack.AddUniqueDynamic(AttackObject, &IAttackObject::Attack);
-		}
+			if ( IAttackObject* AttackObject = Cast<IAttackObject>( GetOwner() ) )
+			{
+				Sibling->OnAttack.AddUniqueDynamic( AttackObject , &IAttackObject::Attack );
+			}
 
-		if (IReloadObject* ReloadObject = Cast<IReloadObject>(GetOwner()))
-		{
-			Sibling->OnReload.AddUniqueDynamic(ReloadObject, &IReloadObject::Reload);
+			if ( IReloadObject* ReloadObject = Cast<IReloadObject>( GetOwner() ) )
+			{
+				Sibling->OnReload.AddUniqueDynamic( ReloadObject , &IReloadObject::Reload );
+			}
 		}
 	}
 

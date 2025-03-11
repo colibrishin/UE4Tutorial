@@ -85,6 +85,12 @@ public:
 
 	UC_Weapon* GetSiblingComponent() const;
 
+	UFUNCTION()
+	virtual void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp );
+
+	UFUNCTION()
+	virtual void HandleDrop( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallDrop );
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -147,12 +153,6 @@ protected:
 
 	UFUNCTION()
 	void HandleReloadEnd(UC_Weapon* InWeapon);
-
-	UFUNCTION()
-	virtual void HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallPickUp);
-
-	UFUNCTION()
-	virtual void HandleDrop(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallDrop);
 
 	UFUNCTION()
 	void ConsumeAmmo();

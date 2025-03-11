@@ -24,40 +24,61 @@ UC_PickUp::UC_PickUp()
 	SetIsReplicatedByDefault(true);
 }
 
-
-void UC_PickUp::SetActive(bool bNewActive, bool bReset)
+void UC_PickUp::AttachEventHandlers(const bool bEnable, const EPickUp PickUpOrDrop)
 {
-	const bool bPreviousActive = IsActive();
-
-	Super::SetActive(bNewActive , bReset);
-
-	if (bNewActive != bPreviousActive && GetNetMode() != NM_Client)
+	if ( GetNetMode() == NM_Client )
 	{
-		if (!bNewActive)
-		{
-			OnObjectPickUp.RemoveAll(this);
-			OnObjectDrop.RemoveAll(this);
+		return;
+	}
 
-			if (UMeshComponent* MeshComponent = GetOwner()->GetComponentByClass<UMeshComponent>())
-			{
-				MeshComponent->OnComponentBeginOverlap.RemoveAll(this);
-			}
-		}
-		else
+	if ( bEnable )
+	{
+		switch ( PickUpOrDrop )
 		{
-			AttachEventHandlers();
+		case EPickUp::PickUp:
+		{
+			OnObjectPickUp.AddUniqueDynamic( this , &UC_PickUp::OnPickUpCallback );
+			if ( OnObjectDrop.Contains( this , "OnDropCallback" ) )
+			{
+				OnObjectDrop.Remove( this , "OnDropCallback" );
+			}
+
+			if ( UPrimitiveComponent* CollisionComponent = GetOwner()->GetComponentByClass<UPrimitiveComponent>() )
+			{
+				CollisionComponent->OnComponentBeginOverlap.AddUniqueDynamic( this , &UC_PickUp::OnBeginOverlap );
+			}
+			break;
+		}
+		case EPickUp::Drop:
+		{
+			if ( OnObjectPickUp.Contains( this , "OnPickUpCallBack" ) )
+			{
+				OnObjectPickUp.Remove( this , "OnPickUpCallback" );
+			}
+			OnObjectDrop.AddUniqueDynamic( this , &UC_PickUp::OnDropCallback );
+
+			if ( UPrimitiveComponent* CollisionComponent = GetOwner()->GetComponentByClass<UPrimitiveComponent>();
+				 CollisionComponent && CollisionComponent->OnComponentBeginOverlap.Contains(this, "OnBeginOverlap") )
+			{
+				CollisionComponent->OnComponentBeginOverlap.Remove( this , "OnBeginOverlap" );
+			}
+			break;
+		}
+		default:
+			check( false );
+			break;
 		}
 	}
-}
-
-void UC_PickUp::AttachEventHandlers()
-{
-	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
-	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
-
-	if (UMeshComponent* MeshComponent = GetOwner()->GetComponentByClass<UMeshComponent>())
+	else 
 	{
-		MeshComponent->OnComponentBeginOverlap.AddUniqueDynamic(this , &UC_PickUp::OnBeginOverlap);
+		OnObjectPickUp.RemoveAll( this );
+		OnObjectDrop.RemoveAll( this );
+
+		if ( UPrimitiveComponent* CollisionComponent = GetOwner()->GetComponentByClass<UPrimitiveComponent>();
+			 CollisionComponent && CollisionComponent->OnComponentBeginOverlap.Contains(this, "OnBeginOverlap") )
+		{
+			CollisionComponent->OnComponentBeginOverlap.Remove( this, "OnBeginOverlap" );
+		}
 	}
 }
 
@@ -65,16 +86,6 @@ void UC_PickUp::AttachEventHandlers()
 void UC_PickUp::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (GetNetMode() != NM_Client)
-	{
-		if (UMeshComponent* MeshComponent = GetOwner()->GetComponentByClass<UMeshComponent>())
-		{
-			MeshComponent->SetGenerateOverlapEvents(true);
-		}
-
-		AttachEventHandlers();
-	}
 }
 
 void UC_PickUp::OnBeginOverlap(
@@ -83,7 +94,7 @@ void UC_PickUp::OnBeginOverlap(
 	const FHitResult& /*SweepResult*/
 )
 {
-	if (Cast<IPickingUp>(OtherActor))
+	if ( Cast<IPickingUp>(OtherActor) )
 	{
 		OnObjectPickUp.Broadcast(TScriptInterface<IPickingUp>(OtherActor), true);
 	}
@@ -91,98 +102,100 @@ void UC_PickUp::OnBeginOverlap(
 
 void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallPickUp)
 {
+	if ( GetNetMode() == NM_Client )
+	{
+		return;
+	}
+
 	if (!InCaller)
 	{
 		LOG_FUNC(LogPickUp , Error , "Caught invalid pickup object!");
 		return;
 	}
 
-	LOG_FUNC_PRINTF(LogPickUp , Log , "Caught pickup : %s" , *InCaller->_getUObject()->GetName());
-
-	OnObjectPickUp.RemoveAll(this);
-	OnObjectDrop.AddUniqueDynamic(this , &UC_PickUp::OnDropCallback);
+	AttachEventHandlers( true , EPickUp::Drop );
 
 	if (bCallPickUp)
 	{
-		if (GetNetMode() != NM_Client)
-		{
-			InCaller->PickUp(this);
+		LOG_FUNC_PRINTF( LogPickUp , Log , "Caught pickup : %s" , *InCaller->_getUObject()->GetName() );
+		InCaller->PickUp( this );
 
-			// Assuming the object is cloned into child actor component or consumed etc;
-			GetOwner()->Destroy(true);
-		}
+		// Assuming the object is cloned into child actor component or consumed etc;
+		GetOwner()->Destroy( true );
 	}
 }
 
 void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallDrop)
 {
+	if ( GetNetMode() == NM_Client )
+	{
+		return;
+	}
+
 	if (!InCaller)
 	{
 		LOG_FUNC(LogPickUp , Error , "Caught invalid drop object!");
 		return;
 	}
 
-	LOG_FUNC_PRINTF(LogPickUp , Log , "Caught drop : %s" , *InCaller->_getUObject()->GetName());
+	AttachEventHandlers( false , EPickUp::Drop );
 
-	OnObjectDrop.RemoveAll(this);
-	OnObjectPickUp.AddUniqueDynamic(this , &UC_PickUp::OnPickUpCallback);
-
-	if (bCallDrop)
+	if ( bCallDrop )
 	{
-		if (GetNetMode() != NM_Client)
+		LOG_FUNC_PRINTF( LogPickUp , Log , "Caught drop : %s" , *InCaller->_getUObject()->GetName() );
+
+		const AActor* PickingObject = Cast<AActor>( InCaller.GetInterface() );
+		FVector Origin , Extents;
+		PickingObject->GetActorBounds( true , Origin , Extents );
+
+		FVector DropLocation = PickingObject->GetActorLocation();
+		FVector ForwardVector = PickingObject->GetActorForwardVector();
+
+		if ( const UCameraComponent* CameraComponent = PickingObject->GetComponentByClass<UCameraComponent>() )
 		{
-			const AActor* PickingObject = Cast<AActor>(InCaller.GetInterface());
-			FVector Origin, Extents;
-			PickingObject->GetActorBounds(true, Origin, Extents);
-
-			FVector DropLocation = PickingObject->GetActorLocation();
-			FVector ForwardVector = PickingObject->GetActorForwardVector();
-
-			if (const UCameraComponent* CameraComponent = PickingObject->GetComponentByClass<UCameraComponent>())
-			{
-				ForwardVector = CameraComponent->GetForwardVector();
-			}
-
-			const FRotator ForwardRotator = ForwardVector.Rotation();
-			const FVector RotatedExtent = ForwardRotator.RotateVector(Extents);
-			const FVector RePickPrevention = {RotatedExtent.X, RotatedExtent.Y, Extents.Z};
-
-			const FTransform Transform
-			{
-				FQuat::Identity,
-				DropLocation + RePickPrevention,
-				FVector::OneVector
-			};
-			
-			// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
-			AA_Collectable* InObject = Cast<AA_Collectable>(GetOwner());
-			AA_Collectable* Cloned = FCollectableUtility::CloneChildActor
-			(
-				InObject,
-				Transform,
-				[this, &ForwardVector](AActor* InActor)
-				{
-					AA_Collectable* InCollectable = Cast<AA_Collectable>(InActor); 
-					
-					InCollectable->DetachFromActor(FDetachmentTransformRules::KeepRelativeTransform);
-					InCollectable->SetPhysicsInClient(true);
-					InCollectable->SetReplicates(true);
-					InCollectable->SetReplicateMovement(true);
-
-					// Reset velocity;
-					if (UPrimitiveComponent* CollisionComponent = InCollectable->GetCollisionComponent())
-					{
-						CollisionComponent->SetAllPhysicsLinearVelocity(FVector::ZeroVector);
-						CollisionComponent->SetAllPhysicsAngularVelocityInRadians(FVector::ZeroVector);
-						CollisionComponent->AddForce(ForwardVector * 50.f);
-					}
-
-					OnObjectDropPreSpawned.Broadcast(InActor);
-				}
-			);
-
-			// Object destruction should be handled in InCaller's Drop;
-			InCaller->Drop(this);
+			ForwardVector = CameraComponent->GetForwardVector();
 		}
+
+		const FRotator ForwardRotator = ForwardVector.Rotation();
+		const FVector RotatedExtent = ForwardRotator.RotateVector( Extents );
+		const FVector RePickPrevention = { RotatedExtent.X, RotatedExtent.Y, Extents.Z };
+
+		const FTransform Transform
+		{
+			FQuat::Identity,
+			DropLocation + RePickPrevention,
+			FVector::OneVector
+		};
+
+		// Clone the object before destroyed => ChildActorComponent->DestroyChildActor();
+		AA_Collectable* InObject = Cast<AA_Collectable>( GetOwner() );
+		AA_Collectable* Cloned = FCollectableUtility::CloneChildActor
+		(
+			InObject ,
+			Transform ,
+			[this , &ForwardVector]( AActor* InActor )
+			{
+				AA_Collectable* InCollectable = Cast<AA_Collectable>( InActor );
+
+				InCollectable->DetachFromActor( FDetachmentTransformRules::KeepRelativeTransform );
+				InCollectable->SetPhysicsInClient( true );
+				InCollectable->SetReplicates( true );
+				InCollectable->SetReplicateMovement( true );
+
+				// Reset velocity;
+				if ( UPrimitiveComponent* CollisionComponent = InCollectable->GetCollisionComponent() )
+				{
+					CollisionComponent->SetAllPhysicsLinearVelocity( FVector::ZeroVector );
+					CollisionComponent->SetAllPhysicsAngularVelocityInRadians( FVector::ZeroVector );
+					CollisionComponent->AddForce( ForwardVector * 50.f );
+				}
+
+				OnObjectDropPreSpawned.Broadcast( InActor );
+			}
+		);
+		Cloned->GetComponentByClass<UC_PickUp>()->AttachEventHandlers( true , EPickUp::PickUp );
+
+		// Object destruction should be handled in InCaller's Drop;
+		InCaller->Drop( this );
 	}
 }
