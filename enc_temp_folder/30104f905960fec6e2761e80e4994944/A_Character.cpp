@@ -178,19 +178,9 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	HandActor->bAlwaysRelevant = true;
 	// Replicates the arm hand child actor to owner only;
 	ArmHandActor->bOnlyRelevantToOwner = true;
-
-	const auto& InitializeCollectable = [ this ]( const AA_Collectable* InCollectable, const bool bEnableEventHandler )
-		{
-			if ( UC_PickUp* PickUpComponent = InCollectable->GetComponentByClass<UC_PickUp>() )
-			{
-				PickUpComponent->AttachEventHandlers( bEnableEventHandler, EPickUp::Drop );
-				PickUpComponent->OnObjectPickUp.Broadcast( this , false );
-			}
-		};
-
-	InitializeCollectable( HandActor, true );
-	InitializeCollectable( ArmHandActor, false );
-
+	
+	HandActor->GetComponentByClass<UC_PickUp>()->AttachEventHandlers( true , EPickUp::Drop );
+	ArmHandActor->GetComponentByClass<UC_PickUp>()->AttachEventHandlers( false , EPickUp::Drop );
 	SyncHandProperties();
 
 	OnHandChanged.Broadcast(HandActor);

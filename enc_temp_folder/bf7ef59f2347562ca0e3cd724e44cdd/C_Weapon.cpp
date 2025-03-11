@@ -201,8 +201,6 @@ void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCha
 
 		if (UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>(InCharacter->InputComponent))
 		{
-			LOG_FUNC( LogWeaponComponent , Log , "Binding the weapon actions" );
-
 			AttackStartBinding = &InputComponent->BindAction
 					(AttackAction , ETriggerEvent::Started , this , &UC_Weapon::Attack);
 			AttackStopBinding = &InputComponent->BindAction
@@ -231,8 +229,6 @@ void UC_Weapon::Client_SetupDropInput_Implementation(const AA_Character* InChara
 
 		if (UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>(InCharacter->InputComponent))
 		{
-			LOG_FUNC( LogWeaponComponent , Log , "Unbinding the weapon actions" );
-
 			InputComponent->RemoveBinding(*AttackStartBinding);
 			InputComponent->RemoveBinding(*AttackStopBinding);
 			InputComponent->RemoveBinding(*ReloadBinding);
@@ -462,10 +458,7 @@ void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const 
 
 	if (const AA_Character* Character = Cast<AA_Character>(InPickUpObject.GetInterface()))
 	{
-		if (!IsDummy())
-		{
-			Client_SetupPickupInput( Character );	
-		}
+		Client_SetupPickupInput( Character );
 
 		if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 		{
