@@ -22,9 +22,11 @@ public:
 
 	virtual void BeginPlay() override;
 
-	virtual void OnRep_Pawn() override;
+	virtual void OnPossess( APawn* aPawn ) override;
 
-	virtual void OnRep_PlayerState() override;
+	virtual void InitPlayerState() override;
+
+	virtual void OnRep_Pawn() override;
 
 	virtual void ClientSetHUD_Implementation(TSubclassOf<AHUD> NewHUDClass) override;
 

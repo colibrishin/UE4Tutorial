@@ -31,6 +31,28 @@ void AMyPlayerController::BeginPlay()
 	Super::BeginPlay();
 }
 
+void AMyPlayerController::OnPossess( APawn* aPawn )
+{
+	Super::OnPossess( aPawn );
+	
+	// Case for the listen server.
+	if ( HasAuthority() && aPawn ) 
+	{
+		UpdateHUDForPawn();
+	}
+}
+
+void AMyPlayerController::InitPlayerState()
+{
+	Super::InitPlayerState();
+
+	// Case for the listen server.
+	if ( HasAuthority() )
+	{
+		UpdateHUDForPlayerState();
+	}
+}
+
 void AMyPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
@@ -40,11 +62,6 @@ void AMyPlayerController::OnRep_Pawn()
 	{
 		UpdateHUDForPawn();
 	}
-}
-
-void AMyPlayerController::OnRep_PlayerState()
-{
-	Super::OnRep_PlayerState();
 }
 
 void AMyPlayerController::ClientSetHUD_Implementation( TSubclassOf<AHUD> NewHUDClass )
