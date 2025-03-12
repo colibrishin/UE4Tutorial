@@ -34,6 +34,12 @@ void AMyPlayerController::BeginPlay()
 void AMyPlayerController::OnRep_Pawn()
 {
 	Super::OnRep_Pawn();
+
+	// HUD is initialized before the pawn. Also handles the GameModeBase::RestartPlayer cases.
+	if ( GetCharacter() )
+	{
+		UpdateHUDForPawn();
+	}
 }
 
 void AMyPlayerController::OnRep_PlayerState()
@@ -45,12 +51,8 @@ void AMyPlayerController::ClientSetHUD_Implementation( TSubclassOf<AHUD> NewHUDC
 {
 	Super::ClientSetHUD_Implementation( NewHUDClass );
 
-	if (GetCharacter())
-	{
-		UpdateHUDForPawn();
-	}
-
-	if (GetPlayerState<AMyPlayerState>())
+	// Player State will be initialized along with the Player Controller.
+	if ( GetPlayerState<AMyPlayerState>() )
 	{
 		UpdateHUDForPlayerState();
 	}
@@ -67,11 +69,10 @@ void AMyPlayerController::UpdateHUDForPlayerState() const
 				  Iterator;
 				  ++Iterator )
 			{
-				UUserWidget* Widget = Cast<UUserWidget>(
-					Iterator->GetObjectPropertyValue(
-						Iterator->ContainerPtrToValuePtr<void>( HUD->GetInGameWidget() , 0 )
-					)
-				);
+				void* PropertyAddress = Iterator->ContainerPtrToValuePtr<void>( HUD->GetInGameWidget() );
+				UObject* ObjectPointer = Iterator->GetObjectPropertyValue( PropertyAddress );
+				UUserWidget* Widget = Cast<UUserWidget>( ObjectPointer );
+
 				if ( IMyPlayerStateRequiredWidget* Interface = Cast<IMyPlayerStateRequiredWidget>( Widget ) )
 				{
 					Interface->DispatchPlayerState( Cast<AMyPlayerState>( MyPlayerState ) );
@@ -94,9 +95,10 @@ void AMyPlayerController::UpdateHUDForPawn() const
 				  Iterator;
 				  ++Iterator )
 			{
-				UUserWidget* Widget = Cast<UUserWidget>(
-					Iterator->GetObjectPropertyValue( Iterator->ContainerPtrToValuePtr<void>( HUD->GetInGameWidget() , 0 ) )
-				);
+				void* PropertyAddress = Iterator->ContainerPtrToValuePtr<void>(HUD->GetInGameWidget());
+				UObject* ObjectPointer = Iterator->GetObjectPropertyValue( PropertyAddress );
+				UUserWidget* Widget = Cast<UUserWidget>( ObjectPointer );
+
 				if ( ICharacterRequiredWidget* Interface = Cast<ICharacterRequiredWidget>( Widget ) )
 				{
 					Interface->DispatchCharacter( MyCharacter );
