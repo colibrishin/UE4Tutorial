@@ -85,6 +85,8 @@ public:
 
 	UC_Weapon* GetSiblingComponent() const;
 
+	void UpdateFrom( const UC_Weapon* InOtherComponent );
+
 	UFUNCTION()
 	virtual void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp );
 
@@ -123,6 +125,8 @@ protected:
 
 	UFUNCTION()
 	void OnRep_OnAmmoUpdated();
+
+	void OnAmmoUpdatedImplementation();
 
 	UFUNCTION(NetMulticast , Unreliable)
 	void Multi_PlayAttackSound();
@@ -168,6 +172,9 @@ protected:
 	void HandleDummy(AA_Collectable* InPreviousDummy);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION()
+	virtual void MoveAmmoInfo( AActor* InActor );
 
 protected:
 	

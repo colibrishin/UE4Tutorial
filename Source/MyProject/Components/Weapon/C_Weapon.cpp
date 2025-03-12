@@ -135,6 +135,13 @@ UC_Weapon* UC_Weapon::GetSiblingComponent() const
 	return Sibling->GetWeaponComponent();
 }
 
+void UC_Weapon::UpdateFrom( const UC_Weapon* InOtherComponent )
+{
+	AmmoSpent = InOtherComponent->AmmoSpent;
+	AmmoSpentInClip = InOtherComponent->AmmoSpentInClip;
+	LoadedAmmo = InOtherComponent->LoadedAmmo;
+}
+
 // Called when the game starts
 void UC_Weapon::BeginPlay()
 {
@@ -279,9 +286,13 @@ void UC_Weapon::Client_OnReload_Implementation()
 
 void UC_Weapon::OnRep_OnAmmoUpdated()
 {
-	OnAmmoUpdated.Broadcast(GetRemainingAmmoInClip() , GetRemainingAmmoWithoutCurrentClip(), this);
+	OnAmmoUpdatedImplementation();
 }
 #pragma endregion 
+void UC_Weapon::OnAmmoUpdatedImplementation()
+{
+	OnAmmoUpdated.Broadcast( GetRemainingAmmoInClip() , GetRemainingAmmoWithoutCurrentClip() , this );
+}
 
 void UC_Weapon::AttackImplementation()
 {
@@ -459,6 +470,11 @@ void UC_Weapon::HandleReloadEnd(UC_Weapon* /*InWeapon*/)
 
 	bCanFire   = AmmoLeft;
 	bCanReload = MagazineLeft;
+
+	if ( GetNetMode() == NM_ListenServer )
+	{
+		OnAmmoUpdatedImplementation();
+	}
 }
 
 void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallPickUp)
@@ -482,6 +498,7 @@ void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const 
 		{
 			PickUpComponent->OnObjectPickUp.Remove(this, "HandlePickUp");
 			PickUpComponent->OnObjectDrop.AddUniqueDynamic(this , &UC_Weapon::HandleDrop);
+			PickUpComponent->OnObjectDropPreSpawned.AddUniqueDynamic( this , &UC_Weapon::MoveAmmoInfo );
 		}
 	}
 }
@@ -500,13 +517,14 @@ void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject, const bo
 
 		if (!IsDummy())
 		{
-			Client_SetupDropInput(Character);	
+			Client_SetupDropInput(Character);
 		}
 
 		if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 		{
 			PickUpComponent->OnObjectPickUp.AddUniqueDynamic(this , &UC_Weapon::HandlePickUp);
 			PickUpComponent->OnObjectDrop.Remove(this, "HandleDrop");
+			PickUpComponent->OnObjectDropPreSpawned.Remove( this , "MoveAmmoInfo" );
 		}
 	}
 }
@@ -518,6 +536,11 @@ void UC_Weapon::ConsumeAmmo()
 	ConsecutiveShot++;
 
 	LOG_FUNC_PRINTF(LogWeaponComponent, Log, "AmmoSpentInClip: %d, ConsecutiveShot: %d", AmmoSpentInClip, ConsecutiveShot);
+
+	if ( GetNetMode() == NM_ListenServer )
+	{
+		OnAmmoUpdatedImplementation();
+	}
 }
 
 void UC_Weapon::ReloadClip()
@@ -618,6 +641,13 @@ void UC_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME_CONDITION(UC_Weapon , LoadedAmmo , COND_OwnerOnly);
 }
 
+void UC_Weapon::MoveAmmoInfo( AActor* InActor )
+{
+	if ( const AA_Weapon* Weapon = Cast<AA_Weapon>( InActor ) )
+	{
+		Weapon->GetWeaponComponent()->UpdateFrom( this );
+	}
+}
 
 // Called every frame
 void UC_Weapon::TickComponent(float DeltaTime , ELevelTick TickType , FActorComponentTickFunction* ThisTickFunction)
