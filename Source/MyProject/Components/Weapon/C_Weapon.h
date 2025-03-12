@@ -111,6 +111,10 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void Client_SetupDropInput(const AA_Character* InCharacter);
 
+	void SetupPickupInputImplementation( const AA_Character* InCharacter );
+
+	void SetupDropInputImplementation( const AA_Character* InCharacter );
+
 	UFUNCTION(Client, Reliable)
 	void Client_OnAttack();
 

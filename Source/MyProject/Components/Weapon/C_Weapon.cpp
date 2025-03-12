@@ -186,56 +186,67 @@ void UC_Weapon::Server_Reload_Implementation()
 
 void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCharacter)
 {
-	if ( GetNetMode() != NM_Client )
+	if ( GetNetMode() == NM_Client || GetNetMode() == NM_ListenServer)
 	{
-		return;
+		SetupPickupInputImplementation( InCharacter );
 	}
+}
 
-	if (const APlayerController* PlayerController = Cast<APlayerController>(InCharacter->GetController()))
+void UC_Weapon::SetupPickupInputImplementation( const AA_Character* InCharacter ) 
+{
+	if ( const APlayerController* PlayerController = Cast<APlayerController>( InCharacter->GetController() ) )
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
-			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		if ( UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
+			UEnhancedInputLocalPlayerSubsystem>( PlayerController->GetLocalPlayer() ) )
 		{
-			Subsystem->AddMappingContext(InputMapping , IsDummy() ? 1 : 0);
+			Subsystem->AddMappingContext( InputMapping , IsDummy() ? 1 : 0 );
 		}
 
-		if (UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>(InCharacter->InputComponent))
+		if ( UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>( InCharacter->InputComponent ) )
 		{
 			LOG_FUNC( LogWeaponComponent , Log , "Binding the weapon actions" );
 
 			AttackStartBinding = &InputComponent->BindAction
-					(AttackAction , ETriggerEvent::Started , this , &UC_Weapon::Attack);
+			( AttackAction , ETriggerEvent::Started , this , &UC_Weapon::Attack );
 			AttackStopBinding = &InputComponent->BindAction
-					(AttackAction , ETriggerEvent::Completed , this , &UC_Weapon::StopAttack);
+			( AttackAction , ETriggerEvent::Completed , this , &UC_Weapon::StopAttack );
 
 			ReloadBinding = &InputComponent->BindAction
-					(ReloadAction , ETriggerEvent::Started , this , &UC_Weapon::Reload);
+			( ReloadAction , ETriggerEvent::Started , this , &UC_Weapon::Reload );
 		}
 		else
 		{
-			LOG_FUNC(LogWeaponComponent , Error , "Unable to bind the key binding");
+			LOG_FUNC( LogWeaponComponent , Error , "Unable to bind the key binding" );
 		}
 	}
 }
 
 void UC_Weapon::Client_SetupDropInput_Implementation(const AA_Character* InCharacter)
 {
-	if (const APlayerController* PlayerController = Cast<APlayerController>(InCharacter->GetController()))
+	if ( GetNetMode() == NM_Client || GetNetMode() == NM_ListenServer )
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
+		SetupDropInputImplementation( InCharacter );
+	}
+}
+
+void UC_Weapon::SetupDropInputImplementation( const AA_Character* InCharacter ) 
+{
+	if ( const APlayerController* PlayerController = Cast<APlayerController>( InCharacter->GetController() ) )
+	{
+		if ( UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
 					UEnhancedInputLocalPlayerSubsystem>
-				(PlayerController->GetLocalPlayer()))
+				( PlayerController->GetLocalPlayer() ) )
 		{
-			Subsystem->RemoveMappingContext(InputMapping);
+			Subsystem->RemoveMappingContext( InputMapping );
 		}
 
-		if (UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>(InCharacter->InputComponent))
+		if ( UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>( InCharacter->InputComponent ) )
 		{
 			LOG_FUNC( LogWeaponComponent , Log , "Unbinding the weapon actions" );
 
-			InputComponent->RemoveBinding(*AttackStartBinding);
-			InputComponent->RemoveBinding(*AttackStopBinding);
-			InputComponent->RemoveBinding(*ReloadBinding);
+			InputComponent->RemoveBinding( *AttackStartBinding );
+			InputComponent->RemoveBinding( *AttackStopBinding );
+			InputComponent->RemoveBinding( *ReloadBinding );
 		}
 	}
 }
