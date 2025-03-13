@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "DA_Weapon.h"
+#include "MyProject/Private/Data.h"
 #include "MyProject/Interfaces/EventHandler.h"
 
 #include "DA_ThrowWeapon.generated.h"
@@ -21,7 +22,8 @@ public:
 	float GetThrowForce() const { return ThrowForce; }
 	float GetThrowMultiplier() const { return ThrowForceMultiplier; }
 	float GetEventTimeAfterThrow() const { return EventTimeAfterThrow; }
-	TSubclassOf<IEventHandler> GetEventHandler() const { return TimeAfterEventHandler; }
+	const FParameters& GetParameters() const { return Parameters; }
+	TSubclassOf<UObject> GetEventHandler() const { return TimeAfterEventHandler; }
 	
 private:
 	UPROPERTY(EditAnywhere, Category="Throwable", BlueprintReadWrite, meta=(AllowPrivateAccess))
@@ -37,5 +39,8 @@ private:
 	float EventTimeAfterThrow;
 
 	UPROPERTY( EditAnywhere , Category = "Throwable" , BlueprintReadWrite , meta = ( AllowPrivateAccess ) )
-	TSubclassOf<IEventHandler> TimeAfterEventHandler;
+	FParameters Parameters;
+
+	UPROPERTY( EditAnywhere , Category = "Throwable" , BlueprintReadWrite , meta = ( MustImplement = "EventHandler", AllowPrivateAccess) )
+	TSubclassOf<UObject> TimeAfterEventHandler;
 };

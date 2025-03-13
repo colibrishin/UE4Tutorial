@@ -14,6 +14,8 @@ class IPickingUp;
 struct FEnhancedInputActionEventBinding;
 class UInputAction;
 class UInputMappingContext;
+class UDA_Weapon;
+
 enum class EMyWeaponType : uint8;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams
@@ -61,9 +63,9 @@ public:
 
 	FOnReloadEnd OnReloadEnd;
 
-	EMyWeaponType GetWeaponType() const { return WeaponType; }
+	EMyWeaponType GetWeaponType() const;
 
-	float GetRange() const { return Range; }
+	float GetRange() const;
 	
 	uint32 GetRemainingAmmo() const;
 
@@ -74,6 +76,8 @@ public:
 	uint32 GetAmmoPerClip() const;
 
 	uint32 GetConsecutiveShot() const;
+
+	uint32 GetDamage() const;
 
 	void Attack();
 
@@ -86,6 +90,8 @@ public:
 	UC_Weapon* GetSiblingComponent() const;
 
 	void UpdateFrom( const UC_Weapon* InOtherComponent );
+
+	virtual void UpdateFrom( UDA_Weapon* InAsset );
 
 	UFUNCTION()
 	virtual void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp );
@@ -115,7 +121,7 @@ protected:
 
 	void SetupPickupInputImplementation( const AA_Character* InCharacter );
 
-	void SetupDropInputImplementation( const AA_Character* InCharacter );
+	void SetupDropInputImplementation( const AA_Character* InCharacter ) const;
 
 	UFUNCTION(Client, Reliable)
 	void Client_OnAttack();
@@ -198,39 +204,15 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Category=Stats, Replicated)
 	int32 LoadedAmmo;
-	
-	UPROPERTY(VisibleAnywhere)
-	EMyWeaponType WeaponType;
-	
-	UPROPERTY(VisibleAnywhere)
-	int32 AmmoPerClip;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category=Stats)
 	int32 TotalAmmo;
-	
-	UPROPERTY(VisibleAnywhere)
-	bool bCanSpray;
 
-	UPROPERTY(VisibleAnywhere)
-	int32 Damage;
-
-	UPROPERTY(VisibleAnywhere)
-	float AttackRate;
-
-	UPROPERTY(VisibleAnywhere)
-	float ReloadTime;
-
-	UPROPERTY(VisibleAnywhere)
-	float Range;
-	
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, Category=Stats)
 	int32 ConsecutiveShot;
 
-	UPROPERTY(VisibleAnywhere)
-	USoundBase* AttackSound;
-
-	UPROPERTY(VisibleAnywhere)
-	USoundBase* ReloadSound;
+	UPROPERTY(VisibleAnywhere, Category="Asset")
+	UDA_Weapon* ReferenceAsset;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UInputMappingContext* InputMapping;

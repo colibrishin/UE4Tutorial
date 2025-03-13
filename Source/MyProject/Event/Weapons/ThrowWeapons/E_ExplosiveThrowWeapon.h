@@ -16,6 +16,6 @@ class MYPROJECT_API UE_ExplosiveThrowWeapon : public UObject, public IEventHandl
 	GENERATED_BODY()
 
 public:
-	virtual void DoEvent( TScriptInterface<IEventableContext> InContext ) override;
+	virtual void DoEvent( TScriptInterface<IEventableContext> InContext, const FParameters& InParameters ) const override;
 	
 };

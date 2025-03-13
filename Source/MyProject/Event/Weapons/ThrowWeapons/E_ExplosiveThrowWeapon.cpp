@@ -10,55 +10,50 @@
 #include "Engine/OverlapResult.h"
 #include "Engine/DamageEvents.h"
 
-void UE_ExplosiveThrowWeapon::DoEvent( TScriptInterface<IEventableContext> InContext )
+void UE_ExplosiveThrowWeapon::DoEvent( TScriptInterface<IEventableContext> InContext, const FParameters& InParameters ) const
 {
-	if ( UC_ThrowWeapon* WeaponComponent = Cast<UC_ThrowWeapon>( InContext.GetObject() ) )
+	if ( const UC_ThrowWeapon* WeaponComponent = Cast<UC_ThrowWeapon>( InContext.GetObject() ) )
 	{
-		float* Damage;
-		float* Radius;
-		GetParameter<float>( FText::FromString( "Damage" ) , &Damage );
-		GetParameter<float>( FText::FromString( "Radius" ) , &Radius );
+		const float Damage = WeaponComponent->GetDamage();
+		const float Radius = InParameters.FloatParameters["Radius"];
 
-		if ( Damage && Radius )
+		TArray<FOverlapResult> HitResults;
+
+		GetWorld()->OverlapMultiByChannel
+		(
+			OUT HitResults ,
+			WeaponComponent->GetOwner()->GetActorLocation() ,
+			FQuat::Identity ,
+			ECC_Pawn ,
+			FCollisionShape::MakeSphere( Radius )
+		);
+
+		AA_Character*         OriginCharacter = WeaponComponent->GetOrigin();
+		const AA_ThrowWeapon* Weapon          = Cast<AA_ThrowWeapon>( WeaponComponent->GetOwner() );
+		
+		// Throw weapon component does not mutates the origin character of the spawned one.
+		check( OriginCharacter );
+		// Throw weapon component does not originates from the throw weapon.
+		check( Weapon );
+
+		for ( const auto& Result : HitResults )
 		{
-			TArray<FOverlapResult> HitResults;
-
-			GetWorld()->OverlapMultiByChannel
-			(
-				OUT HitResults ,
-				WeaponComponent->GetOwner()->GetActorLocation() ,
-				FQuat::Identity ,
-				ECC_Pawn ,
-				FCollisionShape::MakeSphere( *Radius )
-			);
-
-			AA_Character* OriginCharacter = WeaponComponent->GetOrigin();
-			AA_ThrowWeapon* Weapon = Cast<AA_ThrowWeapon>( WeaponComponent->GetOwner() );
-			
-			// Throw weapon component does not mutates the origin character of the spawned one.
-			check( OriginCharacter );
-			// Throw weapon component does not originates from the throw weapon.
-			check( Weapon );
-
-			for ( const auto& Result : HitResults )
+			if ( const AA_Character* Character = Cast<AA_Character>( Result.GetActor() ) )
 			{
-				if ( const AA_Character* Character = Cast<AA_Character>( Result.GetActor() ) )
-				{
-					const auto& Distance = FVector::Distance( Character->GetActorLocation() , Weapon->GetActorLocation() );
-					const auto& Ratio = 1.f - Distance / *Radius;
-					const auto& RatioDamage = (*Damage) * Ratio;
+				const auto& Distance = FVector::Distance( Character->GetActorLocation() , Weapon->GetActorLocation() );
+				const auto& Ratio = 1.f - Distance / Radius;
+				const auto& RatioDamage = Damage * Ratio;
 
-					if ( const auto& MyPlayerState = Character->GetPlayerState<AMyPlayerState>() )
-					{
-						// todo: team damage or self damage reduction
-						MyPlayerState->TakeDamage
-						(
-							RatioDamage ,
-							FDamageEvent{} ,
-							OriginCharacter->GetController() ,
-							OriginCharacter
-						);
-					}
+				if ( const auto& MyPlayerState = Character->GetPlayerState<AMyPlayerState>() )
+				{
+					// todo: team damage or self damage reduction
+					MyPlayerState->TakeDamage
+					(
+						RatioDamage ,
+						FDamageEvent{} ,
+						OriginCharacter->GetController() ,
+						OriginCharacter
+					);
 				}
 			}
 		}

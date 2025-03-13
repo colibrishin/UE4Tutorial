@@ -20,6 +20,7 @@ public:
 	AA_RangeWeapon(const FObjectInitializer& ObjectInitializer);
 
 	UC_RangeWeapon* GetRangeWeaponComponent() const;
+	UNiagaraComponent* GetBulletTrailComponent() const;
 
 protected:
 	// Called when the game starts or when spawned

@@ -3,11 +3,15 @@
 
 #include "C_RangeWeapon.h"
 
+#include "NiagaraComponent.h"
+
 #include "Camera/CameraComponent.h"
 
 #include "Engine/DamageEvents.h"
 
 #include "MyProject/Actors/BaseClass/A_Character.h"
+#include "MyProject/Actors/BaseClass/A_RangeWeapon.h"
+#include "MyProject/DataAsset/DA_RangeWeapon.h"
 #include "MyProject/Private/Utilities.hpp"
 
 #include "Net/UnrealNetwork.h"
@@ -43,8 +47,11 @@ void UC_RangeWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 FVector UC_RangeWeapon::ApplyRecoil(const FVector& InNormal, const FVector& InRightVector, const FVector& InUpVector) const
 {
 	FVector     Normal = InNormal;
-	const float HModifier      = HSpread->GetFloatValue((float)GetConsecutiveShot() / (float)GetAmmoPerClip());
-	const float VModifier      = VSpread->GetFloatValue((float)GetConsecutiveShot() / (float)GetAmmoPerClip());
+	const UDA_RangeWeapon* WeaponAsset = Cast<UDA_RangeWeapon>( ReferenceAsset );
+	check( WeaponAsset );
+
+	const float HModifier      = WeaponAsset->GetHSpread()->GetFloatValue((float)GetConsecutiveShot() / (float)GetAmmoPerClip());
+	const float VModifier      = WeaponAsset->GetVSpread()->GetFloatValue((float)GetConsecutiveShot() / (float)GetAmmoPerClip());
 
 	const float HDegree = FMath::RadiansToDegrees(FMath::Sin(HModifier));
 	const float VDegree = FMath::RadiansToDegrees(FMath::Sin(VModifier));
@@ -65,7 +72,8 @@ void UC_RangeWeapon::Fire()
 	const UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>();
 	const UCameraComponent* CameraComponent = PickUpComponent->GetOwner()->GetAttachParentActor()->GetComponentByClass<UCameraComponent>();
 
-	if (bHitscan)
+	if ( const UDA_RangeWeapon* WeaponAsset = Cast<UDA_RangeWeapon>(ReferenceAsset); 
+		 WeaponAsset->GetHitscan() )
 	{
 		RecoiledNormal = 
 			ApplyRecoil(CameraComponent->GetForwardVector(), CameraComponent->GetRightVector(), CameraComponent->GetUpVector());
@@ -80,7 +88,7 @@ void UC_RangeWeapon::DoHitscan(const FVector& InRecoiledNormal)
 	const UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>();
 	const UCameraComponent* Cam = PickUpComponent->GetOwner()->GetAttachParentActor()->GetComponentByClass<UCameraComponent>();
 	const FVector ShotPosition = Cam->GetComponentLocation();
-	const FVector EndPosition = ShotPosition + (InRecoiledNormal * Range);
+	const FVector EndPosition = ShotPosition + (InRecoiledNormal * ReferenceAsset->GetRange());
 	FHitResult OutHitResult{};
 
 	FCollisionQueryParams QueryParams;
@@ -104,11 +112,25 @@ void UC_RangeWeapon::DoHitscan(const FVector& InRecoiledNormal)
 		{
 			// todo: utilize the damage event
 			const FDamageEvent DamageEvent{};
-			HitCharacter->TakeDamage(Damage, DamageEvent, HitCharacter->GetController(), GetOwner());
+			HitCharacter->TakeDamage(ReferenceAsset->GetDamage(), DamageEvent, HitCharacter->GetController(), GetOwner());
 		}
 		else
 		{
 			// todo: bullet hole;
+		}
+	}
+}
+
+void UC_RangeWeapon::UpdateFrom( UDA_Weapon* InAsset )
+{
+	Super::UpdateFrom( InAsset );
+
+	if (const UDA_RangeWeapon* WeaponAsset = Cast<UDA_RangeWeapon>(InAsset))
+	{
+		if (const AA_RangeWeapon* Weapon = Cast<AA_RangeWeapon>(GetOwner()))
+		{
+			Weapon->GetBulletTrailComponent()->SetAsset(WeaponAsset->GetBulletTrail());
+			Weapon->GetBulletTrailComponent()->SetVariableFloat("FireRate", WeaponAsset->GetAttackRate());
 		}
 	}
 }

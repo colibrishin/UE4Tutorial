@@ -23,7 +23,6 @@ public:
 	UTexture2D* GetImage() const { return WeaponImage; }
 	int32 GetDamage() const { return Damage; }
 	int32 GetPrice() const { return Price; }
-	float GetRadius() const { return Radius; }
 	int32 GetMaxAmmo() const { return MaxAmmo; }
 	int32 GetMagazine() const { return Magazine; }
 	float GetReloadTime() const { return ReloadTime; }
@@ -49,9 +48,6 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Common", BlueprintReadWrite, meta=(AllowPrivateAccess))
 	int32 Price;
-
-	UPROPERTY(EditAnywhere, Category="Common", BlueprintReadWrite, meta=(AllowPrivateAccess))
-	float Radius;
 
 	UPROPERTY(EditAnywhere, Category="Common", BlueprintReadWrite, meta=(AllowPrivateAccess))
 	int32 MaxAmmo;

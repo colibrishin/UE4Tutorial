@@ -30,7 +30,7 @@ void UC_WeaponAsset::ApplyAsset()
 {
 	Super::ApplyAsset();
 
-	const UDA_Weapon* WeaponAsset = GetAsset<UDA_Weapon>();
+	UDA_Weapon* WeaponAsset = GetAsset<UDA_Weapon>();
 	check(WeaponAsset);
 
 	const AActor* Actor = GetOwner();
@@ -40,71 +40,9 @@ void UC_WeaponAsset::ApplyAsset()
 	}
 	check( Actor != nullptr );
 	
-	if (UC_Weapon* WeaponComponent = Actor->GetComponentByClass<UC_Weapon>())
+	if ( UC_Weapon* WeaponComponent = Actor->GetComponentByClass<UC_Weapon>() )
 	{
-		WeaponComponent->WeaponType = WeaponAsset->GetWeaponType();
-		WeaponComponent->AttackSound = WeaponAsset->GetAttackSound();
-		WeaponComponent->ReloadSound = WeaponAsset->GetReloadSound();
-		WeaponComponent->AttackRate = WeaponAsset->GetAttackRate();
-		WeaponComponent->bCanSpray = WeaponAsset->GetSpray();
-		WeaponComponent->AmmoPerClip = WeaponAsset->GetMaxAmmo();
-		WeaponComponent->TotalAmmo = WeaponAsset->GetMaxAmmo() * WeaponAsset->GetMagazine();
-		WeaponComponent->Range = WeaponAsset->GetRange();
-		WeaponComponent->Damage = WeaponAsset->GetDamage();
-		WeaponComponent->ReloadTime = WeaponAsset->GetReloadTime();
-
-		WeaponComponent->ReloadClip();
-
-		switch (WeaponAsset->GetWeaponType())
-		{
-		case EMyWeaponType::Range:
-			{
-				const UDA_RangeWeapon* RangeAsset = GetAsset<UDA_RangeWeapon>();
-				check(RangeAsset);
-			
-				if (UC_RangeWeapon* RangeWeapon = Cast<UC_RangeWeapon>(WeaponComponent))
-				{
-					RangeWeapon->bAimable = RangeAsset->GetAimable();
-					RangeWeapon->VSpread = RangeAsset->GetVSpread();
-					RangeWeapon->HSpread = RangeAsset->GetHSpread();
-					RangeWeapon->bHitscan = RangeAsset->GetHitscan();
-				}
-
-				if (const AA_RangeWeapon* Weapon = Cast<AA_RangeWeapon>(GetOwner()))
-				{
-					Weapon->BulletTrailComponent->SetAsset(RangeAsset->GetBulletTrail());
-					Weapon->BulletTrailComponent->SetVariableFloat("FireRate", WeaponAsset->GetAttackRate());
-				}
-
-				break;
-			}
-		case EMyWeaponType::Melee: break;
-		case EMyWeaponType::Throwable:
-			{
-				const UDA_ThrowWeapon* ThrowAsset = GetAsset<UDA_ThrowWeapon>();
-				check(ThrowAsset);
-
-				if (UC_ThrowWeapon* ThrowWeapon = Cast<UC_ThrowWeapon>(WeaponComponent))
-				{
-					ThrowWeapon->CookingTime = ThrowAsset->GetCookingTime();
-					ThrowWeapon->ThrowForce = ThrowAsset->GetThrowForce();
-					ThrowWeapon->ThrowForceMultiplier = ThrowAsset->GetThrowMultiplier();
-					ThrowWeapon->EventTimeAfterThrow = ThrowAsset->GetEventTimeAfterThrow();
-					
-					if ( TSubclassOf<IEventHandler> Handler = ThrowAsset->GetEventHandler() )
-					{
-						ThrowWeapon->EventHandler = GetWorld()->GetGameInstance()->GetSubsystem<USS_EventGameInstance>()->AddEvent( Handler );
-					}
-				}
-				
-				break;
-			}
-		case EMyWeaponType::Unknown:
-		default:
-			// Unknown weapon type caught
-			ensure(false);
-			break;
-		}
+		WeaponComponent->UpdateFrom( WeaponAsset );
 	}
 }
 

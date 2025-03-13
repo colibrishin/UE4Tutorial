@@ -4,7 +4,7 @@
 #include "MyProject/Frameworks/Subsystems/SS_EventGameInstance.h"
 #include "SS_EventGameInstance.h"
 
-TScriptInterface<IEventHandler> USS_EventGameInstance::AddEvent( TSubclassOf<IEventHandler> Handler )
+TScriptInterface<IEventHandler> USS_EventGameInstance::AddEvent( const TSubclassOf<UObject>& Handler )
 {
 	if ( Handler ) 
 	{

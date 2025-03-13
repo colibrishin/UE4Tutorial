@@ -34,25 +34,15 @@ protected:
 	UFUNCTION()
 	void Throw(UC_Weapon* InWeapon);
 
-	void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp ) override;
+	virtual void UpdateFrom(UDA_Weapon* InAsset) override;
+
+	virtual void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp ) override;
 
 	void SetOrigin( AA_Character* InCharacter );
 
 private:
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	float CookTimeCounter;
-
-	UPROPERTY(VisibleAnywhere, Category="Throwable", meta=(AllowPrivateAccess))
-	float CookingTime;
-	
-	UPROPERTY(VisibleAnywhere, Category="Throwable", meta=(AllowPrivateAccess))
-	float ThrowForce;
-
-	UPROPERTY(VisibleAnywhere, Category="Throwable", meta=(AllowPrivateAccess))
-	float ThrowForceMultiplier;
-
-	UPROPERTY( VisibleAnywhere , Category = "Throwable" , meta = ( AllowPrivateAccess ) )
-	float EventTimeAfterThrow;
 
 	UPROPERTY(VisibleAnywhere, Category="Origin", meta=(AllowPrivateAccess))
 	AA_Character* OriginCharacter;

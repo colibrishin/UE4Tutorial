@@ -16,8 +16,8 @@ class MYPROJECT_API USS_EventGameInstance : public UGameInstanceSubsystem
 	GENERATED_BODY()
 
 public:
-	TScriptInterface<IEventHandler> AddEvent( TSubclassOf<IEventHandler> Handler );
+	TScriptInterface<IEventHandler> AddEvent( const TSubclassOf<UObject>& Handler );
 
 	UPROPERTY(VisibleAnywhere)
-	TMap<TSubclassOf<IEventHandler>, UObject*> Handlers;
+	TMap<TSubclassOf<UObject>, UObject*> Handlers;
 };
