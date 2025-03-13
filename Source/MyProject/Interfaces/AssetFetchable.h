@@ -37,6 +37,8 @@ public:
 		PostFetchAsset();
 	}
 
+	void UpdateCollisionComponent( USceneComponent* RootComponent, USceneComponent* ParentComponent, UShapeComponent* NewComponent, const FName& CollisionProfileName );
+
 protected:
 	virtual void PostFetchAsset();
 	

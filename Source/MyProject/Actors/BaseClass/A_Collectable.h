@@ -51,9 +51,10 @@ public:
 
 	UC_PickUp*              GetPickUpComponent() const { return PickUpComponent; }
 	USkeletalMeshComponent* GetSkeletalMeshComponent() const { return SkeletalMeshComponent; }
-	UPrimitiveComponent*    GetCollisionComponent() const { return CollisionComponent; }
+	UShapeComponent*    GetCollisionComponent() const { return CollisionComponent; }
 	void                    SetDummy(const bool InFlag , AA_Collectable* InSibling);
 	void                    SetPhysicsInClient(const bool InPhysics);
+	void                    SetCollisionTypeInClient( const ECollisionEnabled::Type InType );
 
 	bool            IsDummy() const { return bDummy; }
 	AA_Collectable* GetSibling() const { return Sibling; }
@@ -71,9 +72,15 @@ protected:
 
 	UFUNCTION()
 	void OnRep_PhysicsInClient() const;
+
+	UFUNCTION()
+	void OnRep_CollisionTypeInClient() const;
 	
-	UPROPERTY(VisibleAnywhere, Replicated)
-	UPrimitiveComponent* CollisionComponent;
+	UFUNCTION()
+	virtual void OnRep_CollisionComponent();
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CollisionComponent)
+	UShapeComponent* CollisionComponent;
 	
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	USkeletalMeshComponent* SkeletalMeshComponent;
@@ -90,14 +97,14 @@ protected:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_PhysicsInClient, meta=(AllowPrivateAccess))
 	bool bPhysicsInClient;
 
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_CollisionTypeInClient, meta=(AllowPrivatetAccess))
+	TEnumAsByte<ECollisionEnabled::Type> CollisionTypeInClient;
+
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_Dummy, meta=(AllowPrivateAccess))
 	AA_Collectable* Sibling;
 	
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
-private:
-	virtual void ApplyPhysics(const bool InPhysics) const;
 	
 };

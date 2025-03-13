@@ -128,7 +128,7 @@ void AA_Character::BeginPlay()
 		}
 	}
 
-	if (GetNetMode() == NM_Client)
+	if ( GetNetMode() == NM_Client )
 	{
 		OnHandChanged.AddUFunction(this, "SyncHandProperties");
 	}
@@ -138,7 +138,7 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 {
 	IPickingUp::PickUp(InPickUp);
 
-	if (GetNetMode() == NM_Client)
+	if ( GetNetMode() == NM_Client )
 	{
 		return;
 	}

@@ -25,7 +25,9 @@ protected:
 	virtual void BeginPlay() override;
 
 	virtual void PostFetchAsset() override;
-	
+
+	virtual void OnRep_CollisionComponent() override;
+
 public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

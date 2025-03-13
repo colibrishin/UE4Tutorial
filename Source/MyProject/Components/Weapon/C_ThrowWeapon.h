@@ -29,7 +29,8 @@ protected:
 
 	UFUNCTION()
 	void Throw(UC_Weapon* InWeapon);
-	
+
+	void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp ) override;
 
 private:
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))

@@ -63,8 +63,11 @@ void UC_CollectableAsset::ApplyAsset()
 			const USkeletalMeshComponent* MeshComponent = TargetActor->GetComponentByClass<USkeletalMeshComponent>();
 			const FBoxSphereBounds Bounds = MeshComponent->GetLocalBounds();
 
-			const USceneComponent* PreviousRootComponent = TargetActor->GetRootComponent();
-			USceneComponent* PreviousAttachParent = PreviousRootComponent->GetAttachParent();
+			if ( TargetActor->CollisionComponent )
+			{
+				TargetActor->CollisionComponent->UnregisterComponent();
+				TargetActor->CollisionComponent->DestroyComponent();
+			}
 		
 			switch (Collectable->GetCollisionType())
 			{
@@ -91,31 +94,14 @@ void UC_CollectableAsset::ApplyAsset()
 			default: check(false);
 			}
 		
-			TargetActor->SetRootComponent(TargetActor->CollisionComponent);
 			TargetActor->CollisionComponent->SetIsReplicated(true);
 			TargetActor->CollisionComponent->RegisterComponent();
 
-			if (PreviousAttachParent)
-			{
-				TargetActor->CollisionComponent->AttachToComponent
-				(
-					PreviousAttachParent,
-					FAttachmentTransformRules::KeepRelativeTransform
-				);
-			}
-		
-			TargetActor->SkeletalMeshComponent->AttachToComponent
-			(
-				TargetActor->CollisionComponent,
-				FAttachmentTransformRules::KeepRelativeTransform
-			);
+			USceneComponent* PreviousRootComponent = Actor->GetRootComponent();
+			USceneComponent* ParentComponent = Actor->GetParentComponent();
+
+			TargetActor->UpdateCollisionComponent( PreviousRootComponent, ParentComponent, TargetActor->GetCollisionComponent(), "MyCollectable");
 		}
-		
-		// lazy initialization of collision component;
-		TargetActor->CollisionComponent->SetCollisionProfileName("MyCollectable");
-		TargetActor->CollisionComponent->SetSimulatePhysics(false);
-		TargetActor->CollisionComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-		TargetActor->CollisionComponent->SetAllUseCCD(true);
 	}
 }
 

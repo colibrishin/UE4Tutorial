@@ -4,8 +4,11 @@
 #include "A_ThrowWeapon.h"
 
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Components/ShapeComponent.h"
 
 #include "MyProject/Components/Weapon/C_ThrowWeapon.h"
+
+#include "Net/UnrealNetwork.h"
 
 AA_ThrowWeapon::AA_ThrowWeapon(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UC_ThrowWeapon>(WeaponComponentName))
@@ -14,13 +17,9 @@ AA_ThrowWeapon::AA_ThrowWeapon(const FObjectInitializer& ObjectInitializer)
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	
-	// Update projectile movement to mesh component
-	ProjectileMovementComponent->SetUpdatedComponent(RootComponent);
-
-	// do not simulate yet;
+	// Disable the simulation by default. The simulation should be done by server.
 	ProjectileMovementComponent->bSimulationEnabled = false;
 	ProjectileMovementComponent->bShouldBounce = true;
-	ProjectileMovementComponent->bInitialVelocityInLocalSpace = false;
 
 	ProjectileMovementComponent->bInterpMovement = true;
 	ProjectileMovementComponent->bInterpRotation = true;
@@ -35,8 +34,18 @@ void AA_ThrowWeapon::BeginPlay()
 void AA_ThrowWeapon::PostFetchAsset()
 {
 	Super::PostFetchAsset();
+}
 
-	//SphereComponent->SetSphereRadius(SkeletalMeshComponent->GetLocalBounds().BoxExtent.GetMax());
+void AA_ThrowWeapon::OnRep_CollisionComponent()
+{
+	Super::OnRep_CollisionComponent();
+
+	if ( GetCollisionComponent() )
+	{
+		// Update projectile movement to collision component
+		ProjectileMovementComponent->SetUpdatedComponent( GetRootComponent() );
+		CollisionComponent->SetSimulatePhysics( false );
+	}
 }
 
 // Called every frame

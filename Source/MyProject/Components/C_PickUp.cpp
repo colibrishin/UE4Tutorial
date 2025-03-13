@@ -6,6 +6,7 @@
 #include "..\Interfaces\PickingUp.h"
 
 #include "Camera/CameraComponent.h"
+#include "Components/ShapeComponent.h"
 
 #include "GameFramework/MovementComponent.h"
 
@@ -178,12 +179,21 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 				AA_Collectable* InCollectable = Cast<AA_Collectable>( InActor );
 
 				InCollectable->DetachFromActor( FDetachmentTransformRules::KeepRelativeTransform );
-				InCollectable->SetPhysicsInClient( true );
+				
+				// Disable the client side physics simulation
+				InCollectable->SetPhysicsInClient( false );
+				InCollectable->SetCollisionTypeInClient( ECollisionEnabled::NoCollision );
+
+				// Enable the server side physics simulation
+				InCollectable->GetCollisionComponent()->SetSimulatePhysics( true );
+				InCollectable->GetCollisionComponent()->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
+
 				InCollectable->SetReplicates( true );
 				InCollectable->SetReplicateMovement( true );
+				InCollectable->bAlwaysRelevant = true;
 
-				// Reset velocity;
-				if ( UPrimitiveComponent* CollisionComponent = InCollectable->GetCollisionComponent() )
+				// Reset any velocities and throw the object
+				if ( UShapeComponent* CollisionComponent = InCollectable->GetCollisionComponent() )
 				{
 					CollisionComponent->SetAllPhysicsLinearVelocity( FVector::ZeroVector );
 					CollisionComponent->SetAllPhysicsAngularVelocityInRadians( FVector::ZeroVector );

@@ -4,6 +4,7 @@
 #include "C_ThrowWeapon.h"
 
 #include "Camera/CameraComponent.h"
+#include "Components/ShapeComponent.h"
 
 #include "GameFramework/ProjectileMovementComponent.h"
 
@@ -57,14 +58,16 @@ void UC_ThrowWeapon::TickComponent(float DeltaTime, ELevelTick TickType, FActorC
 void UC_ThrowWeapon::SetUpSpawnedObject(AActor* InSpawnedActor)
 {
 	const AActor* WeaponOwner = GetOwner()->GetAttachParentActor();
-	const FVector Forward = WeaponOwner->GetComponentByClass<UCameraComponent>()->GetForwardVector();
 	const float CookTimeRatio = CookTimeCounter / CookingTime;
-	const FVector Force = Forward * ThrowForce * (CookTimeRatio * ThrowForceMultiplier);
+	const FVector ForwardVector = GetOwner()->GetOwner()->GetActorForwardVector();
+	const float Force = ThrowForce * (CookTimeRatio * ThrowForceMultiplier);
 
 	if (AA_ThrowWeapon* ThrowWeapon = Cast<AA_ThrowWeapon>(InSpawnedActor))
 	{
+		FRotator Rotator( 45.f , 0.f , 0.f );
 		ThrowWeapon->GetProjectileMovementComponent()->bSimulationEnabled = true;
-		ThrowWeapon->GetProjectileMovementComponent()->Velocity = Force;
+		ThrowWeapon->GetProjectileMovementComponent()->InitialSpeed = Force;
+		ThrowWeapon->GetProjectileMovementComponent()->Velocity = Rotator.RotateVector(ForwardVector * Force);
 	}
 
 	CookTimeCounter = 0.f;
@@ -79,3 +82,17 @@ void UC_ThrowWeapon::Throw(UC_Weapon* InWeapon)
 	PickUpComponent->OnObjectDrop.Broadcast(OwningActor, true);
 }
 
+void UC_ThrowWeapon::HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp )
+{
+	Super::HandlePickUp( InPickUpObject , bCallPickUp );
+
+	if ( GetNetMode() == NM_Client )
+	{
+		return;
+	}
+
+	AA_ThrowWeapon* ThrowWeapon = Cast<AA_ThrowWeapon>( GetOwner() );
+	check( ThrowWeapon );
+
+	ThrowWeapon->GetProjectileMovementComponent()->bSimulationEnabled = false;
+}
