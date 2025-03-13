@@ -64,10 +64,15 @@ void UC_ThrowWeapon::SetUpSpawnedObject(AActor* InSpawnedActor)
 
 	if (AA_ThrowWeapon* ThrowWeapon = Cast<AA_ThrowWeapon>(InSpawnedActor))
 	{
+		ThrowWeapon->bAlwaysRelevant = true;
+		ThrowWeapon->GetCollisionComponent()->SetSimulatePhysics( false );
+		ThrowWeapon->GetCollisionComponent()->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
+
 		FRotator Rotator( 45.f , 0.f , 0.f );
-		ThrowWeapon->GetProjectileMovementComponent()->bSimulationEnabled = true;
+		ThrowWeapon->GetProjectileMovementComponent()->SetUpdatedComponent( ThrowWeapon->GetCollisionComponent() );
+		ThrowWeapon->GetProjectileMovementComponent()->SetActive( true );
 		ThrowWeapon->GetProjectileMovementComponent()->InitialSpeed = Force;
-		ThrowWeapon->GetProjectileMovementComponent()->Velocity = Rotator.RotateVector(ForwardVector * Force);
+		ThrowWeapon->GetProjectileMovementComponent()->Velocity = Rotator.RotateVector(ForwardVector).GetSafeNormal() * Force;
 	}
 
 	CookTimeCounter = 0.f;
@@ -94,5 +99,5 @@ void UC_ThrowWeapon::HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject ,
 	AA_ThrowWeapon* ThrowWeapon = Cast<AA_ThrowWeapon>( GetOwner() );
 	check( ThrowWeapon );
 
-	ThrowWeapon->GetProjectileMovementComponent()->bSimulationEnabled = false;
+	ThrowWeapon->GetProjectileMovementComponent()->SetActive( false );
 }
