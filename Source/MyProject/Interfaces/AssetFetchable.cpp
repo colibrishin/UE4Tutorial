@@ -21,7 +21,10 @@ void IAssetFetchable::UpdateCollisionComponent(USceneComponent* RootComponent, U
 			);
 		}
 
-		RootComponent->AttachToComponent(NewComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		if (RootComponent) 
+		{
+			RootComponent->AttachToComponent(NewComponent, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+		}
 
 		// lazy initialization of collision component;
 		NewComponent->SetCollisionProfileName(CollisionProfileName);

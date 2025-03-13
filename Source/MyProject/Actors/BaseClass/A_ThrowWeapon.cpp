@@ -13,14 +13,13 @@
 AA_ThrowWeapon::AA_ThrowWeapon(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer.SetDefaultSubobjectClass<UC_ThrowWeapon>(WeaponComponentName))
 {
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	
-	// Disable the simulation by default. The simulation should be done by server.
-	ProjectileMovementComponent->bSimulationEnabled = false;
+	ProjectileMovementComponent->bAutoUpdateTickRegistration = false;
+	ProjectileMovementComponent->bSimulationEnabled = true;
 	ProjectileMovementComponent->bShouldBounce = true;
-
 	ProjectileMovementComponent->bInterpMovement = true;
 	ProjectileMovementComponent->bInterpRotation = true;
 }
@@ -29,6 +28,13 @@ AA_ThrowWeapon::AA_ThrowWeapon(const FObjectInitializer& ObjectInitializer)
 void AA_ThrowWeapon::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Exclude the listen server case.
+	if ( GetNetMode() == NM_Client )
+	{
+		// Disable the simulation. The simulation should be done by server.
+		ProjectileMovementComponent->SetActive( false );
+	}
 }
 
 void AA_ThrowWeapon::PostFetchAsset()
@@ -42,8 +48,7 @@ void AA_ThrowWeapon::OnRep_CollisionComponent()
 
 	if ( GetCollisionComponent() )
 	{
-		// Update projectile movement to collision component
-		ProjectileMovementComponent->SetUpdatedComponent( GetRootComponent() );
+		ProjectileMovementComponent->SetUpdatedComponent( CollisionComponent );
 		CollisionComponent->SetSimulatePhysics( false );
 	}
 }
