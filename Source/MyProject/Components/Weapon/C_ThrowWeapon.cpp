@@ -61,18 +61,47 @@ void UC_ThrowWeapon::SetUpSpawnedObject(AActor* InSpawnedActor)
 	const float CookTimeRatio = CookTimeCounter / CookingTime;
 	const FVector ForwardVector = GetOwner()->GetOwner()->GetActorForwardVector();
 	const float Force = ThrowForce * (CookTimeRatio * ThrowForceMultiplier);
+	
+	// Spawned actor is not throw weapon
+	AA_ThrowWeapon* ThrowWeapon = Cast<AA_ThrowWeapon>( InSpawnedActor );
+	check( ThrowWeapon );
 
-	if (AA_ThrowWeapon* ThrowWeapon = Cast<AA_ThrowWeapon>(InSpawnedActor))
+	ThrowWeapon->bAlwaysRelevant = true;
+	ThrowWeapon->GetCollisionComponent()->SetSimulatePhysics( false );
+	ThrowWeapon->GetCollisionComponent()->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
+
+	FRotator Rotator( 45.f , 0.f , 0.f );
+	ThrowWeapon->GetProjectileMovementComponent()->SetUpdatedComponent( ThrowWeapon->GetCollisionComponent() );
+	ThrowWeapon->GetProjectileMovementComponent()->SetActive( true );
+	ThrowWeapon->GetProjectileMovementComponent()->InitialSpeed = Force;
+	ThrowWeapon->GetProjectileMovementComponent()->Velocity = Rotator.RotateVector( ForwardVector ).GetSafeNormal() * Force;
+
+	UC_ThrowWeapon* SpawnedComponent = Cast<UC_ThrowWeapon>( ThrowWeapon->GetWeaponComponent() );
+	AA_Character* Origin = Cast<AA_Character>( GetOwner()->GetParentActor() );
+	// Throw weapon originates from unknown actor
+	check( Origin );
+	// Throw weapon component not found
+	check( SpawnedComponent );
+
+	// Mutates the origin character of the spawned throw weapon.
+	SpawnedComponent->SetOrigin( Origin );
+
+	// Do not allow to pick up the throw weapon again.
+	// todo: pick and throw back?
+	ThrowWeapon->GetPickUpComponent()->AttachEventHandlers( false , EPickUp::Drop );
+
+	if ( EventHandler )
 	{
-		ThrowWeapon->bAlwaysRelevant = true;
-		ThrowWeapon->GetCollisionComponent()->SetSimulatePhysics( false );
-		ThrowWeapon->GetCollisionComponent()->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
+		FTimerDelegate Delegate;
+		Delegate.BindRaw( EventHandler.GetInterface() , &IEventHandler::DoEvent , TScriptInterface<IEventableContext>( this ) );
 
-		FRotator Rotator( 45.f , 0.f , 0.f );
-		ThrowWeapon->GetProjectileMovementComponent()->SetUpdatedComponent( ThrowWeapon->GetCollisionComponent() );
-		ThrowWeapon->GetProjectileMovementComponent()->SetActive( true );
-		ThrowWeapon->GetProjectileMovementComponent()->InitialSpeed = Force;
-		ThrowWeapon->GetProjectileMovementComponent()->Velocity = Rotator.RotateVector(ForwardVector).GetSafeNormal() * Force;
+		GetWorld()->GetTimerManager().SetTimer(
+			SpawnedComponent->ThrowAfterEventTimer ,
+			Delegate ,
+			SpawnedComponent->EventTimeAfterThrow ,
+			false ,
+			-1
+		);
 	}
 
 	CookTimeCounter = 0.f;
@@ -100,4 +129,14 @@ void UC_ThrowWeapon::HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject ,
 	check( ThrowWeapon );
 
 	ThrowWeapon->GetProjectileMovementComponent()->SetActive( false );
+}
+
+void UC_ThrowWeapon::SetOrigin( AA_Character* InCharacter )
+{
+	OriginCharacter = InCharacter;
+}
+
+AA_Character* UC_ThrowWeapon::GetOrigin() const
+{
+	return OriginCharacter;
 }

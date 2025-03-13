@@ -12,6 +12,7 @@
 #include "MyProject/DataAsset/DA_RangeWeapon.h"
 #include "MyProject/DataAsset/DA_ThrowWeapon.h"
 #include "MyProject/DataAsset/DA_Weapon.h"
+#include "MyProject/Frameworks/Subsystems/SS_EventGameInstance.h"
 
 DEFINE_LOG_CATEGORY(LogWeaponAssetComponent);
 
@@ -88,6 +89,12 @@ void UC_WeaponAsset::ApplyAsset()
 					ThrowWeapon->CookingTime = ThrowAsset->GetCookingTime();
 					ThrowWeapon->ThrowForce = ThrowAsset->GetThrowForce();
 					ThrowWeapon->ThrowForceMultiplier = ThrowAsset->GetThrowMultiplier();
+					ThrowWeapon->EventTimeAfterThrow = ThrowAsset->GetEventTimeAfterThrow();
+					
+					if ( TSubclassOf<IEventHandler> Handler = ThrowAsset->GetEventHandler() )
+					{
+						ThrowWeapon->EventHandler = GetWorld()->GetGameInstance()->GetSubsystem<USS_EventGameInstance>()->AddEvent( Handler );
+					}
 				}
 				
 				break;
