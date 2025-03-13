@@ -43,7 +43,7 @@ AA_Collectable* FCollectableUtility::CloneChildActor
 		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 	);
 
-	for (UActorComponent* OriginalComponent : InObject->GetComponents())
+	for ( UActorComponent* OriginalComponent : InObject->GetComponents() )
 	{
 		// todo: use tag? (5.4 introduced)
 
@@ -57,7 +57,9 @@ AA_Collectable* FCollectableUtility::CloneChildActor
 			OriginalComponent->GetClass()
 		);
 
-		Destination->ReinitializeProperties(OriginalComponent);
+		Destination->ReinitializeProperties( OriginalComponent );
+		// Register the component for the any tick components.
+		Destination->RegisterComponent();
 	}
 
 	// fixme: inconsistent fetching (delegation);
@@ -66,6 +68,7 @@ AA_Collectable* FCollectableUtility::CloneChildActor
 	InDeferredFunction(ClonedObject);
 
 	UGameplayStatics::FinishSpawningActor(ClonedObject, InTransform);
+
 	return ClonedObject;
 }
 
@@ -156,7 +159,8 @@ void AA_Collectable::OnRep_Dummy(AA_Collectable* InPreviousDummy) const
 
 void AA_Collectable::OnRep_PhysicsInClient() const
 {
-	if ( CollisionComponent )
+	// Exclude the listen server case.
+	if ( GetNetMode() == NM_Client && CollisionComponent )
 	{
 		LOG_FUNC_PRINTF( LogCollectable , Log , "Applying physics flag %d and %s Client? : %d;" , bPhysicsInClient);
 		CollisionComponent->SetSimulatePhysics( bPhysicsInClient );
@@ -165,7 +169,8 @@ void AA_Collectable::OnRep_PhysicsInClient() const
 
 void AA_Collectable::OnRep_CollisionTypeInClient() const
 {
-	if ( CollisionComponent )
+	// Exclude the listen server case.
+	if ( GetNetMode() == NM_Client && CollisionComponent )
 	{
 		LOG_FUNC_PRINTF( LogCollectable , Log , "Applying the Collision type %s in client" , *EnumToString( CollisionTypeInClient.GetValue() ) );
 		CollisionComponent->SetCollisionEnabled( CollisionTypeInClient );
