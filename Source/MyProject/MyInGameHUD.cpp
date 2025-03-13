@@ -23,12 +23,13 @@ AMyInGameHUD::AMyInGameHUD()
 	SetRootComponent(Widgets);
 	Widgets->SetWidgetSpace(EWidgetSpace::Screen);
 
-	static ConstructorHelpers::FClassFinder<UUserWidget> BP_Widget(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyInGameUIWidget.BPMyInGameUIWidget_C'"));
+	static ConstructorHelpers::FClassFinder<UMyInGameWidget> BP_Widget(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyInGameUIWidget.BPMyInGameUIWidget_C'"));
 
 	if (BP_Widget.Succeeded())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Widget is loaded"));
 		Widgets->SetWidgetClass(BP_Widget.Class);
+		Widgets->InitWidget();
 	}
 
 	static ConstructorHelpers::FClassFinder<UMyBuyMenuWidget> BP_BuyMenu(TEXT("WidgetBlueprint'/Game/Blueprints/UIs/BPMyBuyMenuWidget.BPMyBuyMenuWidget_C'"));
@@ -37,6 +38,7 @@ AMyInGameHUD::AMyInGameHUD()
 	{
 		UE_LOG(LogTemp, Warning, TEXT("BuyMenu is loaded"));
 		BuyMenu->SetWidgetClass(BP_BuyMenu.Class);
+		BuyMenu->InitWidget();
 	}
 
 	BuyMenu->SetWidgetSpace(EWidgetSpace::Screen);
@@ -47,6 +49,7 @@ AMyInGameHUD::AMyInGameHUD()
 	{
 		LOG_FUNC(LogTemp, Warning, "Stat is loaded");
 		StatWidget->SetWidgetClass(BP_StatWidget.Class);
+		StatWidget->InitWidget();
 	}
 
 	StatWidget->SetWidgetSpace(EWidgetSpace::Screen);

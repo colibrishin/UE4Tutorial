@@ -85,6 +85,14 @@ public:
 
 	UC_Weapon* GetSiblingComponent() const;
 
+	void UpdateFrom( const UC_Weapon* InOtherComponent );
+
+	UFUNCTION()
+	virtual void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp );
+
+	UFUNCTION()
+	virtual void HandleDrop( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallDrop );
+
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
@@ -105,6 +113,10 @@ protected:
 	UFUNCTION(Client, Reliable)
 	void Client_SetupDropInput(const AA_Character* InCharacter);
 
+	void SetupPickupInputImplementation( const AA_Character* InCharacter );
+
+	void SetupDropInputImplementation( const AA_Character* InCharacter );
+
 	UFUNCTION(Client, Reliable)
 	void Client_OnAttack();
 
@@ -113,6 +125,8 @@ protected:
 
 	UFUNCTION()
 	void OnRep_OnAmmoUpdated();
+
+	void OnAmmoUpdatedImplementation();
 
 	UFUNCTION(NetMulticast , Unreliable)
 	void Multi_PlayAttackSound();
@@ -149,12 +163,6 @@ protected:
 	void HandleReloadEnd(UC_Weapon* InWeapon);
 
 	UFUNCTION()
-	virtual void HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallPickUp);
-
-	UFUNCTION()
-	virtual void HandleDrop(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallDrop);
-
-	UFUNCTION()
 	void ConsumeAmmo();
 
 	UFUNCTION()
@@ -164,6 +172,9 @@ protected:
 	void HandleDummy(AA_Collectable* InPreviousDummy);
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	UFUNCTION()
+	virtual void MoveAmmoInfo( AActor* InActor );
 
 protected:
 	

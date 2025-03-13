@@ -8,7 +8,7 @@
 #include "InputMappingContext.h"
 #include "MyProject/Components/C_PickUp.h"
 
-#include "../../../../../UnrealEngine/Engine/Source/Runtime/Engine/Public/Net/UnrealNetwork.h"
+#include "Net/UnrealNetwork.h"
 #include "MyProject/Actors/BaseClass/A_Character.h"
 
 #include "Kismet/GameplayStatics.h"
@@ -135,6 +135,13 @@ UC_Weapon* UC_Weapon::GetSiblingComponent() const
 	return Sibling->GetWeaponComponent();
 }
 
+void UC_Weapon::UpdateFrom( const UC_Weapon* InOtherComponent )
+{
+	AmmoSpent = InOtherComponent->AmmoSpent;
+	AmmoSpentInClip = InOtherComponent->AmmoSpentInClip;
+	LoadedAmmo = InOtherComponent->LoadedAmmo;
+}
+
 // Called when the game starts
 void UC_Weapon::BeginPlay()
 {
@@ -186,47 +193,67 @@ void UC_Weapon::Server_Reload_Implementation()
 
 void UC_Weapon::Client_SetupPickupInput_Implementation(const AA_Character* InCharacter)
 {
-	if (const APlayerController* PlayerController = Cast<APlayerController>(InCharacter->GetController()))
+	if ( GetNetMode() == NM_Client || GetNetMode() == NM_ListenServer)
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
-			UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		SetupPickupInputImplementation( InCharacter );
+	}
+}
+
+void UC_Weapon::SetupPickupInputImplementation( const AA_Character* InCharacter ) 
+{
+	if ( const APlayerController* PlayerController = Cast<APlayerController>( InCharacter->GetController() ) )
+	{
+		if ( UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
+			UEnhancedInputLocalPlayerSubsystem>( PlayerController->GetLocalPlayer() ) )
 		{
-			Subsystem->AddMappingContext(InputMapping , IsDummy() ? 1 : 0);
+			Subsystem->AddMappingContext( InputMapping , IsDummy() ? 1 : 0 );
 		}
 
-		if (UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>(InCharacter->InputComponent))
+		if ( UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>( InCharacter->InputComponent ) )
 		{
+			LOG_FUNC( LogWeaponComponent , Log , "Binding the weapon actions" );
+
 			AttackStartBinding = &InputComponent->BindAction
-					(AttackAction , ETriggerEvent::Started , this , &UC_Weapon::Attack);
+			( AttackAction , ETriggerEvent::Started , this , &UC_Weapon::Attack );
 			AttackStopBinding = &InputComponent->BindAction
-					(AttackAction , ETriggerEvent::Completed , this , &UC_Weapon::StopAttack);
+			( AttackAction , ETriggerEvent::Completed , this , &UC_Weapon::StopAttack );
 
 			ReloadBinding = &InputComponent->BindAction
-					(ReloadAction , ETriggerEvent::Started , this , &UC_Weapon::Reload);
+			( ReloadAction , ETriggerEvent::Started , this , &UC_Weapon::Reload );
 		}
 		else
 		{
-			LOG_FUNC(LogWeaponComponent , Error , "Unable to bind the key binding");
+			LOG_FUNC( LogWeaponComponent , Error , "Unable to bind the key binding" );
 		}
-	}	
+	}
 }
 
 void UC_Weapon::Client_SetupDropInput_Implementation(const AA_Character* InCharacter)
 {
-	if (const APlayerController* PlayerController = Cast<APlayerController>(InCharacter->GetController()))
+	if ( GetNetMode() == NM_Client || GetNetMode() == NM_ListenServer )
 	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
+		SetupDropInputImplementation( InCharacter );
+	}
+}
+
+void UC_Weapon::SetupDropInputImplementation( const AA_Character* InCharacter ) 
+{
+	if ( const APlayerController* PlayerController = Cast<APlayerController>( InCharacter->GetController() ) )
+	{
+		if ( UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<
 					UEnhancedInputLocalPlayerSubsystem>
-				(PlayerController->GetLocalPlayer()))
+				( PlayerController->GetLocalPlayer() ) )
 		{
-			Subsystem->RemoveMappingContext(InputMapping);
+			Subsystem->RemoveMappingContext( InputMapping );
 		}
 
-		if (UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>(InCharacter->InputComponent))
+		if ( UEnhancedInputComponent* InputComponent = Cast<UEnhancedInputComponent>( InCharacter->InputComponent ) )
 		{
-			InputComponent->RemoveBinding(*AttackStartBinding);
-			InputComponent->RemoveBinding(*AttackStopBinding);
-			InputComponent->RemoveBinding(*ReloadBinding);
+			LOG_FUNC( LogWeaponComponent , Log , "Unbinding the weapon actions" );
+
+			InputComponent->RemoveBinding( *AttackStartBinding );
+			InputComponent->RemoveBinding( *AttackStopBinding );
+			InputComponent->RemoveBinding( *ReloadBinding );
 		}
 	}
 }
@@ -259,9 +286,13 @@ void UC_Weapon::Client_OnReload_Implementation()
 
 void UC_Weapon::OnRep_OnAmmoUpdated()
 {
-	OnAmmoUpdated.Broadcast(GetRemainingAmmoInClip() , GetRemainingAmmoWithoutCurrentClip(), this);
+	OnAmmoUpdatedImplementation();
 }
 #pragma endregion 
+void UC_Weapon::OnAmmoUpdatedImplementation()
+{
+	OnAmmoUpdated.Broadcast( GetRemainingAmmoInClip() , GetRemainingAmmoWithoutCurrentClip() , this );
+}
 
 void UC_Weapon::AttackImplementation()
 {
@@ -439,6 +470,11 @@ void UC_Weapon::HandleReloadEnd(UC_Weapon* /*InWeapon*/)
 
 	bCanFire   = AmmoLeft;
 	bCanReload = MagazineLeft;
+
+	if ( GetNetMode() == NM_ListenServer )
+	{
+		OnAmmoUpdatedImplementation();
+	}
 }
 
 void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const bool bCallPickUp)
@@ -455,13 +491,14 @@ void UC_Weapon::HandlePickUp(TScriptInterface<IPickingUp> InPickUpObject, const 
 	{
 		if (!IsDummy())
 		{
-			Client_SetupPickupInput(Character);	
+			Client_SetupPickupInput( Character );	
 		}
 
 		if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 		{
-			PickUpComponent->OnObjectPickUp.RemoveAll(this);
+			PickUpComponent->OnObjectPickUp.Remove(this, "HandlePickUp");
 			PickUpComponent->OnObjectDrop.AddUniqueDynamic(this , &UC_Weapon::HandleDrop);
+			PickUpComponent->OnObjectDropPreSpawned.AddUniqueDynamic( this , &UC_Weapon::MoveAmmoInfo );
 		}
 	}
 }
@@ -480,13 +517,14 @@ void UC_Weapon::HandleDrop(TScriptInterface<IPickingUp> InPickUpObject, const bo
 
 		if (!IsDummy())
 		{
-			Client_SetupDropInput(Character);	
+			Client_SetupDropInput(Character);
 		}
 
 		if (UC_PickUp* PickUpComponent = GetOwner()->GetComponentByClass<UC_PickUp>())
 		{
 			PickUpComponent->OnObjectPickUp.AddUniqueDynamic(this , &UC_Weapon::HandlePickUp);
-			PickUpComponent->OnObjectDrop.RemoveAll(this);
+			PickUpComponent->OnObjectDrop.Remove(this, "HandleDrop");
+			PickUpComponent->OnObjectDropPreSpawned.Remove( this , "MoveAmmoInfo" );
 		}
 	}
 }
@@ -498,6 +536,11 @@ void UC_Weapon::ConsumeAmmo()
 	ConsecutiveShot++;
 
 	LOG_FUNC_PRINTF(LogWeaponComponent, Log, "AmmoSpentInClip: %d, ConsecutiveShot: %d", AmmoSpentInClip, ConsecutiveShot);
+
+	if ( GetNetMode() == NM_ListenServer )
+	{
+		OnAmmoUpdatedImplementation();
+	}
 }
 
 void UC_Weapon::ReloadClip()
@@ -514,22 +557,20 @@ void UC_Weapon::ReloadClip()
 }
 
 void UC_Weapon::HandleDummy(AA_Collectable* InPreviousDummy)
-{
-	SetIsReplicated(!IsDummy());
-	
+{	
 	if (IsDummy())
 	{
-		UC_Weapon* Sibling = GetSiblingComponent();
-		check(Sibling);
-			
-		if (IAttackObject* AttackObject = Cast<IAttackObject>(GetOwner()))
+		if ( UC_Weapon* Sibling = GetSiblingComponent() )
 		{
-			Sibling->OnAttack.AddUniqueDynamic(AttackObject, &IAttackObject::Attack);
-		}
+			if ( IAttackObject* AttackObject = Cast<IAttackObject>( GetOwner() ) )
+			{
+				Sibling->OnAttack.AddUniqueDynamic( AttackObject , &IAttackObject::Attack );
+			}
 
-		if (IReloadObject* ReloadObject = Cast<IReloadObject>(GetOwner()))
-		{
-			Sibling->OnReload.AddUniqueDynamic(ReloadObject, &IReloadObject::Reload);
+			if ( IReloadObject* ReloadObject = Cast<IReloadObject>( GetOwner() ) )
+			{
+				Sibling->OnReload.AddUniqueDynamic( ReloadObject , &IReloadObject::Reload );
+			}
 		}
 	}
 
@@ -600,6 +641,13 @@ void UC_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetim
 	DOREPLIFETIME_CONDITION(UC_Weapon , LoadedAmmo , COND_OwnerOnly);
 }
 
+void UC_Weapon::MoveAmmoInfo( AActor* InActor )
+{
+	if ( const AA_Weapon* Weapon = Cast<AA_Weapon>( InActor ) )
+	{
+		Weapon->GetWeaponComponent()->UpdateFrom( this );
+	}
+}
 
 // Called every frame
 void UC_Weapon::TickComponent(float DeltaTime , ELevelTick TickType , FActorComponentTickFunction* ThisTickFunction)

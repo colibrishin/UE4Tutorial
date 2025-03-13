@@ -41,6 +41,7 @@ APawn* AGM_Jump::SpawnDefaultPawnFor_Implementation(AController* NewPlayer, AAct
 		ESpawnActorScaleMethod::OverrideRootScale);
 
 	Character->GetAssetComponent()->SetID(CharacterAssetID);
+	Character->FetchAsset();
 	UGameplayStatics::FinishSpawningActor(Character, Transform);
 	return Character;
 }

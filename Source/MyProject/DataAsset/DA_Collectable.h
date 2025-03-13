@@ -17,8 +17,8 @@ class MYPROJECT_API UDA_Collectable : public UDA_AssetBase
 
 public:
 	FString GetAssetName() const { return Name; }
-	
 	EMySlotType GetSlotType() const { return SlotType; }
+	EMultiShapeType GetCollisionType() const { return CollisionType; }
 	
 private:
 	UPROPERTY(EditAnywhere)
@@ -26,5 +26,7 @@ private:
 	
 	UPROPERTY(EditAnywhere)
 	EMySlotType SlotType;
-
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
+	EMultiShapeType CollisionType;
 };

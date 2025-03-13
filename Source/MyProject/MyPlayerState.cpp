@@ -38,6 +38,7 @@ AMyPlayerState::AMyPlayerState()
 void AMyPlayerState::BeginPlay()
 {
 	Super::BeginPlay();
+
 }
 
 void AMyPlayerState::UpdateCharacterAsset(APlayerState* /*InPlayerState*/, APawn* InNewCharacter, APawn* /*InOldCharacter*/)
@@ -51,7 +52,7 @@ void AMyPlayerState::UpdateCharacterAsset(APlayerState* /*InPlayerState*/, APawn
 			if (UC_CharacterAsset* CharacterAsset = NewCharacter->GetComponentByClass<UC_CharacterAsset>())
 			{
 				CharacterAsset->SetID(CharacterAssetID);
-				NewCharacter->FetchAsset<UC_CharacterAsset>();
+				NewCharacter->FetchAsset();
 			}
 		}
 	}

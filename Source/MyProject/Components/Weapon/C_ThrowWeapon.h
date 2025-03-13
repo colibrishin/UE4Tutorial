@@ -17,14 +17,20 @@ public:
 	
 	// Sets default values for this component's properties
 	UC_ThrowWeapon();
-
-	virtual void Server_StopAttack_Implementation() override;
 	
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	UFUNCTION()
+	void SetUpSpawnedObject(AActor* InSpawnedActor);
+
+	UFUNCTION()
+	void Throw(UC_Weapon* InWeapon);
+
+	void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp ) override;
 
 private:
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))

@@ -42,5 +42,10 @@ void UMyAmmoWidget::HandleWeaponChanged(AA_Collectable* InNew)
 			           NewWeapon);
 		}
 	}
+	else 
+	{
+		// Empty string. The previous weapon will be destroyed, so it will not remove from the delegate.
+		AmmoText->SetText( FText::GetEmpty() );
+	}
 }
 

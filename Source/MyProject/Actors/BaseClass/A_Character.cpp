@@ -20,11 +20,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
-#include "Kismet/GameplayStatics.h"
-
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
-#include "MyProject/Components/Asset/C_WeaponAsset.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -131,7 +128,7 @@ void AA_Character::BeginPlay()
 		}
 	}
 
-	if (GetNetMode() == NM_Client)
+	if ( GetNetMode() == NM_Client )
 	{
 		OnHandChanged.AddUFunction(this, "SyncHandProperties");
 	}
@@ -141,7 +138,7 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 {
 	IPickingUp::PickUp(InPickUp);
 
-	if (GetNetMode() == NM_Client)
+	if ( GetNetMode() == NM_Client )
 	{
 		return;
 	}
@@ -158,43 +155,42 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 	Hand->SetChildActorClass(Collectable->GetClass());
 	ArmHand->SetChildActorClass(Collectable->GetClass());
 	
-	AA_Collectable* HandChild = Cast<AA_Collectable>(Hand->GetChildActor());
-	AA_Collectable* ArmChild = Cast<AA_Collectable>(ArmHand->GetChildActor());
+	HandActor = Cast<AA_Collectable>(Hand->GetChildActor());
+	ArmHandActor = Cast<AA_Collectable>(ArmHand->GetChildActor());
 
-	HandChild->SetOwner(this);
-	ArmChild->SetOwner(this);
+	HandActor->SetOwner(this);
+	ArmHandActor->SetOwner(this);
 
-	Cast<AA_Collectable>(HandChild)->SetDummy(false, nullptr);
-	Cast<AA_Collectable>(ArmChild)->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
-
-	// Replicates the hand child actor to everyone;
-	HandChild->bAlwaysRelevant = true;
-	// Replicates the arm hand child actor to owner only;
-	ArmChild->bOnlyRelevantToOwner = true;
-	
 	const int32 InPickUpID = Collectable->GetComponentByClass<UC_Asset>()->GetID();
 	UC_Asset* CollectableAsset = Hand->GetChildActor()->GetComponentByClass<UC_Asset>();
 	UC_Asset* ArmCollectableAsset = ArmHand->GetChildActor()->GetComponentByClass<UC_Asset>();
 	
 	CollectableAsset->SetID(InPickUpID);
 	ArmCollectableAsset->SetID(InPickUpID);
-
-	if (UMeshComponent* MeshComponent = HandChild->GetComponentByClass<UMeshComponent>())
-	{
-		MeshComponent->SetOwnerNoSee(true);
-	}
-
-	if (UMeshComponent* MeshComponent = ArmChild->GetComponentByClass<UMeshComponent>())
-	{
-		MeshComponent->SetOnlyOwnerSee(true);
-	}
 	
-	// Broadcast the pick up component to trigger any pick up event dependent listeners;
-	HandChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
-	ArmChild->GetComponentByClass<UC_PickUp>()->OnObjectPickUp.Broadcast(this, false);
-	
-	HandActor = Cast<AA_Collectable>(HandChild);
-	ArmHandActor = Cast<AA_Collectable>(ArmChild);
+	HandActor->SetPhysicsInClient(false);
+	ArmHandActor->SetPhysicsInClient(false);
+
+	HandActor->SetDummy(false, nullptr);
+	ArmHandActor->SetDummy(true, Cast<AA_Collectable>(Hand->GetChildActor()));
+
+	// Replicates the hand child actor to everyone;
+	HandActor->bAlwaysRelevant = true;
+	// Replicates the arm hand child actor to owner only;
+	ArmHandActor->bOnlyRelevantToOwner = true;
+
+	const auto& InitializeCollectable = [ this ]( const AA_Collectable* InCollectable, const bool bEnableEventHandler )
+		{
+			if ( UC_PickUp* PickUpComponent = InCollectable->GetComponentByClass<UC_PickUp>() )
+			{
+				PickUpComponent->AttachEventHandlers( bEnableEventHandler, EPickUp::Drop );
+				PickUpComponent->OnObjectPickUp.Broadcast( this , false );
+			}
+		};
+
+	InitializeCollectable( HandActor, true );
+	InitializeCollectable( ArmHandActor, false );
+
 	SyncHandProperties();
 
 	OnHandChanged.Broadcast(HandActor);
@@ -291,7 +287,7 @@ void AA_Character::OnRep_Hand() const
 
 void AA_Character::SyncHandProperties() const
 {
-	const auto& SyncProperties = [this](const AA_Collectable* InChild)
+	const auto& SyncProperties = [this](AA_Collectable* InChild)
 	{
 		// Since resetting Hand with nullptr exists, validity should be checked; 
 		if (!IsValid(InChild))
@@ -304,8 +300,11 @@ void AA_Character::SyncHandProperties() const
 		if (UMeshComponent* MeshComponent = InChild->GetComponentByClass<UMeshComponent>())
 		{
 			MeshComponent->SetCastShadow(false);
-			MeshComponent->SetSimulatePhysics(false);
-			MeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+
+		if (UPrimitiveComponent* CollisionComponent = InChild->GetCollisionComponent())
+		{
+			CollisionComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		}
 	};
 
@@ -328,12 +327,11 @@ void AA_Character::PostFetchAsset()
 
 void AA_Character::Server_PickUp_Implementation()
 {
-	TArray<FOverlapResult> OutResult;
 	FVector Center, Extents;
 	GetActorBounds(true, Center, Extents);
 
 	// Ignore the character just in case;
-	FCollisionQueryParams Params{NAME_None, false, this};
+	FCollisionQueryParams Params{ NAME_None, false };
 	
 	// Ignore hand collectable objects;
 	if (HandActor)
@@ -341,39 +339,54 @@ void AA_Character::Server_PickUp_Implementation()
 		Params.AddIgnoredActor(HandActor);
 		Params.AddIgnoredActor(ArmHandActor);
 	}
+
+	FVector TestLocation = GetActorLocation();
+
+	// Find the floor.
+	if ( FHitResult OutResult;
+		 GetWorld()->LineTraceSingleByChannel( OutResult , GetActorLocation() , GetActorLocation() + FVector::DownVector * 1000.f , ECC_WorldStatic , Params ) )
+	{
+		DrawDebugLine( GetWorld() , TestLocation , OutResult.Location , FColor::Red , false , 2.f );
+		TestLocation = OutResult.Location;
+	}
 	
-	if (!GetWorld()->OverlapMultiByChannel
-		(
-		 OutResult ,
-		 GetActorLocation() ,
-		 FQuat::Identity ,
-		 ECC_GameTraceChannel9 ,
-		 FCollisionShape::MakeSphere(Extents.GetMax()) ,
-		 Params
-		))
+	if ( TArray<FOverlapResult> OutResults;
+		 !GetWorld()->OverlapMultiByChannel
+		 (
+			 OutResults ,
+			 TestLocation ,
+			 FQuat::Identity ,
+			 ECC_GameTraceChannel9 ,
+			 FCollisionShape::MakeSphere( Extents.GetMax() * 1.5f ) ,
+			 Params
+		 ) )
 	{
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Found nothing to pick up of %s" , *GetName() );
 		return;
 	}
-
-	// Sort the objects in distance wise;
-	OutResult.Sort([this](const FOverlapResult& InLeft, const FOverlapResult& InRight)
+	else 
 	{
-		const float& LeftDistance = FVector::Distance(GetActorLocation(), InLeft.GetActor()->GetActorLocation());
-		const float& RightDistance = FVector::Distance(GetActorLocation(), InRight.GetActor()->GetActorLocation());
-		return LeftDistance < RightDistance; 
-	});
+		// Sort the objects in distance wise;
+		OutResults.Sort( [this]( const FOverlapResult& InLeft , const FOverlapResult& InRight )
+		{
+				const float& LeftDistance = FVector::Distance( GetActorLocation() , InLeft.GetActor()->GetActorLocation() );
+				const float& RightDistance = FVector::Distance( GetActorLocation() , InRight.GetActor()->GetActorLocation() );
+				return LeftDistance < RightDistance;
+		} );
 
-	const AA_Collectable* Collectable = Cast<AA_Collectable>((*OutResult.begin()).GetActor());
-	check(Collectable);
+		const AA_Collectable* Collectable = Cast<AA_Collectable>( ( *OutResults.begin() ).GetActor() );
+		check( Collectable );
 
-	// todo: inventory;
-	if (bHandBusy)
-	{
-		LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, ignore pick up request", *Collectable->GetOwner()->GetName());
-		return;
+		// todo: inventory;
+		if ( bHandBusy )
+		{
+			LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, ignore pick up request" , *Collectable->GetOwner()->GetName() );
+			return;
+		}
+
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Picking up object %s" , *Collectable->GetName() );
+		Collectable->GetPickUpComponent()->OnObjectPickUp.Broadcast( this , true );
 	}
-
-	Collectable->GetPickUpComponent()->OnObjectPickUp.Broadcast(this, true);
 }
 
 void AA_Character::Server_Drop_Implementation()

@@ -3,6 +3,14 @@
 #include "Engine/DataTable.h"
 
 UENUM()
+enum class EMultiShapeType : uint8
+{
+	Box,
+	Sphere,
+	Capsule
+};
+
+UENUM()
 enum class EMyWeaponType : uint8
 {
 	Unknown,

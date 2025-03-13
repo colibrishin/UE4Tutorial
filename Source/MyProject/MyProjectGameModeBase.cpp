@@ -102,7 +102,7 @@ APawn* AMyProjectGameModeBase::SpawnDefaultPawnFor_Implementation(AController* N
 			ESpawnActorScaleMethod::OverrideRootScale);
 
 		DefaultCharacter->GetAssetComponent()->SetID(NewPlayer->GetPlayerState<AMyPlayerState>()->GetCharacterAssetID());
-		DefaultCharacter->FetchAsset<UC_CharacterAsset>();
+		DefaultCharacter->FetchAsset();
 		UGameplayStatics::FinishSpawningActor(DefaultCharacter, Transform, ESpawnActorScaleMethod::OverrideRootScale);
 
 		return DefaultCharacter;

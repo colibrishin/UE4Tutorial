@@ -12,7 +12,14 @@ class AMyCharacter;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectPickUp, TScriptInterface<IPickingUp>, InCaller, const bool, bCallPickUp);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectDrop, TScriptInterface<IPickingUp>, InCaller, const bool, bCallDrop);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectDropSpawned, AActor*, InSpawnedActor);
 DECLARE_LOG_CATEGORY_EXTERN(LogPickUp, Log, All);
+
+enum class EPickUp : uint8_t 
+{
+	PickUp,
+	Drop
+};
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
 class MYPROJECT_API UC_PickUp : public UActorComponent
@@ -27,7 +34,9 @@ public:
 
 	FOnObjectDrop OnObjectDrop;
 
-	virtual void SetActive(bool bNewActive, bool bReset = false) override;
+	FOnObjectDropSpawned OnObjectDropPreSpawned;
+
+	void AttachEventHandlers( const bool bEnable , const EPickUp bPickUpOrDrop );
 
 protected:
 	// Called when the game starts
@@ -42,6 +51,4 @@ protected:
 	UFUNCTION()
 	void OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallDrop);
 
-private:
-	void AttachEventHandlers();
 };

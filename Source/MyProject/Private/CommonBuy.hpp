@@ -99,6 +99,12 @@ inline bool ValidateBuyRequest(const int32 ID, AA_Character* const& Character)
 		return false;
 	}
 
+	if ( Character->GetHand()->GetChildActor() )
+	{
+		LOG_FUNC( LogTemp , Error , "Character has the weapon" );
+		return false;
+	}
+
 	return IsPlayerInBuyZone(Character);
 }
 

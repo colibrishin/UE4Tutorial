@@ -32,9 +32,12 @@ public:
 	
 		T* AssetComponent = Object->GetComponentByClass<T>();
 		ensureAlwaysMsgf(AssetComponent, TEXT("AssetComponent is not found"));
+		AssetComponent->FetchAsset();
 		AssetComponent->ApplyAsset();
 		PostFetchAsset();
 	}
+
+	void UpdateCollisionComponent( USceneComponent* RootComponent, USceneComponent* ParentComponent, UShapeComponent* NewComponent, const FName& CollisionProfileName );
 
 protected:
 	virtual void PostFetchAsset();
