@@ -19,6 +19,7 @@ class UInputMappingContext;
 class UCameraComponent;
 class UC_CharacterAsset;
 class UC_Asset;
+class UC_Health;
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter , Log , All);
 
 // Non-dynamic delegate due to forwarding to player state;
@@ -41,9 +42,12 @@ public:
 	FOnHandChanged OnHandChanged;
 
 	UC_CharacterAsset*      GetAssetComponent() const { return AssetComponent; }
+	UC_Health* GetHealthComponent() const { return HealthComponent; }
 	USkeletalMeshComponent* GetArmMesh() const { return ArmMeshComponent; }
 	UChildActorComponent*   GetHand() const { return Hand; }
 	bool                    IsHandBusy() const { return bHandBusy; };
+
+	virtual float TakeDamage( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser ) override;
 
 protected:
 	// Called when the game starts or when spawned
@@ -58,6 +62,7 @@ protected:
 
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
+
 
 public:
 	// Called every frame
@@ -98,6 +103,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, Replicated, BlueprintReadWrite)
 	UC_CharacterAsset* AssetComponent;
+
+	UPROPERTY( VisibleAnywhere , Replicated , BlueprintReadWrite )
+	UC_Health* HealthComponent;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UChildActorComponent* Hand;

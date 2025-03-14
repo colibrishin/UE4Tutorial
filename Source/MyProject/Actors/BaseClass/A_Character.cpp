@@ -24,6 +24,9 @@
 #include "MyProject/Components/Asset/C_CharacterAsset.h"
 
 #include "Net/UnrealNetwork.h"
+#include <MyProject/AI/MyAIController.h>
+#include <MyProject/MyPlayerController.h>
+#include "MyProject/Components/C_Health.h"
 
 DEFINE_LOG_CATEGORY(LogCharacter);
 
@@ -84,6 +87,7 @@ AA_Character::AA_Character()
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	Hand = CreateDefaultSubobject<UChildActorComponent>(TEXT("HandActor"));
 	ArmHand = CreateDefaultSubobject<UChildActorComponent>(TEXT("ArmHandActor"));
+	HealthComponent = CreateDefaultSubobject<UC_Health>( TEXT( "HealthComponent" ) );
 
 	GetMesh()->SetupAttachment(GetCapsuleComponent());
 	ArmMeshComponent->SetupAttachment(GetCapsuleComponent());
@@ -244,6 +248,29 @@ void AA_Character::Look(const FInputActionValue& Value)
 	AddControllerPitchInput(-LookAxisVector.Y);
 }
 
+float AA_Character::TakeDamage( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
+{
+	const float Value = Super::TakeDamage( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
+
+	if ( HasAuthority() )
+	{
+		HealthComponent->Decrease( (int32)DamageAmount );
+
+		if ( HealthComponent->GetHealth() <= 0 )
+		{
+			const auto& DamageGiver = Cast<AMyPlayerController>( EventInstigator );
+			const auto& Victim = Cast<AMyPlayerController>( GetOwner() );
+			const auto& KillerWeapon = DamageCauser->GetComponentByClass<UC_PickUp>();
+
+			AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>();
+			check( MyPlayerState );
+			MyPlayerState->OnKillOccurred.Broadcast( DamageGiver , Victim , KillerWeapon );
+		}
+	}
+
+	return Value;
+}
+
 // Called every frame
 void AA_Character::Tick(float DeltaTime)
 {
@@ -274,6 +301,7 @@ void AA_Character::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AA_Character, bHandBusy);
 	DOREPLIFETIME(AA_Character, AssetComponent);
 	
+	DOREPLIFETIME( AA_Character , HealthComponent );
 	DOREPLIFETIME(AA_Character, Hand);
 	DOREPLIFETIME_CONDITION(AA_Character, ArmHand, COND_OwnerOnly);
 	DOREPLIFETIME(AA_Character, HandActor);

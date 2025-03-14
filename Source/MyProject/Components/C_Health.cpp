@@ -50,7 +50,7 @@ void UC_Health::Decrease(const int32 InValue)
 	Health = NewValue;
 
 	OnHPChanged.Broadcast(PreviousHealth, Health);
-	OnHPChangedRatio.Broadcast(FMath::Clamp(Health / MaxHealth, 0.f, 1.f));
+	NotifyHPRatioUpdate();
 }
 
 void UC_Health::Increase(const int32 InValue)
@@ -85,7 +85,7 @@ void UC_Health::Increase(const int32 InValue)
 	Health = NewValue;
 
 	OnHPChanged.Broadcast(PreviousHealth, Health);
-	OnHPChangedRatio.Broadcast(FMath::Clamp(Health / MaxHealth, 0.f, 1.f));
+	NotifyHPRatioUpdate();
 }
 
 
@@ -94,14 +94,20 @@ void UC_Health::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SetIsReplicated( true );
 	// ...
 	
+}
+
+void UC_Health::NotifyHPRatioUpdate() const
+{
+	OnHPChangedRatio.Broadcast( FMath::Clamp( (float)Health / (float)MaxHealth , 0.f , 1.f ) );
 }
 
 void UC_Health::OnRep_HP(const int32 InOld) const
 {
 	OnHPChanged.Broadcast(InOld, Health);
-	OnHPChangedRatio.Broadcast(FMath::Clamp(Health / MaxHealth, 0.f, 1.f));
+	NotifyHPRatioUpdate();
 }
 
 void UC_Health::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

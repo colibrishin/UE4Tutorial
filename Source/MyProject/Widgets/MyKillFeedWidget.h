@@ -28,7 +28,7 @@ protected:
 
 private:
 	UFUNCTION()
-	void HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon);
+	void HandleKillOccurred( AMyPlayerController* Killer, AMyPlayerController* Victim, UC_PickUp* Weapon);
 
 	void AddKillFeed(const FText& KillerName, const FText& VictimName, class UTexture2D* WeaponImage);
 

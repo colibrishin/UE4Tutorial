@@ -93,19 +93,25 @@ void UC_ThrowWeapon::SetUpSpawnedObject(AActor* InSpawnedActor)
 	// todo: pick and throw back?
 	ThrowWeapon->GetPickUpComponent()->AttachEventHandlers( false , EPickUp::Drop );
 
-	FTimerDelegate                                                  Delegate;
-	Delegate.BindLambda( []( const TScriptInterface<IEventHandler>& Handler, const TScriptInterface<IEventableContext>& InContext, const UDA_ThrowWeapon* InAsset)
+	if ( EventHandler )
 	{
-		Handler->DoEvent( InContext , InAsset->GetParameters() );
-	}, EventHandler, this, WeaponAsset);
+		FTimerDelegate                                                  Delegate;
+		Delegate.BindLambda( []( const TScriptInterface<IEventHandler>& Handler , const TScriptInterface<IEventableContext>& InContext , const UDA_ThrowWeapon* InAsset )
+		{
+				Handler->DoEvent( InContext , InAsset->GetParameters() );
+		} , EventHandler , SpawnedComponent , WeaponAsset );
 
-	GetWorld()->GetTimerManager().SetTimer(
-		SpawnedComponent->ThrowAfterEventTimer ,
-		Delegate ,
-		WeaponAsset->GetEventTimeAfterThrow(),
-		false ,
-		-1
-	);
+		if ( !SpawnedComponent->ThrowAfterEventTimer.IsValid() )
+		{
+			GetWorld()->GetTimerManager().SetTimer(
+				SpawnedComponent->ThrowAfterEventTimer ,
+				Delegate ,
+				WeaponAsset->GetEventTimeAfterThrow() ,
+				false ,
+				-1
+			);
+		}
+	}
 
 	CookTimeCounter = 0.f;
 }

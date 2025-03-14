@@ -55,7 +55,6 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 		return;
 	}
 
-	PlayerState->GetHealthComponent()->Reset();
 	PlayerState->AddMoney(18000);
 
 	const auto& MyGameState = GetGameState<AMyGameState>();
