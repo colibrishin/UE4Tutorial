@@ -70,6 +70,7 @@ void UC_CharacterAsset::ApplyAsset()
 		if ( UC_Health* HealthComponent = Character->GetHealthComponent() )
 		{
 			HealthComponent->MaxHealth = CharacterAsset->GetMaxHealth();
+			HealthComponent->Reset();
 		}
 
 		// note: Replication Mesh offset setup
