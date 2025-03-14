@@ -32,20 +32,10 @@ protected:
 	void Fire();
 	
 	void DoHitscan(const FVector& InRecoiledNormal);
+
+	virtual void UpdateFrom(UDA_Weapon* InAsset) override;
 	
 private:
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	FVector RecoiledNormal;
-	
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
-	bool bAimable;
-
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
-	bool bHitscan;
-	
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
-	UCurveFloat* VSpread;
-
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
-	UCurveFloat* HSpread;
 };

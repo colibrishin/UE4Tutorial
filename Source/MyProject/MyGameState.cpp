@@ -93,12 +93,17 @@ AMyGameState::AMyGameState()
 	MatchRoundTime = 240.f;
 }
 
-void AMyGameState::HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon)
+void AMyGameState::HandleKillOccurred(AMyPlayerController* Killer, AMyPlayerController* Victim, UC_PickUp* Weapon)
 {
 	if (Killer && Victim)
 	{
-		Killer->IncrementKills();
-		Victim->IncrementDeaths();
+		AMyPlayerState* KillerPlayerState = Killer->GetPlayerState<AMyPlayerState>();
+		AMyPlayerState* VictimPlayerState = Victim->GetPlayerState<AMyPlayerState>();
+
+		check( KillerPlayerState && VictimPlayerState );
+
+		KillerPlayerState->IncrementKills();
+		VictimPlayerState->IncrementDeaths();
 	}
 }
 

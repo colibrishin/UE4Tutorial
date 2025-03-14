@@ -29,7 +29,6 @@ AMyPlayerState::AMyPlayerState()
 	  Money(0)
 {
 	BuyComponent = CreateDefaultSubobject<UC_Buy>(TEXT("BuyComponent"));
-	HealthComponent = CreateDefaultSubobject<UC_Health>(TEXT("HealthComponent"));
 	CharacterAssetID = 4;
 
 	OnPawnSet.AddUniqueDynamic(this, &AMyPlayerState::UpdateCharacterAsset);
@@ -58,31 +57,6 @@ void AMyPlayerState::UpdateCharacterAsset(APlayerState* /*InPlayerState*/, APawn
 	}
 }
 
-float AMyPlayerState::TakeDamage(
-	float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser
-)
-{
-	if (HasAuthority())
-	{
-		// todo: AIController + Player State?
-		if (Cast<AAIController>(EventInstigator))
-		{
-			return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-		}
-
-		const auto& DamageGiver = Cast<AMyPlayerController>(EventInstigator)->GetPlayerState<AMyPlayerState>();
-		const auto& Victim = Cast<AMyPlayerController>(GetOwner())->GetPlayerState<AMyPlayerState>();
-		const auto& KillerWeapon = DamageCauser->GetComponentByClass<UC_PickUp>();
-
-		if (HealthComponent->GetHealth() <= 0)
-		{
-			OnKillOccurred.Broadcast(DamageGiver, Victim, KillerWeapon);
-		}
-	}
-
-	return Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
-}
-
 void AMyPlayerState::Reset()
 {
 	Super::Reset();
@@ -92,7 +66,10 @@ void AMyPlayerState::Reset()
 		LOG_FUNC(LogPlayerState, Log, "Reset PlayerState");
 
 		SetState(EMyCharacterState::Alive);
-		HealthComponent->Reset();
+		if ( const AA_Character* Character = Cast<AA_Character>( GetPawn() ) ) 
+		{
+			Character->GetHealthComponent()->Reset();
+		}
 		// todo: Add money by winning or losing
 	}
 }
@@ -122,7 +99,6 @@ void AMyPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME(AMyPlayerState, Assist);
 	DOREPLIFETIME(AMyPlayerState, State);
 	DOREPLIFETIME(AMyPlayerState, Money);
-	DOREPLIFETIME(AMyPlayerState, HealthComponent);
 	DOREPLIFETIME(AMyPlayerState, BuyComponent);
 }
 
@@ -195,11 +171,6 @@ void AMyPlayerState::SetState(const EMyCharacterState NewState)
 UC_Buy* AMyPlayerState::GetBuyComponent() const
 {
 	return BuyComponent;
-}
-
-UC_Health* AMyPlayerState::GetHealthComponent() const
-{
-	return HealthComponent;
 }
 
 int32 AMyPlayerState::GetCharacterAssetID() const

@@ -4,11 +4,13 @@
 
 #include "CoreMinimal.h"
 #include "C_Weapon.h"
+#include "MyProject/Interfaces/EventableContext.h"
+#include "MyProject/Interfaces/EventHandler.h"
 #include "C_ThrowWeapon.generated.h"
 
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_ThrowWeapon : public UC_Weapon
+class MYPROJECT_API UC_ThrowWeapon : public UC_Weapon, public IEventableContext
 {
 	GENERATED_BODY()
 
@@ -17,6 +19,8 @@ public:
 	
 	// Sets default values for this component's properties
 	UC_ThrowWeapon();
+
+	AA_Character* GetOrigin() const;
 	
 protected:
 	// Called when the game starts
@@ -30,19 +34,21 @@ protected:
 	UFUNCTION()
 	void Throw(UC_Weapon* InWeapon);
 
-	void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp ) override;
+	virtual void UpdateFrom(UDA_Weapon* InAsset) override;
+
+	virtual void HandlePickUp( TScriptInterface<IPickingUp> InPickUpObject , const bool bCallPickUp ) override;
+
+	void SetOrigin( AA_Character* InCharacter );
 
 private:
 	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
 	float CookTimeCounter;
 
-	UPROPERTY(VisibleAnywhere, Category="Throwable", meta=(AllowPrivateAccess))
-	float CookingTime;
-	
-	UPROPERTY(VisibleAnywhere, Category="Throwable", meta=(AllowPrivateAccess))
-	float ThrowForce;
+	UPROPERTY(VisibleAnywhere, Category="Origin", meta=(AllowPrivateAccess))
+	AA_Character* OriginCharacter;
 
-	UPROPERTY(VisibleAnywhere, Category="Throwable", meta=(AllowPrivateAccess))
-	float ThrowForceMultiplier;
+	TScriptInterface<IEventHandler> EventHandler;
+
+	FTimerHandle ThrowAfterEventTimer;
 
 };

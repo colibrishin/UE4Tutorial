@@ -15,6 +15,7 @@
 
 #include "MyProject/Actors/BaseClass/A_Collectable.h"
 #include "MyProject/Actors/BaseClass/A_Weapon.h"
+#include "MyProject/DataAsset/DA_Weapon.h"
 #include "MyProject/Private/Utilities.hpp"
 
 #include "MyProject/Interfaces/AttackObject.h"
@@ -27,9 +28,7 @@ UC_Weapon::UC_Weapon()
 	: bFiring(false),
 	  bReloading(false),
 	  bCanReload(false),
-	  bCanFire(false),
-	  bCanSpray(false),
-	  AttackRate(1.f)
+	  bCanFire(false)
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -64,6 +63,15 @@ UC_Weapon::UC_Weapon()
 	}
 }
 
+EMyWeaponType UC_Weapon::GetWeaponType() const
+{
+	return ReferenceAsset->GetWeaponType();
+}
+
+float UC_Weapon::GetRange() const
+{
+	return ReferenceAsset->GetRange();
+}
 
 uint32 UC_Weapon::GetRemainingAmmo() const
 {
@@ -82,12 +90,17 @@ uint32 UC_Weapon::GetRemainingAmmoWithoutCurrentClip() const
 
 uint32 UC_Weapon::GetAmmoPerClip() const
 {
-	return AmmoPerClip;
+	return ReferenceAsset->GetMaxAmmo();
 }
 
 uint32 UC_Weapon::GetConsecutiveShot() const
 {
 	return ConsecutiveShot;
+}
+
+uint32 UC_Weapon::GetDamage() const
+{
+	return ReferenceAsset->GetDamage();
 }
 
 void UC_Weapon::Attack()
@@ -140,6 +153,13 @@ void UC_Weapon::UpdateFrom( const UC_Weapon* InOtherComponent )
 	AmmoSpent = InOtherComponent->AmmoSpent;
 	AmmoSpentInClip = InOtherComponent->AmmoSpentInClip;
 	LoadedAmmo = InOtherComponent->LoadedAmmo;
+}
+
+void UC_Weapon::UpdateFrom( UDA_Weapon* InAsset )
+{
+	ReferenceAsset = InAsset;
+	TotalAmmo = ReferenceAsset->GetMaxAmmo() * ReferenceAsset->GetMagazine();
+	ReloadClip();
 }
 
 // Called when the game starts
@@ -236,7 +256,7 @@ void UC_Weapon::Client_SetupDropInput_Implementation(const AA_Character* InChara
 	}
 }
 
-void UC_Weapon::SetupDropInputImplementation( const AA_Character* InCharacter ) 
+void UC_Weapon::SetupDropInputImplementation( const AA_Character* InCharacter ) const
 {
 	if ( const APlayerController* PlayerController = Cast<APlayerController>( InCharacter->GetController() ) )
 	{
@@ -260,17 +280,17 @@ void UC_Weapon::SetupDropInputImplementation( const AA_Character* InCharacter )
 
 void UC_Weapon::Multi_PlayAttackSound_Implementation()
 {
-	if (AttackSound)
+	if ( ReferenceAsset->GetAttackSound() )
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld() , AttackSound , GetOwner()->GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation( GetWorld() , ReferenceAsset->GetAttackSound() , GetOwner()->GetActorLocation() );
 	}
 }
 
 void UC_Weapon::Multi_PlayReloadSound_Implementation()
 {
-	if (ReloadSound)
+	if ( ReferenceAsset->GetReloadSound() )
 	{
-		UGameplayStatics::PlaySoundAtLocation(GetWorld() , ReloadSound , GetOwner()->GetActorLocation());
+		UGameplayStatics::PlaySoundAtLocation( GetWorld() , ReferenceAsset->GetReloadSound() , GetOwner()->GetActorLocation() );
 	}
 }
 
@@ -378,7 +398,7 @@ void UC_Weapon::HandleAttackStart(UC_Weapon* /*InWeapon*/)
 	bCanFire   = false;
 	bCanReload = false;
 
-	if (bCanSpray)
+	if ( ReferenceAsset->GetSpray() )
 	{
 		ensure(!SprayTimerHandle.IsValid());
 
@@ -389,7 +409,7 @@ void UC_Weapon::HandleAttackStart(UC_Weapon* /*InWeapon*/)
 				(
 				 SprayTimerHandle ,
 				 TimerDelegate ,
-				 AttackRate ,
+				 ReferenceAsset->GetAttackRate() ,
 				 false);
 	}
 }
@@ -407,7 +427,7 @@ void UC_Weapon::HandleAttackEnd(UC_Weapon* /*InWeapon*/)
 	
 	if (bFiring)
 	{
-		if (bCanSpray)
+		if ( ReferenceAsset->GetSpray() )
 		{
 			if (SprayTimerHandle.IsValid())
 			{
@@ -450,7 +470,7 @@ void UC_Weapon::HandleReloadStart(UC_Weapon* /*InWeapon*/)
 			(
 			 ReloadTimerHandle ,
 			 TimerDelegate ,
-			 ReloadTime ,
+			 ReferenceAsset->GetReloadTime() ,
 			 false
 			);
 }
@@ -545,12 +565,12 @@ void UC_Weapon::ConsumeAmmo()
 
 void UC_Weapon::ReloadClip()
 {
-	if (GetRemainingAmmo() > 0)
+	if ( GetRemainingAmmo() > 0 )
 	{
-		AmmoSpent       += AmmoSpentInClip;
-		LoadedAmmo = FMath::Clamp(GetRemainingAmmo(), 0, AmmoPerClip);
+		AmmoSpent += AmmoSpentInClip;
+		LoadedAmmo = FMath::Clamp( GetRemainingAmmo() , 0 , ReferenceAsset->GetMaxAmmo() );
 		AmmoSpentInClip = 0;
-		
+
 		bCanFire = GetRemainingAmmoInClip() > 0;
 		bCanReload = GetRemainingAmmo() > 0;
 	}

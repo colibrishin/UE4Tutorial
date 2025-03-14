@@ -67,12 +67,10 @@ void UC_CharacterAsset::ApplyAsset()
 			SpringArmComponent->ProbeSize = CharacterAsset->GetCollisionProbeSize();
 		}
 
-		if ( const AMyPlayerState* PlayerState = Character->GetPlayerState<AMyPlayerState>() )
+		if ( UC_Health* HealthComponent = Character->GetHealthComponent() )
 		{
-			if ( UC_Health* HealthComponent = PlayerState->GetHealthComponent() )
-			{
-				HealthComponent->MaxHealth = CharacterAsset->GetMaxHealth();
-			}
+			HealthComponent->MaxHealth = CharacterAsset->GetMaxHealth();
+			HealthComponent->Reset();
 		}
 
 		// note: Replication Mesh offset setup

@@ -18,6 +18,7 @@ class AA_C4;
 class AA_Character;
 class UC_Weapon;
 class UC_Buy;
+class AMyPlayerController;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged , EMyRoundProgress)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuyChanged, bool, InFlag);
@@ -80,7 +81,7 @@ public:
 	AMyGameState();
 
 	UFUNCTION()
-	void HandleKillOccurred(AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon);
+	void HandleKillOccurred( AMyPlayerController* Killer, AMyPlayerController* Victim, UC_PickUp* Weapon);
 
 	UFUNCTION()
 	void HandlePlayerStateChanged(AMyPlayerState* PlayerState, const EMyCharacterState State);

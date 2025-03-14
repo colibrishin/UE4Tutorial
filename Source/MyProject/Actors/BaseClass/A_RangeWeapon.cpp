@@ -30,6 +30,11 @@ UC_RangeWeapon* AA_RangeWeapon::GetRangeWeaponComponent() const
 	return Cast<UC_RangeWeapon>(GetWeaponComponent());
 }
 
+UNiagaraComponent* AA_RangeWeapon::GetBulletTrailComponent() const
+{
+	return BulletTrailComponent;
+}
+
 // Called when the game starts or when spawned
 void AA_RangeWeapon::BeginPlay()
 {

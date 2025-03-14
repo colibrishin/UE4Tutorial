@@ -11,6 +11,21 @@
 class UDA_AssetBase;
 class UDA_Collectable;
 
+USTRUCT(BlueprintType)
+struct FParameters
+{
+	GENERATED_BODY()
+
+	UPROPERTY( EditAnywhere , Category = "Values" , BlueprintReadWrite , meta = ( AllowPrivateAccess ) )
+	TMap<FString , float> FloatParameters;
+
+	UPROPERTY( EditAnywhere , Category = "Values" , BlueprintReadWrite , meta = ( AllowPrivateAccess ) )
+	TMap<FString , int> IntegerParameters;
+	
+	UPROPERTY( EditAnywhere , Category = "Values" , BlueprintReadWrite , meta = ( AllowPrivateAccess ) )
+	TMap<FString , FVector> VectorParameters;
+};
+
 USTRUCT()
 struct FBaseAssetRow : public FTableRowBase
 {

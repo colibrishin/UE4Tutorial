@@ -10,6 +10,7 @@
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/Components/Asset/C_WeaponAsset.h"
 #include "MyProject/DataAsset/DA_Weapon.h"
+#include "MyProject/MyPlayerController.h"
 
 void UMyKillFeedWidget::NativeConstruct()
 {
@@ -38,13 +39,16 @@ void UMyKillFeedWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTim
 }
 
 void UMyKillFeedWidget::HandleKillOccurred(
-	AMyPlayerState* Killer, AMyPlayerState* Victim, UC_PickUp* Weapon
+	AMyPlayerController* Killer, AMyPlayerController* Victim, UC_PickUp* Weapon
 )
 {
 	if (Killer && Victim && Weapon)
 	{
-		const auto& KillerName = FText::FromString(*Killer->GetPlayerName());
-		const auto& VictimName = FText::FromString(*Victim->GetPlayerName());
+		AMyPlayerState* KillerPlayerState = Killer->GetPlayerState<AMyPlayerState>();
+		AMyPlayerState* VictimPlayerState = Victim->GetPlayerState<AMyPlayerState>();
+
+		const auto& KillerName = FText::FromString(*KillerPlayerState->GetPlayerName());
+		const auto& VictimName = FText::FromString(*VictimPlayerState->GetPlayerName());
 		UTexture2D* WeaponImage = nullptr;
 
 		if (const UC_WeaponAsset* AssetComponent = Weapon->GetOwner()->GetComponentByClass<UC_WeaponAsset>())

@@ -20,13 +20,14 @@ class UC_Health;
 class UC_PickUp;
 class UC_Weapon;
 class AMyCollectable;
+class AMyPlayerController;
 class UC_Buy;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged , AMyPlayerState* , InPlayerState ,
                                              const EMyCharacterState , InCurrentState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, const int32, InNewMoney);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, AMyPlayerState*, InPlayerState);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, AMyPlayerState*, InKiller, AMyPlayerState*, InVictim, UC_PickUp*, InWeapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, AMyPlayerController*, InKiller, AMyPlayerController*, InVictim, UC_PickUp*, InWeapon);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogPlayerState, Log, All);
 /**
@@ -46,7 +47,6 @@ public:
 	void       SetState(const EMyCharacterState NewState);
 	void       AddMoney(const int32 Amount);
 	UC_Buy*    GetBuyComponent() const;
-	UC_Health* GetHealthComponent() const;
 	int32      GetCharacterAssetID() const;
 
 	FOnStateChanged OnStateChanged;
@@ -67,10 +67,8 @@ public:
 
 	int32 GetDeath() const { return Death; }
 
-	int32 GetAssist()const { return Assist; }
+	int32 GetAssist() const { return Assist; }
 
-	virtual float TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser) override;
-	
 protected:
 	virtual void    BeginPlay() override;
 
@@ -107,9 +105,6 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess, ClampMin=0))
 	int32 CharacterAssetID;
-
-	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
-	UC_Health* HealthComponent;
 	
 	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	UC_Buy* BuyComponent;

@@ -45,6 +45,8 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+	void NotifyHPRatioUpdate() const;
+
 	UFUNCTION()
 	void OnRep_HP(const int32 InOld) const;
 
