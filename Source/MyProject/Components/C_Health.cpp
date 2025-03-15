@@ -40,14 +40,17 @@ void UC_Health::Decrease(const int32 InValue)
 		LOG_FUNC(LogHealthComponent, Warning, "Underflow! Assuming the value to 0");
 		Health = 0;
 	}
-	else if (NewValue < 0)
+	else if (NewValue <= 0)
 	{
 		Health = 0;
 	}
+	else
+	{
+		Health = NewValue;
+	}
 
-	LOG_FUNC_PRINTF(LogHealthComponent, Log, "Health changed to %d", NewValue);
+	LOG_FUNC_PRINTF(LogHealthComponent, Log, "Health changed to %d", Health);
 	const auto PreviousHealth = Health;
-	Health = NewValue;
 
 	OnHPChanged.Broadcast(PreviousHealth, Health);
 	NotifyHPRatioUpdate();
@@ -78,11 +81,14 @@ void UC_Health::Increase(const int32 InValue)
 	{
 		Health = MaxHealth;
 	}
+	else
+	{
+		Health = NewValue;
+	}
 
 	LOG_FUNC_PRINTF(LogHealthComponent, Log, "Health changed to %d", NewValue);
 
 	const auto PreviousHealth = Health;
-	Health = NewValue;
 
 	OnHPChanged.Broadcast(PreviousHealth, Health);
 	NotifyHPRatioUpdate();
