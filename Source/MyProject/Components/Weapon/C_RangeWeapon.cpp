@@ -75,10 +75,12 @@ void UC_RangeWeapon::Fire()
 	if ( const UDA_RangeWeapon* WeaponAsset = Cast<UDA_RangeWeapon>(ReferenceAsset); 
 		 WeaponAsset->GetHitscan() )
 	{
-		RecoiledNormal = 
-			ApplyRecoil(CameraComponent->GetForwardVector(), CameraComponent->GetRightVector(), CameraComponent->GetUpVector());
-		
-		DoHitscan(RecoiledNormal);
+		RecoiledNormal = ApplyRecoil( CameraComponent->GetForwardVector() , CameraComponent->GetRightVector() , CameraComponent->GetUpVector() );
+
+		if ( !IsDummy() )
+		{
+			DoHitscan(RecoiledNormal);	
+		}
 	}
 }
 
@@ -89,7 +91,6 @@ void UC_RangeWeapon::DoHitscan(const FVector& InRecoiledNormal)
 	const UCameraComponent* Cam = PickUpComponent->GetOwner()->GetAttachParentActor()->GetComponentByClass<UCameraComponent>();
 	const FVector ShotPosition = Cam->GetComponentLocation();
 	const FVector EndPosition = ShotPosition + (InRecoiledNormal * ReferenceAsset->GetRange());
-	FHitResult OutHitResult{};
 
 	FCollisionQueryParams QueryParams;
 	// Weapon;
@@ -98,25 +99,34 @@ void UC_RangeWeapon::DoHitscan(const FVector& InRecoiledNormal)
 	QueryParams.AddIgnoredActor(GetOwner()->GetOwner());
 
 	LOG_FUNC_PRINTF(LogWeaponComponent, Log, "Hitscaning with normal %s, Client? : %d", *InRecoiledNormal.ToString(), GetNetMode() == NM_Client);
-	
-	if (GetWorld()->LineTraceSingleByChannel(OutHitResult, ShotPosition, EndPosition, ECC_Visibility, QueryParams))
+
+	if ( TArray<FHitResult> OutHitResults; 
+		 GetWorld()->LineTraceMultiByChannel(OutHitResults, ShotPosition, EndPosition, ECC_GameTraceChannel1, QueryParams) )
 	{
 #if WITH_EDITOR
 		if (!IsDummy())
 		{
-			DrawDebugLine(GetWorld(), ShotPosition, OutHitResult.Location, FColor::Red, false, 2.f);
-			DrawDebugBox(GetWorld(), OutHitResult.Location, FVector::OneVector, FColor::Yellow, false, 2.f);
+			DrawDebugLine(GetWorld(), ShotPosition, OutHitResults.Last().Location, FColor::Red, false, 2.f);
+			DrawDebugBox(GetWorld(), OutHitResults.Last().Location, FVector::OneVector, FColor::Yellow, false, 2.f);
 		}
 #endif
-		if (AA_Character* HitCharacter = Cast<AA_Character>(OutHitResult.GetActor()))
+
+		for (const FHitResult& HitResult : OutHitResults)
 		{
-			// todo: utilize the damage event
-			const FDamageEvent DamageEvent{};
-			HitCharacter->TakeDamage(ReferenceAsset->GetDamage(), DamageEvent, HitCharacter->GetController(), GetOwner());
-		}
-		else
-		{
-			// todo: bullet hole;
+			if (AA_Character* HitCharacter = Cast<AA_Character>(HitResult.GetActor()))
+			{
+				//todo: utilize damage event
+				const FDamageEvent DamageEvent{};
+
+				HitCharacter->TakeDamage(ReferenceAsset->GetDamage(), DamageEvent, HitCharacter->GetController(), GetOwner());
+
+				// todo: penetration rate of weapon
+				break;
+			}
+			else
+			{
+				// todo: bullet hole;
+			}
 		}
 	}
 }
