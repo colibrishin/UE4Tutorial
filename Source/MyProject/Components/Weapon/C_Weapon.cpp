@@ -105,7 +105,7 @@ uint32 UC_Weapon::GetDamage() const
 
 void UC_Weapon::Attack()
 {
-	if (ValidateAttack())
+	if ( !bRequestFiring )
 	{
 		Server_Attack();
 	}
@@ -113,7 +113,7 @@ void UC_Weapon::Attack()
 
 void UC_Weapon::StopAttack()
 {
-	if (bFiring)
+	if ( bRequestFiring )
 	{
 		Server_StopAttack();
 	}
@@ -198,11 +198,13 @@ void UC_Weapon::BeginPlay()
 #pragma region Network
 void UC_Weapon::Server_StopAttack_Implementation()
 {
+	bRequestFiring = false;
 	StopAttackImplementation();
 }
 
 void UC_Weapon::Server_Attack_Implementation()
 {
+	bRequestFiring = true;
 	AttackImplementation();
 }
 
@@ -296,12 +298,18 @@ void UC_Weapon::Multi_PlayReloadSound_Implementation()
 
 void UC_Weapon::Client_OnAttack_Implementation()
 {
-	OnAttack.Broadcast();
+	if (GetNetMode() == NM_Client)
+	{
+		OnAttack.Broadcast();	
+	}
 }
 
 void UC_Weapon::Client_OnReload_Implementation()
 {
-	OnReload.Broadcast();
+	if (GetNetMode() == NM_Client)
+	{
+		OnReload.Broadcast();	
+	}
 }
 
 void UC_Weapon::OnRep_OnAmmoUpdated()
@@ -318,14 +326,28 @@ void UC_Weapon::AttackImplementation()
 {
 	check(!IsDummy());
 	
-	if (ValidateAttack())
+	if ( bRequestFiring )
 	{
-		bFiring = true;
-		// Update state, consume ammo, Play sound, animation etc...
-		OnAttackStart.Broadcast(this);
-		// Process for attack
-		OnAttack.Broadcast();
-		Client_OnAttack();
+		if ( SprayTimerHandle.IsValid() )
+		{
+			const float RemainingTime = GetWorld()->GetTimerManager().GetTimerRemaining( SprayTimerHandle );
+			GetWorld()->GetTimerManager().SetTimer( DeferredAttackTimerHandle , this , &UC_Weapon::Attack , RemainingTime );
+			return;
+		}
+
+		if ( ValidateAttack() )
+		{
+			bFiring = true;
+			// Update state, consume ammo, Play sound, animation etc...
+			OnAttackStart.Broadcast( this );
+			// Process for attack
+			OnAttack.Broadcast();
+
+			if (GetNetMode() != NM_ListenServer)
+			{
+				Client_OnAttack();	
+			}
+		}
 	}
 	else
 	{
@@ -416,15 +438,6 @@ void UC_Weapon::HandleAttackStart(UC_Weapon* /*InWeapon*/)
 
 void UC_Weapon::HandleAttackEnd(UC_Weapon* /*InWeapon*/)
 {
-	bCanFire   = GetRemainingAmmoInClip() > 0;
-	bCanReload = GetRemainingAmmo() > 0;
-
-	if (!bCanFire)
-	{
-		StopAttackImplementation();
-		return;
-	}
-	
 	if (bFiring)
 	{
 		if ( ReferenceAsset->GetSpray() )
@@ -433,8 +446,18 @@ void UC_Weapon::HandleAttackEnd(UC_Weapon* /*InWeapon*/)
 			{
 				GetWorld()->GetTimerManager().ClearTimer(SprayTimerHandle);
 			}
-			
-			AttackImplementation();
+
+			RefreshFireAvailability();
+
+			if ( !ValidateAttack() )
+			{
+				StopAttackImplementation();
+				return;
+			}
+			else
+			{
+				AttackImplementation();				
+			}
 		}
 		else
 		{
@@ -445,15 +468,27 @@ void UC_Weapon::HandleAttackEnd(UC_Weapon* /*InWeapon*/)
 
 void UC_Weapon::HandleStopAttack(UC_Weapon* /*InWeapon*/)
 {
-	bCanFire   = GetRemainingAmmoInClip() > 0;
-	bCanReload = GetRemainingAmmo() > 0;
-
 	ConsecutiveShot = 0;
-	
+
+	// Tap firing
 	if (SprayTimerHandle.IsValid())
 	{
+		const float RemainingTime = GetWorld()->GetTimerManager().GetTimerRemaining( SprayTimerHandle );
+
+		FTimerDelegate Delegate;
+		Delegate.BindUObject( this , &UC_Weapon::HandleDeferredStopAttack , this );
+		GetWorld()->GetTimerManager().SetTimer( DeferredStopAttackTimerHandle , Delegate , RemainingTime , false , -1 );
 		GetWorld()->GetTimerManager().ClearTimer(SprayTimerHandle);
 	}
+	else
+	{
+		RefreshFireAvailability();
+	}
+}
+
+void UC_Weapon::HandleDeferredStopAttack( UC_Weapon* InWeapon )
+{
+	RefreshFireAvailability();
 }
 
 void UC_Weapon::HandleReloadStart(UC_Weapon* /*InWeapon*/)
@@ -484,16 +519,17 @@ void UC_Weapon::HandleReloadEnd(UC_Weapon* /*InWeapon*/)
 	
 	ReloadClip();
 	bReloading = false;
-	
-	const bool AmmoLeft     = GetRemainingAmmoInClip() > 0;
-	const bool MagazineLeft = GetRemainingAmmo() > 0;
 
-	bCanFire   = AmmoLeft;
-	bCanReload = MagazineLeft;
+	RefreshFireAvailability();
 
 	if ( GetNetMode() == NM_ListenServer )
 	{
 		OnAmmoUpdatedImplementation();
+	}
+
+	if ( bRequestFiring )
+	{
+		AttackImplementation();
 	}
 }
 
@@ -652,6 +688,7 @@ void UC_Weapon::HandleDummy(AA_Collectable* InPreviousDummy)
 void UC_Weapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	DOREPLIFETIME_CONDITION( UC_Weapon , bRequestFiring , COND_OwnerOnly );
 	DOREPLIFETIME_CONDITION(UC_Weapon , bFiring , COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UC_Weapon , bReloading , COND_OwnerOnly);
 	DOREPLIFETIME_CONDITION(UC_Weapon , bCanReload , COND_OwnerOnly);
@@ -667,6 +704,12 @@ void UC_Weapon::MoveAmmoInfo( AActor* InActor )
 	{
 		Weapon->GetWeaponComponent()->UpdateFrom( this );
 	}
+}
+
+void UC_Weapon::RefreshFireAvailability()
+{
+	bCanFire   = GetRemainingAmmoInClip() > 0;
+	bCanReload = GetRemainingAmmo() > 0;
 }
 
 // Called every frame

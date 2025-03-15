@@ -252,18 +252,19 @@ float AA_Character::TakeDamage( float DamageAmount , FDamageEvent const& DamageE
 {
 	const float Value = Super::TakeDamage( DamageAmount , DamageEvent , EventInstigator , DamageCauser );
 
-	if ( HasAuthority() )
+	// If the player state does not exists, then the player has been killed.
+	if ( const AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>(); 
+		 HasAuthority() && MyPlayerState )
 	{
 		HealthComponent->Decrease( (int32)DamageAmount );
 
 		if ( HealthComponent->GetHealth() <= 0 )
 		{
+			LOG_FUNC_PRINTF( LogCharacter , Log , "Character HP is 0 : %s", *GetName() );
+
 			const auto& DamageGiver = Cast<AMyPlayerController>( EventInstigator );
 			const auto& Victim = Cast<AMyPlayerController>( GetOwner() );
 			const auto& KillerWeapon = DamageCauser->GetComponentByClass<UC_PickUp>();
-
-			AMyPlayerState* MyPlayerState = GetPlayerState<AMyPlayerState>();
-			check( MyPlayerState );
 			MyPlayerState->OnKillOccurred.Broadcast( DamageGiver , Victim , KillerWeapon );
 		}
 	}
