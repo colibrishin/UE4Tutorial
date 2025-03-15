@@ -163,6 +163,9 @@ protected:
 	void HandleStopAttack(UC_Weapon* InWeapon);
 
 	UFUNCTION()
+	void HandleDeferredStopAttack( UC_Weapon* InWeapon );
+
+	UFUNCTION()
 	void HandleReloadStart(UC_Weapon* InWeapon);
 
 	UFUNCTION()
@@ -183,7 +186,12 @@ protected:
 	virtual void MoveAmmoInfo( AActor* InActor );
 
 protected:
-	
+
+	void RefreshFireAvailability();
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool bRequestFiring;
+
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bFiring;
 
@@ -232,6 +240,10 @@ protected:
 	FTimerHandle SprayTimerHandle;
 
 	FTimerHandle ReloadTimerHandle;
+
+	FTimerHandle DeferredAttackTimerHandle;
+
+	FTimerHandle DeferredStopAttackTimerHandle;
 
 public:
 	// Called every frame
