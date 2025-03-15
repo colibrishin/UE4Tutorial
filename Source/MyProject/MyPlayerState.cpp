@@ -76,7 +76,7 @@ void AMyPlayerState::Reset()
 
 void AMyPlayerState::IncrementKills()
 {
-	if (HasAuthority())
+	if ( HasAuthority() && GetState() == EMyCharacterState::Alive)
 	{
 		Kill++;
 	}
@@ -84,9 +84,10 @@ void AMyPlayerState::IncrementKills()
 
 void AMyPlayerState::IncrementDeaths()
 {
-	if (HasAuthority())
+	if ( HasAuthority() && GetState() == EMyCharacterState::Alive )
 	{
 		Death++;
+		SetState( EMyCharacterState::Dead );
 	}
 }
 
@@ -160,10 +161,9 @@ void AMyPlayerState::AssignTeam()
 
 void AMyPlayerState::SetState(const EMyCharacterState NewState)
 {
-	State = NewState;
-
 	if (HasAuthority())
 	{
+		State = NewState;
 		OnStateChanged.Broadcast(this, State);
 	}
 }
