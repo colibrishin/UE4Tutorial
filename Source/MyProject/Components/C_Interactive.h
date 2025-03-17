@@ -34,11 +34,15 @@ public:
 
 	void SetDelayed( const bool InFlag ) { bDelay = InFlag; }
 
+	float GetDelayedTime() const { return DelayTime; }
+
 	bool CanInteract() const { return !bInteracting; }
 	
 	void Interaction(AA_Character* InInteractor);
 
 	void StopInteraction();
+
+	double GetInteractionStartTime() const;
 
 protected:
 	// Called when the game starts
@@ -63,6 +67,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bInteracting;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	double InteractionStartWorldTime;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	AA_Character* Interactor;

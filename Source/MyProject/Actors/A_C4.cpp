@@ -38,7 +38,8 @@ float AA_C4::GetElapsedPlantTimeRatio() const
 {
 	if (BombState == EMyBombState::Planting)
 	{
-		return PlantingTime / InteractiveComponent->GetElapsedTime();
+		// todo: the start time of the planting
+		return InteractiveComponent->GetElapsedTime() / PlantingTime;
 	}
 
 	return 0.f;
@@ -48,7 +49,8 @@ float AA_C4::GetElapsedDefuseTimeRatio() const
 {
 	if (BombState == EMyBombState::Defusing)
 	{
-		return DefusingTime / InteractiveComponent->GetElapsedTime();
+		// todo: the start time of the defusing
+		return InteractiveComponent->GetElapsedTime() / DefusingTime;
 	}
 
 	return 0.f;

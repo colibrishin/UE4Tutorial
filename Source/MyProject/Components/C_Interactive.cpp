@@ -66,6 +66,7 @@ void UC_Interactive::Interaction(AA_Character* InInteractor)
 		}
 		
 		bInteracting = true;
+		InteractionStartWorldTime = GetWorld()->GetTimeSeconds();
 		Object->StartInteraction();
 	}
 	else
@@ -88,9 +89,16 @@ void UC_Interactive::StopInteraction()
 	IInteractiveObject* Object = Cast<IInteractiveObject>(GetOwner());
 	ensure(Object);
 	
+	InteractionStartWorldTime = 0;
 	bInteracting = false;
 	Object->StopInteraction();
 	Interactor = nullptr;
+}
+
+double UC_Interactive::GetInteractionStartTime() const
+{
+	check( bInteracting );
+	return InteractionStartWorldTime;
 }
 
 // Called when the game starts
@@ -148,6 +156,7 @@ void UC_Interactive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME( UC_Interactive , bInteracting );
 	DOREPLIFETIME( UC_Interactive , Interactor );
 	DOREPLIFETIME( UC_Interactive , DelayTime );
+	DOREPLIFETIME( UC_Interactive , InteractionStartWorldTime , COND_OwnerOnly );
 }
 
 // Called every frame

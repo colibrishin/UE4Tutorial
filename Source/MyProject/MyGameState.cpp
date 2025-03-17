@@ -353,6 +353,27 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AMyGameState, RoundC4);
 }
 
+void AMyGameState::UpdateC4( AActor* InNewActor )
+{
+	if ( AA_C4* InNewC4 = Cast<AA_C4>( InNewActor );
+		 InNewC4 && !InNewC4->IsDummy() )
+	{
+		if ( RoundC4 )
+		{
+			RoundC4->OnBombStateChanged.Remove( C4DelegateHandle );
+		}
+
+		RoundC4 = InNewC4;
+		C4DelegateHandle = InNewC4->OnBombStateChanged.AddRaw( &OnBombStateChanged , &FOnBombStateChangedDynamic::Broadcast);
+
+		if ( UC_PickUp* PickUpComponent = InNewC4->GetPickUpComponent() )
+		{
+			PickUpComponent->OnObjectDropPreSpawned.AddUniqueDynamic( this , &AMyGameState::UpdateC4 );
+			PickUpComponent->OnObjectPickUpSpawned.AddUniqueDynamic( this , &AMyGameState::UpdateC4 );
+		}
+	}
+}
+
 void AMyGameState::HandleBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character* InDefuser)
 {
 	LOG_FUNC_PRINTF(LogTemp, Warning, "BombState: %s", *EnumToString(InNewState));
@@ -387,9 +408,9 @@ void AMyGameState::RestartRound()
 	AliveCT = 0;
 	AliveT = 0;
 
-	if (RoundC4)
+	if ( RoundC4 && C4DelegateHandle.IsValid() )
 	{
-		RoundC4->OnBombStateChanged.RemoveAll(this);
+		RoundC4->OnBombStateChanged.Remove( C4DelegateHandle );
 		RoundC4->Destroy(true);
 	}
 	
@@ -488,8 +509,7 @@ void AMyGameState::RestartRound()
 		PickUpComponent->AttachEventHandlers( true , EPickUp::PickUp );
 	}
 
-	RoundC4 = Cast<AA_C4>(C4);
-	RoundC4->OnBombStateChanged.AddRaw(&OnBombStateChanged, &FOnBombStateChangedDynamic::Broadcast);
+	UpdateC4( C4 );
 
 	GetWorldTimerManager().ClearTimer(RoundTimerHandle);
 	GetWorldTimerManager().ClearTimer(RoundEndTimerHandle);
@@ -520,6 +540,26 @@ void AMyGameState::SetWinner(const EMyTeam NewWinner)
 		(Winner == EMyTeam::CT ? CTWinCount : TWinCount)++;
 		OnWinnerSet.Broadcast(Winner);
 		GoToRoundEnd();
+	}
+}
+
+void AMyGameState::OnRep_C4( AA_C4* PreviousC4 )
+{
+	if ( GetNetMode() == NM_Client )
+	{
+		if ( C4DelegateHandle.IsValid() )
+		{
+			if ( PreviousC4 )
+			{
+				PreviousC4->OnBombStateChanged.Remove( C4DelegateHandle );
+			}
+
+			C4DelegateHandle.Reset();
+		}
+		if ( RoundC4 )
+		{
+			C4DelegateHandle = RoundC4->OnBombStateChanged.AddRaw( &OnBombStateChanged , &FOnBombStateChangedDynamic::Broadcast );
+		}
 	}
 }
 

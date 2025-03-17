@@ -97,6 +97,9 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION()
+	void UpdateC4( AActor* InNewActor );
+
 private:
 	UFUNCTION()
 	void HandleBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character*
@@ -128,6 +131,9 @@ private:
 	void HandleRoundProgress() const;
 
 	void SetWinner(const EMyTeam NewWinner);
+
+	UFUNCTION()
+	void OnRep_C4( AA_C4* PreviousC4 );
 
 	UFUNCTION()
 	void BuyTimeEnded();
@@ -194,7 +200,7 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
 	bool bCanBuy;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_C4)
 	AA_C4* RoundC4;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -214,6 +220,7 @@ private:
 		FTimerHandle&                     NextHandle
 	);
 
+	FDelegateHandle C4DelegateHandle;
 	FTimerHandle* CurrentHandle;
 	FTimerHandle FreezeTimerHandle;
 	FTimerHandle RoundTimerHandle;
