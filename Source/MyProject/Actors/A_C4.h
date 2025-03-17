@@ -54,6 +54,8 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void PostFetchAsset() override;
+
 protected:
 	UFUNCTION()
 	void         OnRep_BombState(const EMyBombState InOldBombState) const;

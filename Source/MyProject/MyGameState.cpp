@@ -16,6 +16,7 @@
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerStart.h"
+#include "Components/ShapeComponent.h"
 
 #include "Kismet/GameplayStatics.h"
 
@@ -453,21 +454,34 @@ void AMyGameState::RestartRound()
 	}
 
 	const auto& TSpawnPoint = GetWorld()->GetAuthGameMode<AMyProjectGameModeBase>()->GetTSpawnPoint();
-	const auto& SpawnPointLocation = TSpawnPoint->GetActorLocation();
+	const auto& SpawnPointLocation = TSpawnPoint->GetActorLocation() + FVector::UpVector * 25.f;
 
-	FActorSpawnParameters SpawnParameters;
-
-	SpawnParameters.Owner = GetWorld()->GetFirstPlayerController();
-
-	AA_C4* const& C4 = GetWorld()->SpawnActor<AA_C4>(
+	FTransform SpawnTransform( FRotator::ZeroRotator , SpawnPointLocation , FVector::OneVector );
+	AA_C4* const& C4 = GetWorld()->SpawnActorDeferred<AA_C4>(
 		AA_C4::StaticClass(),
-		SpawnPointLocation,
-		FRotator::ZeroRotator,
-		SpawnParameters
+		FTransform::Identity,
+		GetWorld()->GetFirstPlayerController(),
+		nullptr,
+		ESpawnActorCollisionHandlingMethod::AlwaysSpawn
 	);
 
 	C4->SetReplicateMovement(true);
-	C4->SetReplicates(true);
+	C4->SetReplicates( true );
+	C4->GetAssetComponent()->SetID( 5 );
+
+	UGameplayStatics::FinishSpawningActor( C4 , SpawnTransform );
+
+	// Server-side collision only
+	C4->GetCollisionComponent()->SetSimulatePhysics( true );
+	C4->GetCollisionComponent()->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
+
+	C4->SetPhysicsInClient( false );
+	C4->SetCollisionTypeInClient( ECollisionEnabled::NoCollision );
+
+	if ( UC_PickUp* PickUpComponent = C4->GetPickUpComponent() )
+	{
+		PickUpComponent->AttachEventHandlers( true , EPickUp::PickUp );
+	}
 
 	RoundC4 = Cast<AA_C4>(C4);
 	RoundC4->OnBombStateChanged.AddRaw(&OnBombStateChanged, &FOnBombStateChangedDynamic::Broadcast);

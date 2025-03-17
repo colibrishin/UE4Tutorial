@@ -5,6 +5,7 @@
 
 #include "MyProject/Components/C_Interactive.h"
 #include "MyProject/Private/Enum.h"
+#include "Components/ShapeComponent.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -142,6 +143,14 @@ void AA_C4::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(AA_C4, BombState);
 	DOREPLIFETIME(AA_C4, Planter);
 	DOREPLIFETIME(AA_C4, Defuser);
+}
+
+void AA_C4::PostFetchAsset()
+{
+	if (CollisionComponent)
+	{
+		CollisionComponent->SetCollisionProfileName("MyC4");
+	}
 }
 
 void AA_C4::OnRep_BombState(const EMyBombState InOldBombState) const

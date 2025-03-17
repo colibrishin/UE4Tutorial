@@ -116,9 +116,10 @@ AA_Character::AA_Character()
 	AssetComponent->OnAssetIDSet.AddUObject(
 		this, &AA_Character::FetchAsset);
 
-	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 
 	GetCapsuleComponent()->InitCapsuleSize(88.f, 88.f);
+	GetCapsuleComponent()->SetCollisionProfileName( "MyCharacter" );
 }
 
 // Called when the game starts or when spawned

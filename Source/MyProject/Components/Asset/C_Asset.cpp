@@ -40,6 +40,12 @@ UC_Asset::UC_Asset() : ID(-1)
 
 void UC_Asset::ApplyAsset()
 {
+	if ( GetID() == -1 )
+	{
+		LOG_FUNC_PRINTF( LogAssetComponent , Error , "Invalid Asset ID: %s" , *GetName() );
+		return;
+	}
+
 	LOG_FUNC_PRINTF(LogAssetComponent, Log, "Applying asset to %s with %d; Client? : %d", *GetOwner()->GetName(), GetID(), GetNetMode() == NM_Client);
 
 	const AActor* Actor = GetOwner();
@@ -49,6 +55,13 @@ void UC_Asset::ApplyAsset()
 		Actor = Cast<AActor>( GetOuter() );
 	}
 	check( Actor != nullptr );
+
+	if ( AssetData->GetOverrideActorClass() && 
+		 (AssetData->GetOverrideActorClass() != Actor->GetClass()) )
+	{
+		LOG_FUNC_PRINTF( LogAssetComponent , Error , "Overriden class %s does not match with the fetched asset class %s" , *Actor->GetClass()->GetName() , *AssetData->GetOverrideActorClass()->GetName() );
+;		return;
+	}
 
 	bool bCapsule = false;
 
@@ -107,8 +120,6 @@ void UC_Asset::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetime
 
 void UC_Asset::OnRep_ID()
 {
-	FetchAsset();
-	ApplyAsset();
 	OnAssetIDSet.Broadcast();
 }
 

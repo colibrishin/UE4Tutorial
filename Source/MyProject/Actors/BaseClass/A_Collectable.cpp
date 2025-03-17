@@ -84,6 +84,7 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(AssetComponentName);
 	PickUpComponent = CreateDefaultSubobject<UC_PickUp>(TEXT("PickUpComponent"));
 
+	SetRootComponent( SkeletalMeshComponent );
 	SkeletalMeshComponent->SetSimulatePhysics(false);
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	
@@ -97,9 +98,11 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	AActor::SetReplicateMovement(true);
 	bNetLoadOnClient = true;
 	bDummy = false;
-	bPhysicsInClient = false;
 
-	AssetComponent->OnAssetIDSet.AddUObject(this, &AA_Collectable::FetchAsset);
+	bPhysicsInClient = false;
+	CollisionTypeInClient = ECollisionEnabled::NoCollision;
+
+	AssetComponent->OnAssetIDSet.AddUObject( this , &AA_Collectable::FetchAsset );
 }
 
 void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)

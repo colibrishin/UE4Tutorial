@@ -56,12 +56,14 @@ void UC_CollectableAsset::ApplyAsset()
 	check(Collectable);
 	
 	if ( AA_Collectable* TargetActor = Cast<AA_Collectable>(Actor);
-		TargetActor )
+		 TargetActor )
 	{
 		if (GetNetMode() != NM_Client)
 		{
 			const USkeletalMeshComponent* MeshComponent = TargetActor->GetComponentByClass<USkeletalMeshComponent>();
 			const FBoxSphereBounds Bounds = MeshComponent->GetLocalBounds();
+			const FVector CustomScale = GetAsset<UDA_Collectable>()->GetSize();
+			const float ScaleDistanced = FVector::Distance( FVector::ZeroVector , CustomScale );
 
 			if ( TargetActor->CollisionComponent )
 			{
@@ -74,21 +76,21 @@ void UC_CollectableAsset::ApplyAsset()
 			case EMultiShapeType::Box:
 				{
 					TargetActor->CollisionComponent = NewObject<UBoxComponent>(TargetActor, TEXT("CollisionComponent"));
-					Cast<UBoxComponent>(TargetActor->CollisionComponent)->SetBoxExtent(Bounds.BoxExtent);
+					Cast<UBoxComponent>(TargetActor->CollisionComponent)->SetBoxExtent(Bounds.BoxExtent * CustomScale);
 					break;
 				}
 			case EMultiShapeType::Sphere:
 				{
 					TargetActor->CollisionComponent = NewObject<USphereComponent>(TargetActor, TEXT("CollisionComponent"));
-					Cast<USphereComponent>(TargetActor->CollisionComponent)->SetSphereRadius(Bounds.BoxExtent.GetMax());
+					Cast<USphereComponent>( TargetActor->CollisionComponent )->SetSphereRadius( Bounds.SphereRadius * ScaleDistanced );
 					break;
 				}
 			case EMultiShapeType::Capsule:
 				{
 					// todo: accurate estimation
 					TargetActor->CollisionComponent = NewObject<UCapsuleComponent>(TargetActor, TEXT("CollisionComponent"));
-					Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleRadius(Bounds.SphereRadius);
-					Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleHalfHeight(Bounds.BoxExtent.Z);
+					Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleRadius(Bounds.SphereRadius * ScaleDistanced);
+					Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleHalfHeight(Bounds.BoxExtent.Z * CustomScale.Z);
 					break;
 				}
 			default: check(false);
