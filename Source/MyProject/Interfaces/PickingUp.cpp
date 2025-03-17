@@ -4,12 +4,11 @@
 #include "PickingUp.h"
 #include "../Private/Utilities.hpp"
 
-DEFINE_LOG_CATEGORY(LogPickableObject);
-
 #include "MyProject/Components/C_PickUp.h"
 
+DEFINE_LOG_CATEGORY(LogPickableObject);
 
 // Add default functionality here for any IPickableObject functions that are not pure virtual.
-void IPickingUp::PickUp(UC_PickUp* InPickUp) {}
+void IPickingUp::PickUp(UC_PickUp* InPickUp , const PickUpSpawnedPredicate& InSpawnPredicate ) { }
 
 void IPickingUp::Drop(UC_PickUp* InPickUp) {}

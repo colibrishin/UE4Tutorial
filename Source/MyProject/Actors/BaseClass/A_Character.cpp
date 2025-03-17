@@ -27,6 +27,9 @@
 #include <MyProject/AI/MyAIController.h>
 #include <MyProject/MyPlayerController.h>
 #include "MyProject/Components/C_Health.h"
+#include "MyProject/Interfaces/InteractiveObject.h"
+#include "MyProject/Components/C_PickUp.h"
+#include "MyProject/Components/C_Interactive.h"
 
 DEFINE_LOG_CATEGORY(LogCharacter);
 
@@ -43,20 +46,33 @@ AA_Character::AA_Character()
 
 	static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Movement(
 		TEXT( "/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Inputs/InputContext/IMC_Movement.IMC_Movement'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Utility(
+		TEXT( "/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Inputs/InputContext/IMC_Utility.IMC_Utility'" )
+	);
+	
 	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Move(
 		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Move.IA_Move'" ) );
 	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Look(
 		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Look.IA_Look'" ) );
 	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Jump(
 		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Jump.IA_Jump'" ) );
+
 	static ConstructorHelpers::FObjectFinder<UInputAction> IA_PickUp(
 		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_PickUp.IA_PickUp'" ) );
 	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Drop( 
 		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Drop.IA_Drop'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_INTERACTIVE( 
+		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Interaction.IA_Interaction'" ) 
+	);
 
 	if (IMC_Movement.Succeeded())
 	{
-		InputMapping = IMC_Movement.Object;
+		MovementInputMapping = IMC_Movement.Object;
+	}
+
+	if ( IMC_Utility.Succeeded() )
+	{
+		UtilityInputMapping = IMC_Utility.Object;
 	}
 
 	if (IA_Move.Succeeded())
@@ -82,6 +98,11 @@ AA_Character::AA_Character()
 	if (IA_Drop.Succeeded())
 	{
 		DropAction = IA_Drop.Object;
+	}
+
+	if ( IA_INTERACTIVE.Succeeded() )
+	{
+		InteractiveAction = IA_INTERACTIVE.Object;
 	}
 	
 	ArmMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("ArmMesh"));
@@ -113,8 +134,7 @@ AA_Character::AA_Character()
 	ArmHand->SetIsReplicated(true);
 	
 	AssetComponent->SetNetAddressable();
-	AssetComponent->OnAssetIDSet.AddUObject(
-		this, &AA_Character::FetchAsset);
+	AssetComponent->OnAssetIDSet.AddUObject(this, &AA_Character::FetchAsset);
 
 	GetCharacterMovement()->bUseControllerDesiredRotation = true;
 
@@ -132,7 +152,8 @@ void AA_Character::BeginPlay()
 	{
 		if ( UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>( PlayerController->GetLocalPlayer() ) )
 		{
-			Subsystem->AddMappingContext( InputMapping , 0 );
+			Subsystem->AddMappingContext( MovementInputMapping , 0 );
+			Subsystem->AddMappingContext( UtilityInputMapping , 0 );
 		}
 	}
 
@@ -142,9 +163,9 @@ void AA_Character::BeginPlay()
 	}
 }
 
-void AA_Character::PickUp(UC_PickUp* InPickUp)
+void AA_Character::PickUp(UC_PickUp* InPickUp , const IPickingUp::PickUpSpawnedPredicate& InObjectPredicate )
 {
-	IPickingUp::PickUp(InPickUp);
+	IPickingUp::PickUp(InPickUp, InObjectPredicate);
 
 	if ( GetNetMode() == NM_Client )
 	{
@@ -198,6 +219,13 @@ void AA_Character::PickUp(UC_PickUp* InPickUp)
 
 	InitializeCollectable( HandActor, true );
 	InitializeCollectable( ArmHandActor, false );
+
+
+	if ( InObjectPredicate )
+	{
+		InObjectPredicate( HandActor );
+		InObjectPredicate( ArmHandActor );
+	}
 
 	SyncHandProperties();
 
@@ -297,6 +325,8 @@ void AA_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 
 		EnhancedInputComponent->BindAction(PickUpAction, ETriggerEvent::Started, this, &AA_Character::Server_PickUp);
 		EnhancedInputComponent->BindAction(DropAction, ETriggerEvent::Started, this, &AA_Character::Server_Drop);
+		EnhancedInputComponent->BindAction( InteractiveAction , ETriggerEvent::Started , this , &AA_Character::Server_Interactive );
+		EnhancedInputComponent->BindAction( InteractiveAction , ETriggerEvent::Completed , this , &AA_Character::Server_StopInteractive );
 	}
 }
 
@@ -364,13 +394,13 @@ void AA_Character::Server_PickUp_Implementation()
 	GetActorBounds(true, Center, Extents);
 
 	// Ignore the character just in case;
-	FCollisionQueryParams Params{ NAME_None, false };
-	
+	FCollisionQueryParams Params{ NAME_None, false, this };
+
 	// Ignore hand collectable objects;
 	if (HandActor)
 	{
-		Params.AddIgnoredActor(HandActor);
-		Params.AddIgnoredActor(ArmHandActor);
+		Params.AddIgnoredActor( HandActor );
+		Params.AddIgnoredActor( ArmHandActor );
 	}
 
 	FVector TestLocation = GetActorLocation();
@@ -427,6 +457,32 @@ void AA_Character::Server_Drop_Implementation()
 	if (HandActor)
 	{
 		HandActor->GetPickUpComponent()->OnObjectDrop.Broadcast(this, true);
+	}
+}
+
+void AA_Character::Server_Interactive_Implementation() 
+{
+	if ( TScriptInterface<IInteractiveObject> InteractiveObject = HandActor ) 
+	{
+		if ( UC_Interactive* InteractiveComponent = Cast<AActor>( InteractiveObject.GetObject() )->GetComponentByClass<UC_Interactive>();
+			 InteractiveComponent && InteractiveComponent->CanInteract() )
+		{
+			LOG_FUNC_PRINTF( LogCharacter , Log , "Starts the interaction with %s" , *HandActor->GetName() );
+			InteractiveComponent->Interaction( this );
+		}
+	}
+}
+
+void AA_Character::Server_StopInteractive_Implementation()
+{
+	if ( TScriptInterface<IInteractiveObject> InteractiveObject = HandActor )
+	{
+		if ( UC_Interactive* InteractiveComponent = Cast<AActor>( InteractiveObject.GetObject() )->GetComponentByClass<UC_Interactive>();
+			 InteractiveComponent && InteractiveComponent->GetInteractor() == this )
+		{
+			LOG_FUNC_PRINTF( LogCharacter , Log , "Stopping the interaction with %s" , *HandActor->GetName() );
+			InteractiveComponent->StopInteraction();
+		}
 	}
 }
 

@@ -23,6 +23,7 @@
 #include "MyProject/Widgets/MyBombIndicatorWidget.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
 #include "Net/UnrealNetwork.h"
+#include "MyProject/Components/Asset/C_CollectableAsset.h"
 
 AMyGameState::AMyGameState()
 	: CTRoundWinSound(nullptr),
@@ -477,6 +478,10 @@ void AMyGameState::RestartRound()
 
 	C4->SetPhysicsInClient( false );
 	C4->SetCollisionTypeInClient( ECollisionEnabled::NoCollision );
+
+	C4->SetDetonationTime( 35.f );
+	C4->SetDefusingTime( 10.f );
+	C4->SetPlantingTime( 5.f );
 
 	if ( UC_PickUp* PickUpComponent = C4->GetPickUpComponent() )
 	{

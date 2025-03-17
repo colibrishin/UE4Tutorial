@@ -5,16 +5,15 @@
 #include "CoreMinimal.h"
 #include "MyProject/Actors/BaseClass/A_Collectable.h"
 #include "MyProject/Interfaces/InteractiveObject.h"
-#include "MyProject/Widgets/MyBombIndicatorWidget.h"
 
 #include "A_C4.generated.h"
-
-// Declare as non-dynamic delegate for forwarding to game state;
-DECLARE_MULTICAST_DELEGATE_FourParams(FOnBombStateChanged, const EMyBombState, const EMyBombState, const AA_Character*, const AA_Character*);
 
 enum class EMyBombState : uint8;
 class UC_Interactive;
 class AA_Character;
+
+// Declare as non-dynamic delegate for forwarding to game state;
+DECLARE_MULTICAST_DELEGATE_FourParams(FOnBombStateChanged, const EMyBombState, const EMyBombState, const AA_Character*, const AA_Character*);
 
 UCLASS()
 class MYPROJECT_API AA_C4 : public AA_Collectable, public IInteractiveObject
@@ -29,7 +28,7 @@ public:
 
 	UC_Interactive* GetInteractiveComponent() const { return InteractiveComponent; }
 
-	float GetElapsedDetonationTime() const;
+	float GetAfterPlantElapsedTime() const;
 
 	float GetDetonationTime() const;
 	
@@ -43,14 +42,28 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:
 	virtual bool PredicateInteraction() override;
 
 	virtual void Interaction() override;
 
+	UFUNCTION()
+	virtual void HandlePlanted( AActor* InSpawnedActor );
+
+	UFUNCTION()
+	void MutateCloned( AActor* InSpawnedActor );
+
+	virtual void Tick( const float DeltaTime ) override;
+
+	void SetState( const EMyBombState NewState );
+
+public:
 	virtual void StartInteraction() override;
 	
 	virtual void StopInteraction() override;
+
+	void SetDetonationTime(const float InTime);
+	void SetPlantingTime( const float InTime );
+	void SetDefusingTime( const float InTime );
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -61,13 +74,16 @@ protected:
 	void         OnRep_BombState(const EMyBombState InOldBombState) const;
 
 private:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Replicated)
 	float DetonationTime;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Replicated)
+	float AfterPlantElapsedTime = 0.f;
+
+	UPROPERTY(EditAnywhere, Replicated )
 	float PlantingTime;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, Replicated )
 	float DefusingTime;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -77,9 +93,9 @@ private:
 	EMyBombState BombState;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
-	AA_Character* Planter;
+	AA_Character* Planter = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
-	AA_Character* Defuser;
+	AA_Character* Defuser = nullptr;
 	
 };

@@ -3,21 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyPlayerState.h"
-
-#include "Actors/A_C4.h"
-
-#include "Private/Utilities.hpp"
-
 #include "GameFramework/GameState.h"
+#include "Public/CommonDelegate.h"
+#include "MyProject/Private/Utilities.hpp"
 
 #include "MyGameState.generated.h"
 
 enum class EMyTeam : uint8;
+enum class EMyRoundProgress : uint8;
+enum class EMyBombState : uint8;
 class AA_C4;
 class AA_Character;
 class UC_Weapon;
 class UC_Buy;
+class AMyPlayerState;
 class AMyPlayerController;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged , EMyRoundProgress)

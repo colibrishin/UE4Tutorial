@@ -5,8 +5,6 @@
 
 #include "MyProject/Interfaces/PickingUp.h"
 #include "GameFramework/Character.h"
-
-#include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Interfaces/AssetFetchable.h"
 
 #include "A_Character.generated.h"
@@ -53,7 +51,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	virtual void PickUp(UC_PickUp* InPickUp) override;
+	virtual void PickUp(UC_PickUp* InPickUp, const IPickingUp::PickUpSpawnedPredicate& InObjectPredicate ) override;
 
 	virtual void Drop(UC_PickUp* InPickUp) override;
 
@@ -88,6 +86,12 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void Server_Drop();
+
+	UFUNCTION( Server , Reliable )
+	void Server_Interactive();
+
+	UFUNCTION( Server , Reliable )
+	void Server_StopInteractive();
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bHandBusy;
@@ -123,8 +127,11 @@ protected:
 	AA_Collectable* ArmHandActor;
 #pragma endregion
 	
-	UPROPERTY(EditAnywhere)
-	UInputMappingContext* InputMapping;
+	UPROPERTY( EditAnywhere )
+	UInputMappingContext* MovementInputMapping;
+
+	UPROPERTY( EditAnywhere )
+	UInputMappingContext* UtilityInputMapping;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UInputAction* MoveAction;
@@ -140,6 +147,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UInputAction* DropAction;
+
+	UPROPERTY( VisibleAnywhere, BlueprintReadWrite )
+	UInputAction* InteractiveAction;
 
 	FDelegateHandle CharacterForwardHandle;
 	

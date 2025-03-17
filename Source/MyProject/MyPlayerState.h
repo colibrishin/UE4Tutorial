@@ -7,11 +7,10 @@
 #include "CoreMinimal.h"
 
 #include "Actors/BaseClass/A_Character.h"
-
 #include "Components/C_PickUp.h"
 
 #include "Private/Enum.h"
-
+#include "Public/CommonDelegate.h"
 #include "GameFramework/PlayerState.h"
 
 #include "MyPlayerState.generated.h"
@@ -27,7 +26,6 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStateChanged , AMyPlayerState* ,
                                              const EMyCharacterState , InCurrentState);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnMoneyChanged, const int32, InNewMoney);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDamageTaken, AMyPlayerState*, InPlayerState);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnKillOccurred, AMyPlayerController*, InKiller, AMyPlayerController*, InVictim, UC_PickUp*, InWeapon);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogPlayerState, Log, All);
 /**

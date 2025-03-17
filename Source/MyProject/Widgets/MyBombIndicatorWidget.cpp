@@ -42,7 +42,7 @@ void UMyBombIndicatorWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 			
 			if (BombState == EMyBombState::Planted || BombState == EMyBombState::Defusing)
 			{
-				const float& BombElapsed = GameState->GetC4()->GetElapsedDetonationTime();
+				const float& BombElapsed = GameState->GetC4()->GetAfterPlantElapsedTime();
 				const float& BombTime = GameState->GetC4()->GetDetonationTime();
 
 				if (BombElapsed < BombTime - 10)

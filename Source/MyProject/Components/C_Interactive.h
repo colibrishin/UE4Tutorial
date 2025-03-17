@@ -10,6 +10,8 @@
 
 #include "C_Interactive.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN( LogInteractiveComponent , All , Log );
+
 class AMyPlayerState;
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
@@ -29,6 +31,10 @@ public:
 	}
 
 	void SetDelayTime(const float InTime) { DelayTime = InTime; }
+
+	void SetDelayed( const bool InFlag ) { bDelay = InFlag; }
+
+	bool CanInteract() const { return !bInteracting; }
 	
 	void Interaction(AA_Character* InInteractor);
 
@@ -38,19 +44,7 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	FORCEINLINE void ResetTimerIfDelayed()
-	{
-		if (bDelay)
-		{
-			ensure(InteractionTimerHandle.IsValid());
-			GetWorld()->GetTimerManager().ClearTimer(InteractionTimerHandle);
-
-			if (bPredicating)
-			{
-				PrimaryComponentTick.SetTickFunctionEnable(false);
-			}
-		}
-	}
+	void ResetTimerIfDelayed();
 	
 	UFUNCTION()
 	void HandleInteraction();
@@ -66,6 +60,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	float DelayTime;
+
+	UPROPERTY(VisibleAnywhere, Replicated)
+	bool bInteracting;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	AA_Character* Interactor;

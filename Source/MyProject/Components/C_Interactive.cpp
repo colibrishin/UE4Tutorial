@@ -5,9 +5,11 @@
 
 #include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Interfaces/InteractiveObject.h"
+#include "MyProject/Private/Utilities.hpp"
 
 #include "Net/UnrealNetwork.h"
 
+DEFINE_LOG_CATEGORY( LogInteractiveComponent );
 
 // Sets default values for this component's properties
 UC_Interactive::UC_Interactive()
@@ -18,11 +20,12 @@ UC_Interactive::UC_Interactive()
 	SetIsReplicatedByDefault( true );
 
 	// ...
+	bInteracting = false;
 }
 
 void UC_Interactive::Interaction(AA_Character* InInteractor)
 {
-	if (GetNetMode() == NM_Client)
+	if ( GetNetMode() == NM_Client || !IsActive() || bInteracting )
 	{
 		return;
 	}
@@ -33,6 +36,8 @@ void UC_Interactive::Interaction(AA_Character* InInteractor)
 	{
 		ensure(!InteractionTimerHandle.IsValid());
 		
+		LOG_FUNC_PRINTF( LogInteractiveComponent , Log , "Starts Interaction with timer. Expired after %f seconds" , DelayTime );
+
 		GetWorld()->GetTimerManager().SetTimer(
 			InteractionTimerHandle,
 			this,
@@ -43,19 +48,24 @@ void UC_Interactive::Interaction(AA_Character* InInteractor)
 
 		if (bPredicating)
 		{
+			LOG_FUNC( LogInteractiveComponent , Log , "Tick-wise predicating is enabled" );
 			PrimaryComponentTick.SetTickFunctionEnable(true);
 		}
 
+		LOG_FUNC_PRINTF( LogInteractiveComponent , Log, "Interactor: %s, Interactee: %s" , *InInteractor->GetName() , *GetOwner()->GetName());
 		Interactor = InInteractor;
-		
+
 		IInteractiveObject* Object = Cast<IInteractiveObject>(GetOwner());
+		check( Object );
 
 		if (!Object->PredicateInteraction())
 		{
+			LOG_FUNC( LogInteractiveComponent , Log , "Initial predication failed. Won't do the interaction" );
 			StopInteraction();
 			return;
 		}
 		
+		bInteracting = true;
 		Object->StartInteraction();
 	}
 	else
@@ -67,7 +77,7 @@ void UC_Interactive::Interaction(AA_Character* InInteractor)
 
 void UC_Interactive::StopInteraction()
 {
-	if (GetNetMode() == NM_Client)
+	if ( GetNetMode() == NM_Client || !IsActive() )
 	{
 		return;
 	}
@@ -78,6 +88,7 @@ void UC_Interactive::StopInteraction()
 	IInteractiveObject* Object = Cast<IInteractiveObject>(GetOwner());
 	ensure(Object);
 	
+	bInteracting = false;
 	Object->StopInteraction();
 	Interactor = nullptr;
 }
@@ -88,7 +99,34 @@ void UC_Interactive::BeginPlay()
 	Super::BeginPlay();
 
 	// ...
-	
+
+	// Actor need to be ticked due to the tick-wise predicating.
+	check( GetOwner()->PrimaryActorTick.bCanEverTick );
+
+	TScriptInterface<IInteractiveObject> Owner = GetOwner();
+	check( Owner );
+
+	bPredicating = Owner->bUsePredicate;
+	bDelay = Owner->bDelay;
+}
+
+inline void UC_Interactive::ResetTimerIfDelayed()
+{
+	if ( bDelay )
+	{
+		LOG_FUNC( LogInteractiveComponent , Log , "Delayed interaction canceled" );
+
+		if ( InteractionTimerHandle.IsValid() )
+		{
+			GetWorld()->GetTimerManager().ClearTimer( InteractionTimerHandle );
+		}
+
+		if ( bPredicating )
+		{
+			LOG_FUNC( LogInteractiveComponent , Log , "Tick-wise predicating is disabled" );
+			PrimaryComponentTick.SetTickFunctionEnable( false );
+		}
+	}
 }
 
 void UC_Interactive::HandleInteraction()
@@ -100,14 +138,16 @@ void UC_Interactive::HandleInteraction()
 	ensure(Object);
 	
 	Object->Interaction();
+	LOG_FUNC( LogInteractiveComponent , Log , "Clear the cached interactor" );
 	Interactor = nullptr;
 }
 
 void UC_Interactive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-	DOREPLIFETIME(UC_Interactive, Interactor);
-	DOREPLIFETIME(UC_Interactive, DelayTime);
+	DOREPLIFETIME( UC_Interactive , bInteracting );
+	DOREPLIFETIME( UC_Interactive , Interactor );
+	DOREPLIFETIME( UC_Interactive , DelayTime );
 }
 
 // Called every frame
