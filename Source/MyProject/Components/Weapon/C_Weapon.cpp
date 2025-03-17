@@ -41,23 +41,24 @@ UC_Weapon::UC_Weapon()
 	OnReloadEnd.AddUniqueDynamic(this , &UC_Weapon::HandleReloadEnd);
 	OnStopAttack.AddUniqueDynamic(this, &UC_Weapon::HandleStopAttack);
 	
-	if (static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Weapon
-		(TEXT("/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Inputs/InputContext/IMC_Weapon.IMC_Weapon'"));
-		IMC_Weapon.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Weapon
+	( TEXT( "/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Inputs/InputContext/IMC_Weapon.IMC_Weapon'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Attack
+	( TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Attack.IA_Attack'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Reload
+	( TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Reload.IA_Reload'" ) );
+
+	if (IMC_Weapon.Succeeded())
 	{
 		InputMapping = IMC_Weapon.Object;
 	}
 
-	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Attack
-		(TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Attack.IA_Attack'"));
-		IA_Attack.Succeeded())
+	if (IA_Attack.Succeeded())
 	{
 		AttackAction = IA_Attack.Object;
 	}
 
-	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Reload
-		(TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Reload.IA_Reload'"));
-		IA_Reload.Succeeded())
+	if (IA_Reload.Succeeded())
 	{
 		ReloadAction = IA_Reload.Object;
 	}

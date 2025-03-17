@@ -41,42 +41,45 @@ AA_Character::AA_Character()
 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = false;
 
-	if (static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Movement(
-		TEXT("/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Inputs/InputContext/IMC_Movement.IMC_Movement'"));
-		IMC_Movement.Succeeded())
+	static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Movement(
+		TEXT( "/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Inputs/InputContext/IMC_Movement.IMC_Movement'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Move(
+		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Move.IA_Move'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Look(
+		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Look.IA_Look'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Jump(
+		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Jump.IA_Jump'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_PickUp(
+		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_PickUp.IA_PickUp'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_Drop( 
+		TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Drop.IA_Drop'" ) );
+
+	if (IMC_Movement.Succeeded())
 	{
 		InputMapping = IMC_Movement.Object;
 	}
 
-	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Move(
-		TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Move.IA_Move'"));
-		IA_Move.Succeeded())
+	if (IA_Move.Succeeded())
 	{
 		MoveAction = IA_Move.Object;
 	}
 
-	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Look(
-		TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Look.IA_Look'"));
-		IA_Look.Succeeded())
+	if (IA_Look.Succeeded())
 	{
 		LookAction = IA_Look.Object;
 	}
 
-	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Jump(
-		TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Jump.IA_Jump'"));
-		IA_Jump.Succeeded())
+	if (IA_Jump.Succeeded())
 	{
 		JumpAction = IA_Jump.Object;
 	}
 
-	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_PickUp(TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_PickUp.IA_PickUp'"));
-		 IA_PickUp.Succeeded())
+	if (IA_PickUp.Succeeded())
 	{
 		PickUpAction = IA_PickUp.Object;
 	}
 
-	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_Drop(TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Inputs/IA_Drop.IA_Drop'"));
-		 IA_Drop.Succeeded())
+	if (IA_Drop.Succeeded())
 	{
 		DropAction = IA_Drop.Object;
 	}
