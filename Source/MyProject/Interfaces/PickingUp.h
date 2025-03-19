@@ -27,7 +27,7 @@ class MYPROJECT_API IPickingUp
 public:
 	using PickUpSpawnedPredicate = TFunction<void( AActor* )>;
 
-	virtual void PickUp(UC_PickUp* InPickUp, const PickUpSpawnedPredicate& InSpawnPredicate);
+	virtual void PickUp(UC_PickUp* InPickUp, const PickUpSpawnedPredicate& InPreSpawnPredicate , const PickUpSpawnedPredicate& InPostSpawnPredicate );
 
 	virtual void Drop(UC_PickUp* InPickUp);
 

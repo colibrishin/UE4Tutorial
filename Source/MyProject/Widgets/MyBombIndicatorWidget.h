@@ -34,6 +34,9 @@ private:
 	);
 
 	UFUNCTION()
+	void HandleRoundProgress( EMyRoundProgress InRoundProgress );
+
+	UFUNCTION()
 	void OnBombPicked(AA_Character* InCharacter);
 
 	void FlickerIndicator();

@@ -47,6 +47,9 @@ protected:
 	virtual void Interaction() override;
 
 	UFUNCTION()
+	virtual void HandlePrePlanted( AActor* InSpawnedActor );
+
+	UFUNCTION()
 	virtual void HandlePlanted( AActor* InSpawnedActor );
 
 	UFUNCTION()
@@ -71,7 +74,7 @@ public:
 
 protected:
 	UFUNCTION()
-	void         OnRep_BombState(const EMyBombState InOldBombState) const;
+	void OnRep_BombState(const EMyBombState InOldBombState);
 
 private:
 	UPROPERTY(EditAnywhere, Replicated)

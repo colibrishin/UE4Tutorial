@@ -8,6 +8,8 @@
 #include "MyProject/Private/Utilities.hpp"
 #include "Components/ShapeComponent.h"
 #include "MyProject/Components/C_PickUp.h"
+#include "MyProject/MyPlayerState.h"
+#include "MyProject/MyGameState.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -21,7 +23,7 @@ AA_C4::AA_C4(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 	bDelay = true;
 
 	InteractiveComponent = CreateDefaultSubobject<UC_Interactive>(TEXT("InteractiveComponent"));
-	BombState = EMyBombState::Unknown;
+	BombState = EMyBombState::Idle;
 }
 
 float AA_C4::GetAfterPlantElapsedTime() const
@@ -38,8 +40,7 @@ float AA_C4::GetElapsedPlantTimeRatio() const
 {
 	if (BombState == EMyBombState::Planting)
 	{
-		// todo: the start time of the planting
-		return InteractiveComponent->GetElapsedTime() / PlantingTime;
+		return ( GetWorld()->GetGameState<AMyGameState>()->GetServerWorldTimeSeconds() - InteractiveComponent->GetInteractionStartTime() ) / PlantingTime;
 	}
 
 	return 0.f;
@@ -49,8 +50,7 @@ float AA_C4::GetElapsedDefuseTimeRatio() const
 {
 	if (BombState == EMyBombState::Defusing)
 	{
-		// todo: the start time of the defusing
-		return InteractiveComponent->GetElapsedTime() / DefusingTime;
+		return ( GetWorld()->GetGameState<AMyGameState>()->GetServerWorldTimeSeconds() - InteractiveComponent->GetInteractionStartTime() ) / DefusingTime;
 	}
 
 	return 0.f;
@@ -71,38 +71,65 @@ void  AA_C4::BeginPlay()
 		BombState = EMyBombState::Idle;
 		GetInteractiveComponent()->SetActive( true );
 		GetInteractiveComponent()->SetDelayTime( PlantingTime );
-		GetPickUpComponent()->OnObjectDropPreSpawned.AddUniqueDynamic(this, &AA_C4::HandlePlanted);
-		GetPickUpComponent()->OnObjectPickUpSpawned.AddUniqueDynamic( this , &AA_C4::MutateCloned );
+		GetPickUpComponent()->OnObjectDropPreSpawned.AddUniqueDynamic( this , &AA_C4::MutateCloned );
+		GetPickUpComponent()->OnObjectDropPostSpawned.AddUniqueDynamic( this, &AA_C4::HandlePlanted );
+		GetPickUpComponent()->OnObjectPickUpPostSpawned.AddUniqueDynamic( this , &AA_C4::MutateCloned );
 	}
 }
 
 bool AA_C4::PredicateInteraction()
 {
-	//todo: range check, viewport check
+	// todo: range check, viewport check
+	if ( ( BombState == EMyBombState::Planted || BombState == EMyBombState::Defusing ) &&
+		 InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::CT )
+	{
+		return false;
+	}
+	
+	if ( ( BombState == EMyBombState::Idle || BombState == EMyBombState::Planting ) &&
+		 InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::T )
+	{
+		return false;
+	}
 
 	return true;
 }
 
 void AA_C4::Interaction()
 {
-	if (BombState == EMyBombState::Planting)
+	switch ( BombState )
 	{
+	case EMyBombState::Planting:
+		if ( InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::T )
+		{
+			break;
+		}
 		Planter = InteractiveComponent->GetInteractor();
 		SetState( EMyBombState::Planted );
-		InteractiveComponent->SetDelayTime(DefusingTime);
 
 		GetPickUpComponent()->OnObjectDrop.Broadcast( GetInteractiveComponent()->GetInteractor() , true );
-		return;
-	}
-	else if (BombState == EMyBombState::Defusing)
-	{
+		break;
+
+	case EMyBombState::Defusing:
+		if ( InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::CT )
+		{
+			break;
+		}
 		Defuser = InteractiveComponent->GetInteractor();
 		SetState( EMyBombState::Defused );
-		InteractiveComponent->SetActive(false);
-		return;
-	}
 
-	ensureAlwaysMsgf(false, TEXT("Uncaught state"));
+		// No longer interactable.
+		InteractiveComponent->SetActive(false);
+		break;
+	}
+}
+
+void AA_C4::HandlePrePlanted( AActor* InSpawnedActor )
+{
+	if ( AA_C4* Cloned = Cast<AA_C4>( InSpawnedActor ) )
+	{
+		MutateCloned( Cloned );
+	}
 }
 
 void AA_C4::StartInteraction()
@@ -110,11 +137,26 @@ void AA_C4::StartInteraction()
 	switch ( BombState )
 	{
 	case EMyBombState::Planted:
+		if ( InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::CT )
+		{
+			break;
+		}
+
 		GetInteractiveComponent()->SetDelayTime( DefusingTime );
 		SetState( EMyBombState::Defusing );
 		Defuser = InteractiveComponent->GetInteractor();
 		break;
 	case EMyBombState::Idle:
+		if ( InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::T )
+		{
+			break;
+		}
+
+		// Block the case where the character does not own the bomb
+		if ( GetParentActor() != InteractiveComponent->GetInteractor() )
+		{
+			break;
+		}
 		GetInteractiveComponent()->SetDelayTime( PlantingTime );
 		SetState( EMyBombState::Planting );
 		Planter = InteractiveComponent->GetInteractor();
@@ -186,16 +228,13 @@ void AA_C4::HandlePlanted(AActor* InSpawnedActor)
 {
 	if (AA_C4* Cloned = Cast<AA_C4>(InSpawnedActor))
 	{
-		MutateCloned( Cloned );
-
-		if ( Cloned->BombState == EMyBombState::Planted ) 
+		if ( BombState == EMyBombState::Planted && !Cloned->IsDummy() ) 
 		{
 			// Mutates the bomb planter to the newly cloned object.
 			Cloned->Planter = Planter;
 			// Disable the pick up component to block the pick up the bomb by defuser.
 			Cloned->GetPickUpComponent()->AttachEventHandlers( false , EPickUp::Drop );
-			// Mutates the bomb state.
-			Cloned->BombState = EMyBombState::Planted;
+			Cloned->SetState( BombState );
 		}
 	}
 }
@@ -206,9 +245,21 @@ void AA_C4::MutateCloned( AActor* InSpawnedActor )
 	{
 		if ( !Cloned->IsDummy() )
 		{
+			// Mutates the bomb state.
 			Cloned->DetonationTime = DetonationTime;
 			Cloned->DefusingTime = DefusingTime;
 			Cloned->PlantingTime = PlantingTime;
+
+			// Preemptive setup for the delay timer
+			switch ( Cloned->BombState )
+			{
+			case EMyBombState::Idle:
+				Cloned->GetInteractiveComponent()->SetDelayTime( PlantingTime );
+				break;
+			case EMyBombState::Planted:
+				Cloned->GetInteractiveComponent()->SetDelayTime( DefusingTime );
+				break;
+			}
 		}
 	}
 }
@@ -218,7 +269,7 @@ void AA_C4::Tick( const float DeltaTime )
 	if ( HasAuthority() && GetNetMode() != NM_Client && !IsDummy() ) 
 	{
 		if ( BombState == EMyBombState::Planted && 
-			 AfterPlantElapsedTime == DetonationTime )
+			 AfterPlantElapsedTime >= DetonationTime )
 		{
 			SetState( EMyBombState::Exploded );
 			PrimaryActorTick.SetTickFunctionEnable( false );
@@ -239,10 +290,11 @@ void AA_C4::SetState( const EMyBombState NewState )
 	OnBombStateChanged.Broadcast( OldBombState , NewState , Planter , Defuser );
 }
 
-void AA_C4::OnRep_BombState(const EMyBombState InOldBombState) const
+void AA_C4::OnRep_BombState(const EMyBombState InOldBombState)
 {
 	if ( GetNetMode() == NM_Client ) 
 	{
+		LOG_FUNC_PRINTF( LogTemp , Log , "Replicating C4 State %s -> %s" , *EnumToString( InOldBombState ) , *EnumToString( BombState ) );
 		OnBombStateChanged.Broadcast( InOldBombState , BombState , Planter , Defuser );
 	}
 }

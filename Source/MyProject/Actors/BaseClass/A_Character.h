@@ -21,7 +21,7 @@ class UC_Health;
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter , Log , All);
 
 // Non-dynamic delegate due to forwarding to player state;
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHandChanged, AA_Collectable*);
+DECLARE_MULTICAST_DELEGATE_OneParam( FOnHandChanged , AA_Collectable* );
 
 UCLASS()
 class MYPROJECT_API AA_Character : public ACharacter, public IPickingUp, public IAssetFetchable
@@ -51,7 +51,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	virtual void PickUp(UC_PickUp* InPickUp, const IPickingUp::PickUpSpawnedPredicate& InObjectPredicate ) override;
+	virtual void PickUp(UC_PickUp* InPickUp, const IPickingUp::PickUpSpawnedPredicate& InObjectPredicate, const PickUpSpawnedPredicate& InPostSpawnPredicate ) override;
 
 	virtual void Drop(UC_PickUp* InPickUp) override;
 
@@ -61,6 +61,7 @@ protected:
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
 
+	bool TestCollectable( TArray<FOverlapResult>& OutResults );
 
 public:
 	// Called every frame
@@ -77,6 +78,9 @@ private:
 
 	UFUNCTION()
 	void SyncHandProperties() const;
+
+	UFUNCTION()
+	void UpdateOnHandChangedTime( AA_Collectable* InHandActor );
 
 protected:
 	virtual void PostFetchAsset() override;
@@ -126,6 +130,16 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	AA_Collectable* ArmHandActor;
 #pragma endregion
+
+	// Server side only variable that produce and consume the data between the pick up and interactive.
+	// It will be used to prevent the pick up and interactive in the same tick.
+	UPROPERTY( VisibleAnywhere )
+	float LastHandChangedInServerTime;
+
+	// Server side only variable that stores the latest successful pick up or drop.
+	// Note that this is not the hand actor but the template actor that has used for the cloning.
+	UPROPERTY( VisibleAnywhere )
+	AA_Collectable* LastSuccededPickOrDrop;
 	
 	UPROPERTY( EditAnywhere )
 	UInputMappingContext* MovementInputMapping;

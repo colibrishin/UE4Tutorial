@@ -23,8 +23,9 @@ void UMyBombIndicatorWidget::NativeConstruct()
 
 	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
 	{
-		GameState->OnBombStateChanged.AddUniqueDynamic(this, &UMyBombIndicatorWidget::HandleBombStateChanged);
-		GameState->OnBombPicked.AddUniqueDynamic(this, &UMyBombIndicatorWidget::OnBombPicked);
+		GameState->OnBombStateChanged.AddUniqueDynamic( this , &UMyBombIndicatorWidget::HandleBombStateChanged );
+		GameState->OnBombPicked.AddUniqueDynamic( this , &UMyBombIndicatorWidget::OnBombPicked );
+		GameState->OnRoundProgressChanged.AddUObject( this , &UMyBombIndicatorWidget::HandleRoundProgress );
 	}
 
 	ElapsedTime = 0.f;
@@ -85,7 +86,7 @@ void UMyBombIndicatorWidget::HandleBombStateChanged(
 	const EMyBombState /*InOldState*/, const EMyBombState InNewState, const AA_Character* /*InPlanter*/, const AA_Character* /*InDefuser*/
 )
 {
-	if (InNewState == EMyBombState::Planting)
+	if ( InNewState == EMyBombState::Planting || InNewState == EMyBombState::Idle )
 	{
 		return;
 	}
@@ -109,19 +110,26 @@ void UMyBombIndicatorWidget::HandleBombStateChanged(
 	}
 }
 
+void UMyBombIndicatorWidget::HandleRoundProgress( EMyRoundProgress InRoundProgress )
+{
+	if ( InRoundProgress == EMyRoundProgress::FreezeTime )
+	{
+		Reset();
+	}
+}
+
 void UMyBombIndicatorWidget::OnBombPicked(AA_Character* InCharacter)
 {
 	if (IsValid(InCharacter))
 	{
-		if (InCharacter == GetPlayerContext().GetPlayerController()->GetCharacter())
+		if (InCharacter->GetController() == GetPlayerContext().GetPlayerController() )
 		{
 			SetRenderOpacity(1.0f);
-		}
-		else
-		{
-			SetRenderOpacity(0.f);
+			return;
 		}
 	}
+
+	SetRenderOpacity( 0.f );
 }
 
 void UMyBombIndicatorWidget::FlickerIndicator()

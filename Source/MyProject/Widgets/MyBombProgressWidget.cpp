@@ -92,6 +92,7 @@ void UMyBombProgressWidget::OnBombStateChanged(const EMyBombState InOldState, co
 	}
 	else
 	{
+		// todo: native construct called every attempt where the bomb progress should be shown.
 		SetRenderOpacity(0.f);
 		RemoveFromParent();
 	}

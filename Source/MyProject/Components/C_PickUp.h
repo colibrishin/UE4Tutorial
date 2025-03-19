@@ -35,9 +35,13 @@ public:
 
 	FOnObjectDrop OnObjectDrop;
 
-	FOnObjectPickUpSpawned OnObjectPickUpSpawned;
+	FOnObjectPickUpSpawned OnObjectPickUpPreSpawned;
+
+	FOnObjectPickUpSpawned OnObjectPickUpPostSpawned;
 
 	FOnObjectDropSpawned OnObjectDropPreSpawned;
+
+	FOnObjectDropSpawned OnObjectDropPostSpawned;
 
 	void AttachEventHandlers( const bool bEnable , const EPickUp bPickUpOrDrop );
 

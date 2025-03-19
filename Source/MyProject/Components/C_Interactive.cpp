@@ -6,6 +6,7 @@
 #include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Interfaces/InteractiveObject.h"
 #include "MyProject/Private/Utilities.hpp"
+#include "MyProject/MyGameState.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -66,12 +67,16 @@ void UC_Interactive::Interaction(AA_Character* InInteractor)
 		}
 		
 		bInteracting = true;
-		InteractionStartWorldTime = GetWorld()->GetTimeSeconds();
+		InteractionStartWorldTime = GetWorld()->GetGameState<AMyGameState>()->GetServerWorldTimeSeconds();
+		GetOwner()->SetOwner( InInteractor->GetController() );
 		Object->StartInteraction();
 	}
 	else
 	{
 		// if not, execute immediately;
+		bInteracting = true;
+		InteractionStartWorldTime = GetWorld()->GetGameState<AMyGameState>()->GetServerWorldTimeSeconds();
+		GetOwner()->SetOwner( InInteractor->GetController() );
 		HandleInteraction();
 	}
 }
@@ -91,6 +96,7 @@ void UC_Interactive::StopInteraction()
 	
 	InteractionStartWorldTime = 0;
 	bInteracting = false;
+	GetOwner()->SetOwner( GetWorld()->GetFirstPlayerController() );
 	Object->StopInteraction();
 	Interactor = nullptr;
 }
@@ -156,7 +162,7 @@ void UC_Interactive::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	DOREPLIFETIME( UC_Interactive , bInteracting );
 	DOREPLIFETIME( UC_Interactive , Interactor );
 	DOREPLIFETIME( UC_Interactive , DelayTime );
-	DOREPLIFETIME( UC_Interactive , InteractionStartWorldTime , COND_OwnerOnly );
+	DOREPLIFETIME_CONDITION( UC_Interactive , InteractionStartWorldTime , COND_OwnerOnly );
 }
 
 // Called every frame

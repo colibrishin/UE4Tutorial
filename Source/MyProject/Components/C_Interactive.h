@@ -69,7 +69,7 @@ private:
 	bool bInteracting;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
-	double InteractionStartWorldTime;
+	float InteractionStartWorldTime;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	AA_Character* Interactor;

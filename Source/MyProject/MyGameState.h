@@ -73,6 +73,10 @@ public:
 	{
 		return MatchRoundTime - GetRoundTime();
 	}
+	float GetStartTickInServerTime() const 
+	{
+		return StartTickInServerTime;
+	}
 
 	int32        GetCTWins() const { return CTWinCount; }
 	int32        GetTWins() const { return TWinCount; }
@@ -97,13 +101,14 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UFUNCTION()
-	void UpdateC4( AActor* InNewActor );
+	virtual void Tick( const float DeltaTime );
 
 private:
 	UFUNCTION()
-	void HandleBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character*
-	                            InDefuser);
+	void HandleBombStateChanged( const EMyBombState InOldState , const EMyBombState InNewState , const AA_Character* InPlanter , const AA_Character* InDefuser );
+
+	UFUNCTION()
+	void UpdateC4( AActor* InNewActor );
 
 	void SetRoundProgress(const EMyRoundProgress NewProgress);
 
@@ -138,7 +143,8 @@ private:
 	UFUNCTION()
 	void BuyTimeEnded();
 
-	void HandleOnBombPicked(AA_Character* Character) const;
+	UFUNCTION()
+	void HandleOnBombPicked( AActor* InC4Actor );
 
 	UFUNCTION()
 	void OnRep_WinnerSet() const;
@@ -161,9 +167,6 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_NotifyBombPicked(AA_Character* Character) const;
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_ResetBombIndicator();
-
 	UPROPERTY(EditAnywhere)
 	USoundWave* CTRoundWinSound;
 
@@ -178,6 +181,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundWave* BombDefusedSound;
+
+	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	float StartTickInServerTime;
 
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess))
 	float MatchRoundTime;

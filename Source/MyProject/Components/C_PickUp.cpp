@@ -121,7 +121,8 @@ void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickingUp> InCaller, const bo
 		LOG_FUNC_PRINTF( LogPickUp , Log , "Caught pickup : %s" , *InCaller->_getUObject()->GetName() );
 		InCaller->PickUp( 
 			this , 
-			std::bind( &FOnObjectPickUpSpawned::Broadcast , OnObjectPickUpSpawned , std::placeholders::_1 ) );
+			std::bind( &FOnObjectPickUpSpawned::Broadcast , OnObjectPickUpPreSpawned , std::placeholders::_1 ),
+			std::bind( &FOnObjectPickUpSpawned::Broadcast, OnObjectPickUpPostSpawned, std::placeholders::_1) );
 
 		// Assuming the object is cloned into child actor component or consumed etc;
 		GetOwner()->Destroy( true );
@@ -206,6 +207,8 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 				OnObjectDropPreSpawned.Broadcast( InActor );
 			}
 		);
+
+		OnObjectDropPostSpawned.Broadcast( Cloned );
 
 		// Object destruction should be handled in InCaller's Drop;
 		InCaller->Drop( this );
