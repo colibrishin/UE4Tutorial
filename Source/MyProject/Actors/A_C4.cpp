@@ -10,6 +10,7 @@
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/MyGameState.h"
+#include "MyProject/MyPlayerController.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -121,6 +122,15 @@ void AA_C4::Interaction()
 		// No longer interactable.
 		InteractiveComponent->SetActive(false);
 		break;
+	case EMyBombState::Idle:
+		break;
+	case EMyBombState::Planted:
+		break;
+	case EMyBombState::Defused:
+		break;
+	case EMyBombState::Exploded:
+		break;
+	default: ;
 	}
 }
 
@@ -161,6 +171,15 @@ void AA_C4::StartInteraction()
 		SetState( EMyBombState::Planting );
 		Planter = InteractiveComponent->GetInteractor();
 		break;
+	case EMyBombState::Planting:
+		break;
+	case EMyBombState::Defusing:
+		break;
+	case EMyBombState::Defused:
+		break;
+	case EMyBombState::Exploded:
+		break;
+	default: ;
 	}
 }
 
@@ -169,13 +188,22 @@ void AA_C4::StopInteraction()
 	switch ( BombState )
 	{
 	case EMyBombState::Defusing:
-		SetState( EMyBombState::Planted );
 		Defuser = nullptr;
+		SetState( EMyBombState::Planted );
 		break;
 	case EMyBombState::Planting:
-		SetState( EMyBombState::Idle );
 		Planter = nullptr;
+		SetState( EMyBombState::Idle );
 		break;
+	case EMyBombState::Idle:
+		break;
+	case EMyBombState::Planted:
+		break;
+	case EMyBombState::Defused:
+		break;
+	case EMyBombState::Exploded:
+		break;
+	default: ;
 	}
 }
 
@@ -211,9 +239,9 @@ void AA_C4::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME( AA_C4 , PlantingTime );
 	DOREPLIFETIME( AA_C4 , DefusingTime );
 	DOREPLIFETIME(AA_C4, InteractiveComponent);
-	DOREPLIFETIME(AA_C4, BombState);
 	DOREPLIFETIME(AA_C4, Planter);
 	DOREPLIFETIME(AA_C4, Defuser);
+	DOREPLIFETIME(AA_C4, BombState);
 }
 
 void AA_C4::PostFetchAsset()
@@ -249,6 +277,7 @@ void AA_C4::MutateCloned( AActor* InSpawnedActor )
 			Cloned->DetonationTime = DetonationTime;
 			Cloned->DefusingTime = DefusingTime;
 			Cloned->PlantingTime = PlantingTime;
+			Cloned->BombState = BombState;
 
 			// Preemptive setup for the delay timer
 			switch ( Cloned->BombState )
@@ -294,6 +323,17 @@ void AA_C4::OnRep_BombState(const EMyBombState InOldBombState)
 {
 	if ( GetNetMode() == NM_Client ) 
 	{
+		// Since the actor replication occurred first before the GameState cache,
+		// the bomb state changed delegation might have not bound.
+		// Requesting the RPC to make sure that server and client sees the same bomb.
+		if ( const AMyGameState* MyGameState = GetWorld()->GetGameState<AMyGameState>();
+			 MyGameState && !OnBombStateChanged.IsBoundToObject( &MyGameState->OnBombStateChanged ) )
+		{
+			LOG_FUNC( LogTemp , Warning , "Bomb has been replicated before the game state, Update the delegation" );
+			GetWorld()->GetFirstPlayerController<AMyPlayerController>()->Server_ValidateUpdateRebroadcastC4( this , { InOldBombState, BombState, Planter, Defuser } );
+			return;
+		}
+
 		LOG_FUNC_PRINTF( LogTemp , Log , "Replicating C4 State %s -> %s" , *EnumToString( InOldBombState ) , *EnumToString( BombState ) );
 		OnBombStateChanged.Broadcast( InOldBombState , BombState , Planter , Defuser );
 	}

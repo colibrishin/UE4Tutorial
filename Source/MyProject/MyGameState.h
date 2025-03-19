@@ -37,6 +37,7 @@ class MYPROJECT_API AMyGameState : public AGameStateBase
 {
 	GENERATED_BODY()
 
+	friend class AMyPlayerController;
 public:
 
 	FOnBuyChanged OnBuyChanged;
@@ -101,7 +102,7 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	virtual void Tick( const float DeltaTime );
+	virtual void Tick( const float DeltaTime ) override;
 
 private:
 	UFUNCTION()

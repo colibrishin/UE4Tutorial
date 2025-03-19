@@ -12,6 +12,24 @@ enum class EMyBombState : uint8;
 class UC_Interactive;
 class AA_Character;
 
+USTRUCT( BlueprintType )
+struct FBombStateContext
+{
+	GENERATED_BODY()
+	
+	UPROPERTY( VisibleAnywhere )
+	EMyBombState OldBombState;
+	
+	UPROPERTY( VisibleAnywhere )
+	EMyBombState NewBombState;
+	
+	UPROPERTY( VisibleAnywhere )
+	AA_Character* Planter;
+
+	UPROPERTY( VisibleAnywhere )
+	AA_Character* Defuser;
+};
+
 // Declare as non-dynamic delegate for forwarding to game state;
 DECLARE_MULTICAST_DELEGATE_FourParams(FOnBombStateChanged, const EMyBombState, const EMyBombState, const AA_Character*, const AA_Character*);
 
@@ -92,13 +110,13 @@ private:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UC_Interactive* InteractiveComponent;
 
-	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_BombState)
-	EMyBombState BombState;
-	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	AA_Character* Planter = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
 	AA_Character* Defuser = nullptr;
+
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing = OnRep_BombState)
+	EMyBombState BombState;
 	
 };

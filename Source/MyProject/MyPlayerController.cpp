@@ -4,11 +4,13 @@
 #include "MyProject/MyPlayerController.h"
 
 #include "MyCameraManager.h"
+#include "MyGameState.h"
 #include "MyInGameHUD.h"
 #include "MyProject/Widgets/MyInGameWidget.h"
 #include "MyPlayerState.h"
 #include "MySpectatorPawn.h"
 
+#include "Actors/A_C4.h"
 #include "Actors/BaseClass/A_Character.h"
 
 #include "MyProject/Private/Utilities.hpp"
@@ -129,6 +131,36 @@ void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)
 {
 	UnPossess();
 	Possess(Spectator);
+}
+
+void AMyPlayerController::Client_ValidateUpdateRebroadcastC4_Implementation(
+	AA_C4* InC4,
+	const FBombStateContext& InContext )
+{
+	if (AMyGameState* MyGameState = GetWorld()->GetGameState<AMyGameState>())
+	{
+		MyGameState->UpdateC4( InC4 );
+		InC4->OnBombStateChanged.Broadcast( InContext.OldBombState , InContext.NewBombState , InContext.Planter , InContext.Defuser );
+	}
+}
+
+void AMyPlayerController::Server_ValidateUpdateRebroadcastC4_Implementation(
+	AA_C4* InC4,
+	const FBombStateContext& InContext )
+{
+	Client_ValidateUpdateRebroadcastC4( InC4 , InContext );
+}
+
+bool AMyPlayerController::Server_ValidateUpdateRebroadcastC4_Validate(
+	AA_C4* InC4,
+	const FBombStateContext& InContext )
+{
+	if ( const AMyGameState* MyGameState = GetWorld()->GetGameState<AMyGameState>())
+	{
+		return MyGameState->GetC4() == InC4;
+	}
+
+	return false;
 }
 
 void AMyPlayerController::Client_SetSpectator_Implementation(AMySpectatorPawn* Spectator)

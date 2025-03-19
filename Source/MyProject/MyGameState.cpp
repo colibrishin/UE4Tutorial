@@ -348,14 +348,18 @@ void AMyGameState::Tick( const float DeltaTime )
 void AMyGameState::UpdateC4( AActor* InNewActor )
 {
 	if ( AA_C4* InNewC4 = Cast<AA_C4>( InNewActor );
-		 InNewC4 && RoundC4 != InNewC4 && !InNewC4->IsDummy() )
+		 InNewC4 && !InNewC4->IsDummy() )
 	{
 		if ( RoundC4 )
 		{
 			RoundC4->OnBombStateChanged.Remove( C4DelegateHandle );
 		}
 
-		RoundC4 = InNewC4;
+		if ( HasAuthority() )
+		{
+			RoundC4 = InNewC4;	
+		}
+
 		C4DelegateHandle = InNewC4->OnBombStateChanged.AddRaw( &OnBombStateChanged , &FOnBombStateChangedDynamic::Broadcast );
 
 		if ( UC_PickUp* PickUpComponent = InNewC4->GetPickUpComponent() )
