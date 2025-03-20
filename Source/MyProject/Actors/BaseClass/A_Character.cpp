@@ -640,23 +640,34 @@ void AA_Character::Server_Interactive_Implementation( const TScriptInterface<IIn
 
 bool AA_Character::Server_Interactive_Validate( const TScriptInterface<IInteractiveObject>& InObject ) 
 {
+	// Invalid: received nullptr
 	if ( !InObject )
 	{
 		return false;
 	}
 
+	// Invalid: object does not have interactive component
 	if ( !InObject->GetInteractiveComponent() )
 	{
 		return false;
 	}
 
+	// Immediate Interaction
 	if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
 		 InObject == HandActor && LastHandChangedInServerTime == ServerTime ) 
 	{
 		return false;
 	}
 
+	// Immediate interaction
 	if ( InObject == LastSuccededPickOrDrop )
+	{
+		return false;
+	}
+
+	// Client might have bypass the predication or does not have the matching replication
+	// todo: what if the client is lagging?
+	if ( InObject->DoesHavePredication() && !InObject->PredicateInteraction( this ) )
 	{
 		return false;
 	}
@@ -677,32 +688,38 @@ void AA_Character::Server_StopInteractive_Implementation( const TScriptInterface
 
 bool AA_Character::Server_StopInteractive_Validate( const TScriptInterface<IInteractiveObject>& InObject )
 {
+	// Invalid: received nullptr
 	if ( !InObject )
 	{
 		return false;
 	}
 
+	// Invalid: object does not have interactive component
 	if ( !InObject->GetInteractiveComponent() )
 	{
 		return false;
 	}
 
+	// Object interactor is not this character
 	if ( InObject->GetInteractiveComponent()->GetInteractor() != this )
 	{
 		return false;
 	}
 
+	// Interaction stopped while the character does not own the object
 	if ( HandActor != InObject )
 	{
 		return false;
 	}
 
+	// Immediate interaction
 	if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
 		 InObject == HandActor && LastHandChangedInServerTime == ServerTime )
 	{
 		return false;
 	}
 
+	// Immediate interaction
 	if ( InObject == LastSuccededPickOrDrop )
 	{
 		return false;

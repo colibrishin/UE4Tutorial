@@ -88,7 +88,7 @@ void  AA_C4::BeginPlay()
 	OnActorEndOverlap.AddUniqueDynamic( this , &AA_C4::OnEndOverlap );
 }
 
-bool AA_C4::PredicateInteraction( AA_Character* InInteractor )
+bool AA_C4::PredicateInteraction( AA_Character* InInteractor ) const
 {
 	return IsAfterPlant() ? PredicateAfterPlant( InInteractor  ) : PredicateBeforePlant( InInteractor );
 }
@@ -338,10 +338,7 @@ bool AA_C4::StartClientInteraction( AA_Character* InInteractor ) const
 {
 	InInteractor->GetCharacterMovement()->StopMovementImmediately();
 	InInteractor->GetCharacterMovement()->SetMovementMode( MOVE_None );
-	return IsAfterPlant() ? PredicateAfterPlant( InInteractor ) : PredicateBeforePlant( InInteractor );
-
-	check( false );
-	return false;
+	return PredicateInteraction( InInteractor );
 }
 
 bool AA_C4::StopClientInteraction() const
@@ -349,7 +346,7 @@ bool AA_C4::StopClientInteraction() const
 	if ( AA_Character* Character = GetInteractiveComponent()->GetInteractor() )
 	{
 		Character->GetCharacterMovement()->SetMovementMode( MOVE_Walking );
-		return IsAfterPlant() ? PredicateAfterPlant( Character ) : PredicateBeforePlant( Character );
+		return PredicateInteraction( Character );
 	}
 
 	check( false );

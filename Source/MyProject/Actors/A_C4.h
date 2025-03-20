@@ -60,7 +60,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	virtual bool PredicateInteraction( AA_Character* InInteractor ) override;
+	virtual bool PredicateInteraction( AA_Character* InInteractor ) const override;
 
 	virtual void Interaction() override;
 

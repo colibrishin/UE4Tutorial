@@ -35,12 +35,11 @@ public:
 	
 	virtual bool StopClientInteraction() const = 0;
 
-protected:
-
 	FORCEINLINE bool DoesHavePredication() const { return bUsePredicate; }
 
-	virtual bool PredicateInteraction( AA_Character* InInteractor ) = 0;
+	virtual bool PredicateInteraction( AA_Character* InInteractor ) const = 0;
 
+protected:
 	virtual void Interaction() = 0;
 
 	bool bUsePredicate = false;
