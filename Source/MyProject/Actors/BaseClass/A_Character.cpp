@@ -430,7 +430,7 @@ void AA_Character::PostFetchAsset()
 
 void AA_Character::Interactive()
 {
-	if ( TScriptInterface<IInteractiveObject> InteractiveObject = HandActor;
+	if ( const TScriptInterface<IInteractiveObject> InteractiveObject = HandActor;
 		 InteractiveObject )
 	{
 		if ( !InteractiveObject->GetInteractiveComponent()->CanInteract() )
@@ -442,8 +442,10 @@ void AA_Character::Interactive()
 		if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
 			 LastHandChangedInServerTime != ServerTime )
 		{
-			InteractiveObject->GetInteractiveComponent()->ClientInteraction( this );
-			Server_Interactive( InteractiveObject );
+			if (InteractiveObject->GetInteractiveComponent()->ClientInteraction( this ) )
+			{
+				Server_Interactive( InteractiveObject );	
+			}
 		}
 	}
 	else
@@ -452,7 +454,7 @@ void AA_Character::Interactive()
 		{
 			for ( UPrimitiveComponent* Result : OutResults )
 			{
-				if ( UC_Interactive* InteractiveComponent = Cast<UC_Interactive>( Result ) )
+				if ( const UC_Interactive* InteractiveComponent = Cast<UC_Interactive>( Result ) )
 				{
 					// Condition where the pick up or drop and interactive both occurred.
 					// The execution order is affected by the registration order of the input action. (Stack)
@@ -464,10 +466,12 @@ void AA_Character::Interactive()
 							continue;
 						}
 
-						InteractiveComponent->ClientInteraction( this );
-						Server_Interactive( InteractiveObject );
-						LastSuccededPickOrDrop = nullptr;
-						break;
+						if (InteractiveComponent->ClientInteraction( this ))
+						{
+							Server_Interactive( InteractiveObject );
+							LastSuccededPickOrDrop = nullptr;
+							break;	
+						}
 					}
 				}
 			}
@@ -477,7 +481,7 @@ void AA_Character::Interactive()
 
 void AA_Character::StopInteractive()
 {
-	if ( TScriptInterface<IInteractiveObject> InteractiveObject = HandActor;
+	if ( const TScriptInterface<IInteractiveObject> InteractiveObject = HandActor;
 		 InteractiveObject )
 	{
 		if ( InteractiveObject->GetInteractiveComponent()->CanInteract() )
@@ -489,8 +493,10 @@ void AA_Character::StopInteractive()
 		if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
 			 LastHandChangedInServerTime != ServerTime )
 		{
-			InteractiveObject->GetInteractiveComponent()->StopClientInteraction( );
-			Server_StopInteractive( InteractiveObject );
+			if (InteractiveObject->GetInteractiveComponent()->StopClientInteraction( ))
+			{
+				Server_StopInteractive( InteractiveObject );	
+			}
 		}
 	}
 	else
@@ -511,10 +517,12 @@ void AA_Character::StopInteractive()
 						continue;
 					}
 
-					InteractiveComponent->StopClientInteraction( );
-					Server_StopInteractive( InteractiveObject );
-					LastSuccededPickOrDrop = nullptr;
-					break;
+					if (InteractiveComponent->StopClientInteraction( ))
+					{
+						Server_StopInteractive( InteractiveObject );
+						LastSuccededPickOrDrop = nullptr;
+						break;	
+					}
 				}
 			}
 		}
@@ -547,9 +555,13 @@ void AA_Character::PickUp()
 					return;
 				}
 
-				LOG_FUNC_PRINTF( LogCharacter , Log , "Client side picking up object %s" , *Collectable->GetName() );
-				LastSuccededPickOrDrop = Collectable;
-				Server_PickUp( Collectable );
+				if ( PickUpComponent->IsActive() )
+				{
+					LOG_FUNC_PRINTF( LogCharacter , Log , "Client side picking up object %s" , *Collectable->GetName() );
+					LastSuccededPickOrDrop = Collectable;
+					Server_PickUp( Collectable );
+					break;	
+				}
 			}
 		}
 	}
@@ -562,9 +574,12 @@ void AA_Character::PickUp()
 
 void AA_Character::Server_PickUp_Implementation(AA_Collectable* InCollectable)
 {
-	LOG_FUNC_PRINTF( LogCharacter , Log , "Picking up object %s" , *InCollectable->GetName() );
-	InCollectable->GetPickUpComponent()->OnObjectPickUp.Broadcast( this , true );
-	LastSuccededPickOrDrop = InCollectable;
+	if ( InCollectable->GetPickUpComponent()->IsActive() )
+	{
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Picking up object %s" , *InCollectable->GetName() );
+		InCollectable->GetPickUpComponent()->OnObjectPickUp.Broadcast( this , true );
+		LastSuccededPickOrDrop = InCollectable;	
+	}
 }
 
 bool AA_Character::Server_PickUp_Validate(AA_Collectable* InCollectable) 

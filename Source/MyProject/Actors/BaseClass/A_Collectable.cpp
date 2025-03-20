@@ -155,15 +155,10 @@ void AA_Collectable::PostFetchAsset()
 {
 	IAssetFetchable::PostFetchAsset();
 
-	if ( PickUpComponent && CollisionComponent )
+	if ( PickUpComponent )
 	{
-		// todo: refactoring
-		// Since the collision component is disabled in the client side, the GetActorBounds returns
-		// zero. Sets the pick up range from the collision component bounds.
-		FBoxSphereBounds Bounds = CollisionComponent->GetLocalBounds();
 		PickUpComponent->AttachToComponent( SkeletalMeshComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
-		PickUpComponent->SetSphereRadius( Bounds.SphereRadius * 1.5f );
-		PickUpComponent->SetCollisionProfileName( "MyCollectable" );
+		PickUpComponent->RefreshCollision( "MyCollectable" );
 	}
 }
 
@@ -171,10 +166,9 @@ void AA_Collectable::PostNetInit()
 {
 	Super::PostNetInit();
 
-	if ( PickUpComponent && CollisionComponent )
+	if ( PickUpComponent )
 	{
-		// todo: refactoring
-		PickUpComponent->SetCollisionProfileName( "MyCollectable" );
+		PickUpComponent->RefreshCollision( "MyCollectable" );
 	}
 }
 
@@ -205,7 +199,7 @@ void AA_Collectable::OnRep_CollisionTypeInClient() const
 
 void AA_Collectable::OnRep_CollisionComponent()
 {
-	if ( UDA_Collectable* Asset = GetAssetComponent()->GetAsset<UDA_Collectable>() )
+	if ( const UDA_Collectable* Asset = GetAssetComponent()->GetAsset<UDA_Collectable>() )
 	{
 		UpdateCollisionComponent( 
 			GetRootComponent() , 
@@ -216,10 +210,9 @@ void AA_Collectable::OnRep_CollisionComponent()
 			RootComponent->GetLocalBounds() , 
 			Asset->GetSize() );
 
-		if ( CollisionComponent && PickUpComponent )
+		if ( PickUpComponent )
 		{
-			FBoxSphereBounds Bounds = CollisionComponent->GetLocalBounds();
-			PickUpComponent->SetSphereRadius( Bounds.SphereRadius * 1.5f );
+			PickUpComponent->RefreshCollision( "MyCollectable" );
 		}
 	}
 }

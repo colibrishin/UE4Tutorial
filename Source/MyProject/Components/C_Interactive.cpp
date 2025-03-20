@@ -22,6 +22,7 @@ UC_Interactive::UC_Interactive()
 
 	// ...
 	bInteracting = false;
+	DefaultSizeMultiplier = 2.f;
 }
 
 bool UC_Interactive::ClientInteraction( AA_Character* InInteractor ) const

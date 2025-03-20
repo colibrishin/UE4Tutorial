@@ -21,8 +21,9 @@ UC_PickUp::UC_PickUp()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
+	
 	SetIsReplicatedByDefault(true);
+	DefaultSizeMultiplier = 2.f;
 }
 
 void UC_PickUp::AttachEventHandlers(const bool bEnable, const EPickUp PickUpOrDrop)
@@ -31,6 +32,8 @@ void UC_PickUp::AttachEventHandlers(const bool bEnable, const EPickUp PickUpOrDr
 	{
 		return;
 	}
+	
+	SetActive( bEnable );
 
 	if ( bEnable )
 	{

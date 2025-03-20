@@ -6,6 +6,8 @@
 #include "MyProject/Interfaces/InteractiveObject.h"
 #include "Components/SphereComponent.h"
 
+#include "MyProject/Interfaces/ShapeAdjust.h"
+
 #include "C_Interactive.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN( LogInteractiveComponent , All , Log );
@@ -13,7 +15,7 @@ DECLARE_LOG_CATEGORY_EXTERN( LogInteractiveComponent , All , Log );
 class AMyPlayerState;
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_Interactive : public USphereComponent
+class MYPROJECT_API UC_Interactive : public USphereComponent, public IShapeAdjust
 {
 	GENERATED_BODY()
 
@@ -32,19 +34,19 @@ public:
 
 	void SetDelayed( const bool InFlag ) { bDelay = InFlag; }
 
-	float GetDelayedTime() const { return DelayTime; }
+	[[nodiscard]] float GetDelayedTime() const { return DelayTime; }
 
-	bool CanInteract() const { return !bInteracting; }
+	[[nodiscard]] bool CanInteract() const { return !bInteracting; }
 
-	bool ClientInteraction( AA_Character* InInteractor ) const;
+	[[nodiscard]] bool ClientInteraction( AA_Character* InInteractor ) const;
 
-	bool StopClientInteraction() const;
+	[[nodiscard]] bool StopClientInteraction() const;
 	
 	void Interaction(AA_Character* InInteractor);
 
 	void StopInteraction();
 
-	double GetInteractionStartTime() const;
+	[[nodiscard]] double GetInteractionStartTime() const;
 
 protected:
 	// Called when the game starts

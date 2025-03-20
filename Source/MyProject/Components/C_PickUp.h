@@ -5,6 +5,8 @@
 #include "CoreMinimal.h"
 #include "Components/SphereComponent.h"
 
+#include "MyProject/Interfaces/ShapeAdjust.h"
+
 #include "C_PickUp.generated.h"
 
 class UInputMappingContext;
@@ -25,7 +27,7 @@ enum class EPickUp : uint8_t
 };
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_PickUp : public USphereComponent
+class MYPROJECT_API UC_PickUp : public USphereComponent, public IShapeAdjust
 {
 	GENERATED_BODY()
 
