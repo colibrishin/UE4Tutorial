@@ -3,6 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/SphereComponent.h"
+
 #include "C_PickUp.generated.h"
 
 class UInputMappingContext;
@@ -23,7 +25,7 @@ enum class EPickUp : uint8_t
 };
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_PickUp : public UActorComponent
+class MYPROJECT_API UC_PickUp : public USphereComponent
 {
 	GENERATED_BODY()
 
@@ -48,9 +50,9 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	
+
 	UFUNCTION()
-	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnBeginOverlap( UPrimitiveComponent* OverlappedComponent , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
 
 	UFUNCTION()
 	void OnPickUpCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallPickUp);

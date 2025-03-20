@@ -135,6 +135,11 @@ bool UC_Weapon::IsDummy() const
 	return Collectable->IsDummy();
 }
 
+bool UC_Weapon::IsFiring() const
+{
+	return bFiring;
+}
+
 UC_Weapon* UC_Weapon::GetSiblingComponent() const
 {
 	const AA_Weapon* Collectable = Cast<AA_Weapon>(GetOwner());

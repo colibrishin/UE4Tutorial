@@ -288,59 +288,31 @@ void AA_Character::Look(const FInputActionValue& Value)
 	AddControllerPitchInput(-LookAxisVector.Y);
 }
 
-bool AA_Character::TestCollectable( TArray<FOverlapResult>& OutResults )
+bool AA_Character::TestCollectable( TArray<UPrimitiveComponent*>& OutResults ) const
 {
-	FVector Center , Extents;
-	GetActorBounds( true , Center , Extents );
+	GetOverlappingComponents( OutResults );
 
-	// Ignore the character just in case;
-	FCollisionQueryParams Params{ NAME_None, false, this };
+	if ( OutResults.IsEmpty() )
+	{
+		return false;
+	}
 
-	// Ignore hand collectable objects;
 	if ( HandActor )
 	{
-		Params.AddIgnoredActor( HandActor );
-		Params.AddIgnoredActor( ArmHandActor );
+		OutResults.Remove( HandActor->GetCollisionComponent() );
+		OutResults.Remove( ArmHandActor->GetCollisionComponent() );
 	}
-
-	FVector TestLocation = GetActorLocation();
-
-	// Find the floor.
-	if ( FHitResult OutResult;
-		 GetWorld()->LineTraceSingleByChannel( OutResult , GetActorLocation() , GetActorLocation() + FVector::DownVector * 1000.f , ECC_WorldStatic , Params ) )
+	
+	// Sort the objects in distance wise;
+	// Since the TArray::Sort deferences the pointer, Use the internal Algo::Sort directly
+	Algo::Sort( OutResults, [this](const UPrimitiveComponent* const& InLeft , const UPrimitiveComponent* const& InRight)
 	{
-		DrawDebugLine( GetWorld() , TestLocation , OutResult.Location , FColor::Red , false , 2.f );
-		TestLocation = OutResult.Location;
-	}
-	else 
-	{
-		return false;
-	}
+		const float& LeftDistance = FVector::Distance( GetActorLocation() , InLeft->GetOwner()->GetActorLocation() );
+		const float& RightDistance = FVector::Distance( GetActorLocation() , InRight->GetOwner()->GetActorLocation() );
+		return LeftDistance < RightDistance;
+	} );
 
-	if ( !GetWorld()->OverlapMultiByChannel
-		 (
-			 OutResults ,
-			 TestLocation ,
-			 FQuat::Identity ,
-			 ECC_GameTraceChannel9 ,
-			 FCollisionShape::MakeSphere( Extents.GetMax() * 1.5f ) ,
-			 Params
-		 ) )
-	{
-		return false;
-	}
-	else
-	{
-		// Sort the objects in distance wise;
-		OutResults.Sort( [this]( const FOverlapResult& InLeft , const FOverlapResult& InRight )
-		{
-			const float& LeftDistance = FVector::Distance( GetActorLocation() , InLeft.GetActor()->GetActorLocation() );
-			const float& RightDistance = FVector::Distance( GetActorLocation() , InRight.GetActor()->GetActorLocation() );
-			return LeftDistance < RightDistance;
-		} );
-
-		return true;
-	}
+	return true;
 }
 
 float AA_Character::TakeDamage( float DamageAmount , FDamageEvent const& DamageEvent , AController* EventInstigator , AActor* DamageCauser )
@@ -386,10 +358,10 @@ void AA_Character::SetupPlayerInputComponent(UInputComponent* PlayerInputCompone
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &AA_Character::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &AA_Character::StopJumping);
 
-		EnhancedInputComponent->BindAction( InteractiveAction , ETriggerEvent::Started , this , &AA_Character::Server_Interactive );
-		EnhancedInputComponent->BindAction( InteractiveAction , ETriggerEvent::Completed , this , &AA_Character::Server_StopInteractive );
-		EnhancedInputComponent->BindAction( PickUpAction, ETriggerEvent::Started, this, &AA_Character::Server_PickUp);
-		EnhancedInputComponent->BindAction( DropAction, ETriggerEvent::Started, this, &AA_Character::Server_Drop);
+		EnhancedInputComponent->BindAction( InteractiveAction , ETriggerEvent::Started , this , &AA_Character::Interactive );
+		EnhancedInputComponent->BindAction( InteractiveAction , ETriggerEvent::Completed , this , &AA_Character::StopInteractive );
+		EnhancedInputComponent->BindAction( PickUpAction , ETriggerEvent::Started , this , &AA_Character::PickUp );
+		EnhancedInputComponent->BindAction( DropAction , ETriggerEvent::Started , this , &AA_Character::Drop );
 	}
 }
 
@@ -456,30 +428,179 @@ void AA_Character::PostFetchAsset()
 	ArmHand->AttachToComponent( ArmMeshComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale , RightHandSocketName );
 }
 
-void AA_Character::Server_PickUp_Implementation()
+void AA_Character::Interactive()
 {
-	if ( TArray<FOverlapResult> OutResults;
-		 TestCollectable( OutResults ) )
+	if ( TScriptInterface<IInteractiveObject> InteractiveObject = HandActor;
+		 InteractiveObject )
 	{
-		AA_Collectable* Collectable = Cast<AA_Collectable>( ( *OutResults.begin() ).GetActor() );
-		check( Collectable );
-
-		// todo: inventory;
-		if ( bHandBusy )
+		if ( !InteractiveObject->GetInteractiveComponent()->CanInteract() )
 		{
-			LOG_FUNC_PRINTF( LogCharacter , Log , "Hand is busy, ignore pick up request" , *Collectable->GetOwner()->GetName() );
 			return;
 		}
 
-		LOG_FUNC_PRINTF( LogCharacter , Log , "Picking up object %s" , *Collectable->GetName() );
-		Collectable->GetPickUpComponent()->OnObjectPickUp.Broadcast( this , true );
-		LastSuccededPickOrDrop = Collectable;
+		// Do not interact with the hand actor if the hand actor has changed in this tick
+		if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
+			 LastHandChangedInServerTime != ServerTime )
+		{
+			InteractiveObject->GetInteractiveComponent()->ClientInteraction( this );
+			Server_Interactive( InteractiveObject );
+		}
 	}
-	else 
+	else
+	{
+		if ( TArray<UPrimitiveComponent*> OutResults; TestCollectable( OutResults ) )
+		{
+			for ( UPrimitiveComponent* Result : OutResults )
+			{
+				if ( UC_Interactive* InteractiveComponent = Cast<UC_Interactive>( Result ) )
+				{
+					// Condition where the pick up or drop and interactive both occurred.
+					// The execution order is affected by the registration order of the input action. (Stack)
+					if ( TScriptInterface<IInteractiveObject> Interface = InteractiveComponent->GetOwner();
+						 Interface && Interface != LastSuccededPickOrDrop )
+					{
+						if ( !InteractiveComponent->CanInteract() )
+						{
+							continue;
+						}
+
+						InteractiveComponent->ClientInteraction( this );
+						Server_Interactive( InteractiveObject );
+						LastSuccededPickOrDrop = nullptr;
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+void AA_Character::StopInteractive()
+{
+	if ( TScriptInterface<IInteractiveObject> InteractiveObject = HandActor;
+		 InteractiveObject )
+	{
+		if ( InteractiveObject->GetInteractiveComponent()->CanInteract() )
+		{
+			return;
+		}
+
+		// Do not interact with the hand actor if the hand actor has changed in this tick
+		if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
+			 LastHandChangedInServerTime != ServerTime )
+		{
+			InteractiveObject->GetInteractiveComponent()->StopClientInteraction( );
+			Server_StopInteractive( InteractiveObject );
+		}
+	}
+	else
+	{
+		if ( TArray<UPrimitiveComponent*> OutResults; TestCollectable( OutResults ) )
+		{
+			for ( UPrimitiveComponent* Result : OutResults )
+			{
+				if ( UC_Interactive* InteractiveComponent = Cast<UC_Interactive>( Result ) )
+				// Condition where the pick up or drop and interactive both occurred.
+				// The execution order is affected by the registration order of the input action. (Stack)
+				if ( TScriptInterface<IInteractiveObject> Interface = InteractiveComponent->GetOwner();
+					 Interface && Interface != LastSuccededPickOrDrop )
+				{
+					if ( InteractiveComponent->CanInteract() &&
+						 InteractiveComponent->GetInteractor() != this )
+					{
+						continue;
+					}
+
+					InteractiveComponent->StopClientInteraction( );
+					Server_StopInteractive( InteractiveObject );
+					LastSuccededPickOrDrop = nullptr;
+					break;
+				}
+			}
+		}
+	}
+}
+
+void AA_Character::Drop()
+{
+	if ( HandActor )
+	{
+		Server_Drop();
+	}
+}
+
+void AA_Character::PickUp()
+{
+	if ( TArray<UPrimitiveComponent*> OutResults; TestCollectable( OutResults ) )
+	{
+		for ( const UPrimitiveComponent* Result : OutResults )
+		{
+			if ( const UC_PickUp* PickUpComponent = Cast<UC_PickUp>( Result ) ) 
+			{
+				AA_Collectable* Collectable = Cast<AA_Collectable>( PickUpComponent->GetOwner() );
+				check( Collectable );
+
+				// todo: inventory;
+				if ( bHandBusy )
+				{
+					LOG_FUNC_PRINTF( LogCharacter , Log , "Client side hand is busy, ignore pick up request" , *Collectable->GetOwner()->GetName() );
+					return;
+				}
+
+				LOG_FUNC_PRINTF( LogCharacter , Log , "Client side picking up object %s" , *Collectable->GetName() );
+				LastSuccededPickOrDrop = Collectable;
+				Server_PickUp( Collectable );
+			}
+		}
+	}
+	else
 	{
 		LastSuccededPickOrDrop = nullptr;
-		LOG_FUNC_PRINTF( LogCharacter , Log , "Found nothing to pick up of %s" , *GetName() );
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Client side found nothing to pick up of %s" , *GetName() );
 	}
+}
+
+void AA_Character::Server_PickUp_Implementation(AA_Collectable* InCollectable)
+{
+	LOG_FUNC_PRINTF( LogCharacter , Log , "Picking up object %s" , *InCollectable->GetName() );
+	InCollectable->GetPickUpComponent()->OnObjectPickUp.Broadcast( this , true );
+	LastSuccededPickOrDrop = InCollectable;
+}
+
+bool AA_Character::Server_PickUp_Validate(AA_Collectable* InCollectable) 
+{
+	if ( !InCollectable )
+	{
+		LOG_FUNC( LogCharacter , Error , "Unknown Collectable!" );
+		return false;
+	}
+
+	// Collectable should be inside of the test area
+	TArray<UPrimitiveComponent*> Components;
+	TestCollectable( Components );
+
+	if ( !Components.Contains( InCollectable->GetPickUpComponent() ) ) 
+	{
+		LOG_FUNC( LogCharacter , Error , "Collection should be in range!" );
+		return false;
+	}
+
+	// todo: inventory;
+	// Already has something in the hand.
+	if ( bHandBusy )
+	{
+		LOG_FUNC( LogCharacter , Error , "Hand is already busy!" );
+		return false;
+	}
+
+	// Already picked up
+	if ( InCollectable->GetParentActor() )
+	{
+		LOG_FUNC_PRINTF( LogCharacter , Error , "Collectable has picked up by %s!", *InCollectable->GetParentActor()->GetName() );
+		return false;
+	}
+
+	return true;
 }
 
 void AA_Character::Server_Drop_Implementation()
@@ -496,96 +617,96 @@ void AA_Character::Server_Drop_Implementation()
 	}
 }
 
-void AA_Character::Server_Interactive_Implementation()
+bool AA_Character::Server_Drop_Validate()
 {
-	const auto& StartInteractImpl = [this]( const TScriptInterface<IInteractiveObject>& InteractiveObject )
-		{
-			if ( !InteractiveObject ) 
-			{
-				return;
-			}
-
-			if ( UC_Interactive* InteractiveComponent = Cast<AActor>( InteractiveObject.GetObject() )->GetComponentByClass<UC_Interactive>();
-			     InteractiveComponent && InteractiveComponent->CanInteract() )
-			{
-				LOG_FUNC_PRINTF( LogCharacter , Log , "Starts the interaction with %s" , *InteractiveObject.GetObject()->GetName());
-				InteractiveComponent->Interaction( this );
-			}
-		};
-
-	if ( TScriptInterface<IInteractiveObject> InteractiveObject = HandActor;
-		 InteractiveObject )
+	if ( !HandActor )
 	{
-		// Do not interact with the hand actor if the hand actor has changed in this tick
-		if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
-			 LastHandChangedInServerTime != ServerTime )
-		{
-			StartInteractImpl( InteractiveObject );
-		}
-	}
-	else
-	{
-		if ( TArray<FOverlapResult> OutResults;
-			 TestCollectable( OutResults ) )
-		{
-			for ( const FOverlapResult& Result : OutResults )
-			{
-				// Condition where the pick up or drop and interactive both occurred.
-				// The execution order is affected by the registration order of the input action. (Stack)
-				if ( TScriptInterface<IInteractiveObject> Interface = ( *OutResults.begin() ).GetActor(); 
-					 Interface && Interface != LastSuccededPickOrDrop )
-				{
-					StartInteractImpl( Interface );
-					break;
-				}
-			}
-		}
+		return false;
 	}
 
-	LastSuccededPickOrDrop = nullptr;
+	return true;
 }
 
-void AA_Character::Server_StopInteractive_Implementation()
+void AA_Character::Server_Interactive_Implementation( const TScriptInterface<IInteractiveObject>& InObject )
 {
-	const auto& StopInteractImpl = [this]( const TScriptInterface<IInteractiveObject>& InteractiveObject )
-		{
-			if ( UC_Interactive* InteractiveComponent = Cast<AActor>( InteractiveObject.GetObject() )->GetComponentByClass<UC_Interactive>();
-			     InteractiveComponent && InteractiveComponent->GetInteractor() == this )
-			{
-				LOG_FUNC_PRINTF( LogCharacter , Log , "Stopping the interaction with %s" , *InteractiveObject.GetObject()->GetName());
-				InteractiveComponent->StopInteraction();
-			}
-		};
-
-	if ( TScriptInterface<IInteractiveObject> InteractiveObject = HandActor;
-		 InteractiveObject )
+	if ( UC_Interactive* InteractiveComponent = InObject->GetInteractiveComponent();
+		 InteractiveComponent && InteractiveComponent->CanInteract() )
 	{
-		// Do not interact with the hand actor if the hand actor has changed in this tick
-		if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
-			 LastHandChangedInServerTime != ServerTime )
-		{
-			StopInteractImpl( InteractiveObject );
-		}
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Starts the interaction with %s" , *InObject.GetObject()->GetName() );
+		InteractiveComponent->Interaction( this );
+		LastSuccededPickOrDrop = nullptr;
 	}
-	else
-	{
-		if ( TArray<FOverlapResult> OutResults;
-			 TestCollectable( OutResults ) )
-		{
-			for ( const FOverlapResult& Result : OutResults )
-			{
-				// Condition where the pick up or drop and interactive both occurred.
-				// The execution order is affected by the registration order of the input action. (Stack)
-				if ( TScriptInterface<IInteractiveObject> Interface = ( *OutResults.begin() ).GetActor();
-					 Interface && Interface != LastSuccededPickOrDrop )
-				{
-					StopInteractImpl( Interface );
-					break;
-				}
-			}
-		}
-	}
-
-	LastSuccededPickOrDrop = nullptr;
 }
 
+bool AA_Character::Server_Interactive_Validate( const TScriptInterface<IInteractiveObject>& InObject ) 
+{
+	if ( !InObject )
+	{
+		return false;
+	}
+
+	if ( !InObject->GetInteractiveComponent() )
+	{
+		return false;
+	}
+
+	if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
+		 InObject == HandActor && LastHandChangedInServerTime == ServerTime ) 
+	{
+		return false;
+	}
+
+	if ( InObject == LastSuccededPickOrDrop )
+	{
+		return false;
+	}
+
+	return true;
+}
+
+void AA_Character::Server_StopInteractive_Implementation( const TScriptInterface<IInteractiveObject>& InObject )
+{
+	if ( UC_Interactive* InteractiveComponent = InObject->GetInteractiveComponent();
+		 InteractiveComponent && InteractiveComponent->GetInteractor() == this )
+	{
+		LOG_FUNC_PRINTF( LogCharacter , Log , "Stopping the interaction with %s" , *InObject.GetObject()->GetName() );
+		InteractiveComponent->StopInteraction();
+		LastSuccededPickOrDrop = nullptr;
+	}
+}
+
+bool AA_Character::Server_StopInteractive_Validate( const TScriptInterface<IInteractiveObject>& InObject )
+{
+	if ( !InObject )
+	{
+		return false;
+	}
+
+	if ( !InObject->GetInteractiveComponent() )
+	{
+		return false;
+	}
+
+	if ( InObject->GetInteractiveComponent()->GetInteractor() != this )
+	{
+		return false;
+	}
+
+	if ( HandActor != InObject )
+	{
+		return false;
+	}
+
+	if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
+		 InObject == HandActor && LastHandChangedInServerTime == ServerTime )
+	{
+		return false;
+	}
+
+	if ( InObject == LastSuccededPickOrDrop )
+	{
+		return false;
+	}
+
+	return true;
+}

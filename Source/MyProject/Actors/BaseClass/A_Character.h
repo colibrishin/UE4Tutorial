@@ -61,7 +61,7 @@ protected:
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
 
-	bool TestCollectable( TArray<FOverlapResult>& OutResults );
+	bool TestCollectable( TArray<UPrimitiveComponent*>& OutResults) const;
 
 public:
 	// Called every frame
@@ -85,17 +85,31 @@ private:
 protected:
 	virtual void PostFetchAsset() override;
 
-	UFUNCTION(Server, Reliable)
-	void Server_PickUp();
+	// Client side pre-interactive process (e.g., predicate, prerequsites)
+	UFUNCTION()
+	virtual void Interactive();
 
-	UFUNCTION(Server, Reliable)
+	// Client side post-interactive process (e.g., predicate, cleanup)
+	UFUNCTION()
+	virtual void StopInteractive();
+
+	UFUNCTION()
+	virtual void Drop();
+
+	UFUNCTION()
+	virtual void PickUp();
+
+	UFUNCTION( Server , Reliable , WithValidation )
+	void Server_PickUp( AA_Collectable* InCollectable );
+
+	UFUNCTION(Server, Reliable, WithValidation )
 	void Server_Drop();
 
-	UFUNCTION( Server , Reliable )
-	void Server_Interactive();
+	UFUNCTION( Server , Reliable , WithValidation )
+	void Server_Interactive( const TScriptInterface<IInteractiveObject>& InObject );
 
-	UFUNCTION( Server , Reliable )
-	void Server_StopInteractive();
+	UFUNCTION( Server , Reliable , WithValidation )
+	void Server_StopInteractive( const TScriptInterface<IInteractiveObject>& Object );
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bHandBusy;
@@ -131,12 +145,12 @@ protected:
 	AA_Collectable* ArmHandActor;
 #pragma endregion
 
-	// Server side only variable that produce and consume the data between the pick up and interactive.
+	// variable that produce and consume the data between the pick up and interactive.
 	// It will be used to prevent the pick up and interactive in the same tick.
 	UPROPERTY( VisibleAnywhere )
 	float LastHandChangedInServerTime;
 
-	// Server side only variable that stores the latest successful pick up or drop.
+	// variable that stores the latest successful pick up or drop.
 	// Note that this is not the hand actor but the template actor that has used for the cloning.
 	UPROPERTY( VisibleAnywhere )
 	AA_Collectable* LastSuccededPickOrDrop;

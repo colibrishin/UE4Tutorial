@@ -24,6 +24,54 @@ UC_Interactive::UC_Interactive()
 	bInteracting = false;
 }
 
+bool UC_Interactive::ClientInteraction( AA_Character* InInteractor ) const
+{
+	if ( GetNetMode() != NM_Client )
+	{
+		return true;
+	}
+
+	if ( !IsActive() || bInteracting )
+	{
+		return false;
+	}
+
+	// Should be the first player controller
+	check( GetWorld()->GetFirstPlayerController()->GetCharacter() == InInteractor );
+
+	IInteractiveObject* Object = Cast<IInteractiveObject>( GetOwner() );
+	check( Object );
+
+	// Check if the predication is met.
+	if ( bPredicating && !Object->PredicateInteraction( InInteractor ) )
+	{
+		LOG_FUNC( LogInteractiveComponent , Log , "Client side Initial predication failed. Won't do the interaction" );
+		return false;
+	}
+
+	LOG_FUNC( LogInteractiveComponent , Log , "Client side starts Interaction." );
+	LOG_FUNC_PRINTF( LogInteractiveComponent , Log , "Interactor: %s, Interactee: %s" , *InInteractor->GetName() , *GetOwner()->GetName() );
+
+	return Object->StartClientInteraction( InInteractor );
+}
+
+bool UC_Interactive::StopClientInteraction() const
+{
+	if ( GetNetMode() != NM_Client )
+	{
+		return true;
+	}
+
+	if ( !IsActive() || !bInteracting )
+	{
+		return false;
+	}
+
+	IInteractiveObject* Object = Cast<IInteractiveObject>( GetOwner() );
+	check( Object );
+	return Object->StopClientInteraction();
+}
+
 void UC_Interactive::Interaction(AA_Character* InInteractor)
 {
 	if ( GetNetMode() == NM_Client || !IsActive() || bInteracting )
@@ -33,40 +81,39 @@ void UC_Interactive::Interaction(AA_Character* InInteractor)
 
 	// If object is delayed interaction object, go for timer;
 	// predication flag will determine whether interaction should be stopped if condition check is failed;
+	IInteractiveObject* Object = Cast<IInteractiveObject>( GetOwner() );
+	check( Object );
+
+	if ( bPredicating )
+	{
+		if ( !Object->PredicateInteraction( InInteractor ) )
+		{
+			LOG_FUNC( LogInteractiveComponent , Log , "Initial predication failed. Won't do the interaction" );
+			return;
+		}
+
+		LOG_FUNC( LogInteractiveComponent , Log , "Tick-wise predicating is enabled" );
+		PrimaryComponentTick.SetTickFunctionEnable( true );
+	}
+	
 	if (bDelay)
 	{
-		ensure(!InteractionTimerHandle.IsValid());
-		
+		ensure( !InteractionTimerHandle.IsValid() );
+
 		LOG_FUNC_PRINTF( LogInteractiveComponent , Log , "Starts Interaction with timer. Expired after %f seconds" , DelayTime );
 
 		GetWorld()->GetTimerManager().SetTimer(
-			InteractionTimerHandle,
-			this,
-			&UC_Interactive::HandleInteraction,
-			DelayTime,
+			InteractionTimerHandle ,
+			this ,
+			&UC_Interactive::HandleInteraction ,
+			DelayTime ,
 			false
 		);
 
-		if (bPredicating)
-		{
-			LOG_FUNC( LogInteractiveComponent , Log , "Tick-wise predicating is enabled" );
-			PrimaryComponentTick.SetTickFunctionEnable(true);
-		}
-
-		LOG_FUNC_PRINTF( LogInteractiveComponent , Log, "Interactor: %s, Interactee: %s" , *InInteractor->GetName() , *GetOwner()->GetName());
-		Interactor = InInteractor;
-
-		IInteractiveObject* Object = Cast<IInteractiveObject>(GetOwner());
-		check( Object );
-
-		if (!Object->PredicateInteraction())
-		{
-			LOG_FUNC( LogInteractiveComponent , Log , "Initial predication failed. Won't do the interaction" );
-			StopInteraction();
-			return;
-		}
+		LOG_FUNC_PRINTF( LogInteractiveComponent , Log , "Interactor: %s, Interactee: %s" , *InInteractor->GetName() , *GetOwner()->GetName() );
 		
 		bInteracting = true;
+		Interactor = InInteractor;
 		InteractionStartWorldTime = GetWorld()->GetGameState<AMyGameState>()->GetServerWorldTimeSeconds();
 		GetOwner()->SetOwner( InInteractor->GetController() );
 		Object->StartInteraction();
@@ -75,6 +122,7 @@ void UC_Interactive::Interaction(AA_Character* InInteractor)
 	{
 		// if not, execute immediately;
 		bInteracting = true;
+		Interactor = InInteractor;
 		InteractionStartWorldTime = GetWorld()->GetGameState<AMyGameState>()->GetServerWorldTimeSeconds();
 		GetOwner()->SetOwner( InInteractor->GetController() );
 		HandleInteraction();
@@ -95,9 +143,10 @@ void UC_Interactive::StopInteraction()
 	ensure(Object);
 	
 	InteractionStartWorldTime = 0;
-	bInteracting = false;
-	GetOwner()->SetOwner( GetWorld()->GetFirstPlayerController() );
 	Object->StopInteraction();
+
+	GetOwner()->SetOwner( GetWorld()->GetFirstPlayerController() );
+	bInteracting = false;
 	Interactor = nullptr;
 }
 
@@ -122,6 +171,11 @@ void UC_Interactive::BeginPlay()
 
 	bPredicating = Owner->bUsePredicate;
 	bDelay = Owner->bDelay;
+
+	SetGenerateOverlapEvents( true );
+	SetSimulatePhysics( false );
+	SetEnableGravity( false );
+	SetCollisionEnabled( ECollisionEnabled::QueryAndProbe );
 }
 
 inline void UC_Interactive::ResetTimerIfDelayed()
@@ -173,12 +227,12 @@ void UC_Interactive::TickComponent(
 	Super::TickComponent(DeltaTime , TickType , ThisTickFunction);
 
 	// tick will be ran if timer is triggered;
-	if (InteractionTimerHandle.IsValid())
+	if ( InteractionTimerHandle.IsValid() )
 	{
 		IInteractiveObject* Object = Cast<IInteractiveObject>(GetOwner());
 		ensure(Object);
 
-		if (!Object->PredicateInteraction())
+		if ( !Object->PredicateInteraction( GetInteractor() ) )
 		{
 			StopInteraction();
 		}

@@ -44,7 +44,11 @@ public:
 	UFUNCTION(Server, Reliable, WithValidation)
 	void Server_ValidateUpdateRebroadcastC4( AA_C4* InC4, const FBombStateContext& InContext );
 
+	void FreezePlayer();
+	void UnfreezePlayer();
+
 private:
+
 	UFUNCTION(Client, Reliable)
 	void Client_ValidateUpdateRebroadcastC4( AA_C4* InC4, const FBombStateContext& InContext );
 

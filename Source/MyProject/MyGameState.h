@@ -183,7 +183,7 @@ private:
 	UPROPERTY(EditAnywhere)
 	USoundWave* BombDefusedSound;
 
-	UPROPERTY(VisibleAnywhere, meta=(AllowPrivateAccess))
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
 	float StartTickInServerTime;
 
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess))

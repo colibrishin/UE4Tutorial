@@ -87,6 +87,11 @@ void UC_PickUp::AttachEventHandlers(const bool bEnable, const EPickUp PickUpOrDr
 void UC_PickUp::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetGenerateOverlapEvents( true );
+	SetSimulatePhysics( false );
+	SetEnableGravity( false );
+	SetCollisionEnabled( ECollisionEnabled::QueryAndProbe );
 }
 
 void UC_PickUp::OnBeginOverlap(
@@ -185,7 +190,7 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 				
 				// Disable the client side physics simulation
 				InCollectable->SetPhysicsInClient( false );
-				InCollectable->SetCollisionTypeInClient( ECollisionEnabled::NoCollision );
+				InCollectable->SetCollisionTypeInClient( ECollisionEnabled::QueryAndProbe );
 
 				// Enable the server side physics simulation
 				InCollectable->GetCollisionComponent()->SetSimulatePhysics( true );

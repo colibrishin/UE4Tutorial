@@ -11,6 +11,10 @@
 #include "MyProject/MyPlayerState.h"
 #include "MyProject/MyGameState.h"
 #include "MyProject/MyPlayerController.h"
+#include "MyProject/Actors/MyPlantableArea.h"
+#include "MyProject/Actors/BaseClass/A_Weapon.h"
+#include "MyProject/Components/Weapon/C_Weapon.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -24,6 +28,9 @@ AA_C4::AA_C4(const FObjectInitializer& ObjectInitializer) : Super(ObjectInitiali
 	bDelay = true;
 
 	InteractiveComponent = CreateDefaultSubobject<UC_Interactive>(TEXT("InteractiveComponent"));
+	InteractiveComponent->SetIsReplicated( true );
+	InteractiveComponent->SetNetAddressable();
+
 	BombState = EMyBombState::Idle;
 }
 
@@ -76,24 +83,14 @@ void  AA_C4::BeginPlay()
 		GetPickUpComponent()->OnObjectDropPostSpawned.AddUniqueDynamic( this, &AA_C4::HandlePlanted );
 		GetPickUpComponent()->OnObjectPickUpPostSpawned.AddUniqueDynamic( this , &AA_C4::MutateCloned );
 	}
+
+	OnActorBeginOverlap.AddUniqueDynamic( this , &AA_C4::OnBeginOverlap );
+	OnActorEndOverlap.AddUniqueDynamic( this , &AA_C4::OnEndOverlap );
 }
 
-bool AA_C4::PredicateInteraction()
+bool AA_C4::PredicateInteraction( AA_Character* InInteractor )
 {
-	// todo: range check, viewport check
-	if ( ( BombState == EMyBombState::Planted || BombState == EMyBombState::Defusing ) &&
-		 InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::CT )
-	{
-		return false;
-	}
-	
-	if ( ( BombState == EMyBombState::Idle || BombState == EMyBombState::Planting ) &&
-		 InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::T )
-	{
-		return false;
-	}
-
-	return true;
+	return IsAfterPlant() ? PredicateAfterPlant( InInteractor  ) : PredicateBeforePlant( InInteractor );
 }
 
 void AA_C4::Interaction()
@@ -106,6 +103,7 @@ void AA_C4::Interaction()
 			break;
 		}
 		Planter = InteractiveComponent->GetInteractor();
+		Planter->GetController<AMyPlayerController>()->UnfreezePlayer();
 		SetState( EMyBombState::Planted );
 
 		GetPickUpComponent()->OnObjectDrop.Broadcast( GetInteractiveComponent()->GetInteractor() , true );
@@ -116,6 +114,7 @@ void AA_C4::Interaction()
 		{
 			break;
 		}
+		Defuser->GetController<AMyPlayerController>()->UnfreezePlayer();
 		Defuser = InteractiveComponent->GetInteractor();
 		SetState( EMyBombState::Defused );
 
@@ -153,8 +152,9 @@ void AA_C4::StartInteraction()
 		}
 
 		GetInteractiveComponent()->SetDelayTime( DefusingTime );
-		SetState( EMyBombState::Defusing );
 		Defuser = InteractiveComponent->GetInteractor();
+		Defuser->GetController<AMyPlayerController>()->FreezePlayer();
+		SetState( EMyBombState::Defusing );
 		break;
 	case EMyBombState::Idle:
 		if ( InteractiveComponent->GetInteractor()->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::T )
@@ -168,8 +168,9 @@ void AA_C4::StartInteraction()
 			break;
 		}
 		GetInteractiveComponent()->SetDelayTime( PlantingTime );
-		SetState( EMyBombState::Planting );
 		Planter = InteractiveComponent->GetInteractor();
+		Planter->GetController<AMyPlayerController>()->FreezePlayer();
+		SetState( EMyBombState::Planting );
 		break;
 	case EMyBombState::Planting:
 		break;
@@ -188,10 +189,12 @@ void AA_C4::StopInteraction()
 	switch ( BombState )
 	{
 	case EMyBombState::Defusing:
+		InteractiveComponent->GetInteractor()->GetController<AMyPlayerController>()->UnfreezePlayer();
 		Defuser = nullptr;
 		SetState( EMyBombState::Planted );
 		break;
 	case EMyBombState::Planting:
+		InteractiveComponent->GetInteractor()->GetController<AMyPlayerController>()->UnfreezePlayer();
 		Planter = nullptr;
 		SetState( EMyBombState::Idle );
 		break;
@@ -246,9 +249,21 @@ void AA_C4::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 
 void AA_C4::PostFetchAsset()
 {
+	Super::PostFetchAsset();
+
 	if (CollisionComponent)
 	{
 		CollisionComponent->SetCollisionProfileName("MyC4");
+	}
+
+	if ( InteractiveComponent && CollisionComponent )
+	{
+		// Since the collision component is disabled in the client side, the GetActorBounds returns
+		// zero. Sets the interaction range from the collision component bounds.
+		FBoxSphereBounds Bounds = CollisionComponent->GetLocalBounds();
+		InteractiveComponent->AttachToComponent( SkeletalMeshComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		InteractiveComponent->SetCollisionProfileName( "MyC4" );
+		InteractiveComponent->SetSphereRadius( Bounds.SphereRadius * 1.5f );
 	}
 }
 
@@ -319,6 +334,28 @@ void AA_C4::SetState( const EMyBombState NewState )
 	OnBombStateChanged.Broadcast( OldBombState , NewState , Planter , Defuser );
 }
 
+bool AA_C4::StartClientInteraction( AA_Character* InInteractor ) const
+{
+	InInteractor->GetCharacterMovement()->StopMovementImmediately();
+	InInteractor->GetCharacterMovement()->SetMovementMode( MOVE_None );
+	return IsAfterPlant() ? PredicateAfterPlant( InInteractor ) : PredicateBeforePlant( InInteractor );
+
+	check( false );
+	return false;
+}
+
+bool AA_C4::StopClientInteraction() const
+{
+	if ( AA_Character* Character = GetInteractiveComponent()->GetInteractor() )
+	{
+		Character->GetCharacterMovement()->SetMovementMode( MOVE_Walking );
+		return IsAfterPlant() ? PredicateAfterPlant( Character ) : PredicateBeforePlant( Character );
+	}
+
+	check( false );
+	return false;
+}
+
 void AA_C4::OnRep_BombState(const EMyBombState InOldBombState)
 {
 	if ( GetNetMode() == NM_Client ) 
@@ -337,4 +374,106 @@ void AA_C4::OnRep_BombState(const EMyBombState InOldBombState)
 		LOG_FUNC_PRINTF( LogTemp , Log , "Replicating C4 State %s -> %s" , *EnumToString( InOldBombState ) , *EnumToString( BombState ) );
 		OnBombStateChanged.Broadcast( InOldBombState , BombState , Planter , Defuser );
 	}
+}
+
+void AA_C4::OnBeginOverlap( AActor* OverlappedActor , AActor* OtherActor )
+{
+	if ( Cast<AMyPlantableArea>( OtherActor ) ) 
+	{
+		bOverlappingPlantableArea = true;
+	}
+}
+
+void AA_C4::OnEndOverlap( AActor* OverlappedActor , AActor* OtherActor )
+{
+	if ( Cast<AMyPlantableArea>( OtherActor ) )
+	{
+		bOverlappingPlantableArea = false;
+	}
+}
+
+void AA_C4::OnRep_CollisionComponent()
+{
+	Super::OnRep_CollisionComponent();
+
+	if ( CollisionComponent && InteractiveComponent )
+	{
+		FBoxSphereBounds Bounds = CollisionComponent->GetLocalBounds();
+		InteractiveComponent->SetSphereRadius( Bounds.SphereRadius * 1.5f );
+	}
+}
+
+bool AA_C4::IsAfterPlant() const
+{
+	return BombState == EMyBombState::Planted || BombState == EMyBombState::Defusing;
+}
+
+bool AA_C4::PredicateAfterPlant( AA_Character* InInteractor ) const
+{
+	// Counter terrorist can defuse the bomb
+	if ( ( BombState == EMyBombState::Planted || BombState == EMyBombState::Defusing ) &&
+		 InInteractor->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::CT )
+	{
+		LOG_FUNC( LogTemp , Log , "C4 defusing is allowed to only CT" );
+		return false;
+	}
+
+	// Cannot defuse the bomb while firing the weapon
+	if ( AA_Weapon* WeaponActor = Cast<AA_Weapon>( InInteractor->GetHand()->GetChildActor() );
+		 WeaponActor && WeaponActor->GetWeaponComponent()->IsFiring() )
+	{
+		LOG_FUNC( LogTemp , Log , "C4 cannot be defused while firing" );
+		return false;
+	}
+
+	// Bomb should be in the player screen
+	if ( FVector2D ScreenPosition;
+		 !Cast<AMyPlayerController>( InInteractor->GetController() )->ProjectWorldLocationToScreen(GetActorLocation(), ScreenPosition ) )
+	{
+		LOG_FUNC( LogTemp , Log , "Out of the player viewport" );
+		return false;
+	}
+
+	// Player should stay still while planting the bomb
+	if ( InInteractor->GetVelocity() != FVector::ZeroVector )
+	{
+		LOG_FUNC( LogTemp , Log , "Player need to stop" );
+		return false;
+	}
+
+	return true;
+}
+
+bool AA_C4::PredicateBeforePlant( AA_Character* InInteractor ) const
+{
+	// Terrorist can plant the bomb
+	if ( ( BombState == EMyBombState::Idle || BombState == EMyBombState::Planting ) &&
+		 InInteractor->GetPlayerState<AMyPlayerState>()->GetTeam() != EMyTeam::T )
+	{
+		LOG_FUNC( LogTemp , Warning , "C4 Planting is allowed to only T" );
+		return false;
+	}
+
+	// If C4 is not in the plantable area, it cannot be planted
+	if ( !bOverlappingPlantableArea )
+	{
+		LOG_FUNC( LogTemp , Warning , "Location is not a plantable area" );
+		return false;
+	}
+
+	// C4 need to be equipped to be planted
+	if ( InInteractor->GetHand()->GetChildActor() != this )
+	{
+		LOG_FUNC( LogTemp , Warning , "C4 does not equiped" );
+		return false;
+	}
+
+	// Player should stay still while planting the bomb
+	if ( InInteractor->GetVelocity() != FVector::ZeroVector )
+	{
+		LOG_FUNC( LogTemp , Warning , "Player need to stop" );
+		return false;
+	}
+
+	return true;
 }

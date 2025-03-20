@@ -3,10 +3,8 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Components/ActorComponent.h"
-
-#include "MyProject/Actors/BaseClass/A_Character.h"
 #include "MyProject/Interfaces/InteractiveObject.h"
+#include "Components/SphereComponent.h"
 
 #include "C_Interactive.generated.h"
 
@@ -15,7 +13,7 @@ DECLARE_LOG_CATEGORY_EXTERN( LogInteractiveComponent , All , Log );
 class AMyPlayerState;
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_Interactive : public UActorComponent
+class MYPROJECT_API UC_Interactive : public USphereComponent
 {
 	GENERATED_BODY()
 
@@ -37,6 +35,10 @@ public:
 	float GetDelayedTime() const { return DelayTime; }
 
 	bool CanInteract() const { return !bInteracting; }
+
+	bool ClientInteraction( AA_Character* InInteractor ) const;
+
+	bool StopClientInteraction() const;
 	
 	void Interaction(AA_Character* InInteractor);
 

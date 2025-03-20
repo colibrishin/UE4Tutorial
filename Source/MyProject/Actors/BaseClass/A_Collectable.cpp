@@ -9,6 +9,7 @@
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
 #include "MyProject/Private/Utilities.hpp"
+#include "MyProject/DataAsset/DA_Collectable.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -87,7 +88,7 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	SetRootComponent( SkeletalMeshComponent );
 	SkeletalMeshComponent->SetSimulatePhysics(false);
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
+
 	PickUpComponent->SetNetAddressable();
 	PickUpComponent->SetIsReplicated(true);
 
@@ -100,7 +101,7 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	bDummy = false;
 
 	bPhysicsInClient = false;
-	CollisionTypeInClient = ECollisionEnabled::NoCollision;
+	CollisionTypeInClient = ECollisionEnabled::QueryAndProbe;
 
 	AssetComponent->OnAssetIDSet.AddUObject( this , &AA_Collectable::FetchAsset );
 }
@@ -153,6 +154,16 @@ void AA_Collectable::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutL
 void AA_Collectable::PostFetchAsset()
 {
 	IAssetFetchable::PostFetchAsset();
+
+	if ( PickUpComponent && CollisionComponent )
+	{
+		// Since the collision component is disabled in the client side, the GetActorBounds returns
+		// zero. Sets the pick up range from the collision component bounds.
+		FBoxSphereBounds Bounds = CollisionComponent->GetLocalBounds();
+		PickUpComponent->AttachToComponent( SkeletalMeshComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		PickUpComponent->SetSphereRadius( Bounds.SphereRadius * 1.5f );
+		PickUpComponent->SetCollisionProfileName( "MyCollectable" );
+	}
 }
 
 void AA_Collectable::OnRep_Dummy(AA_Collectable* InPreviousDummy) const
@@ -182,7 +193,23 @@ void AA_Collectable::OnRep_CollisionTypeInClient() const
 
 void AA_Collectable::OnRep_CollisionComponent()
 {
-	UpdateCollisionComponent( GetRootComponent(), GetParentComponent(), GetCollisionComponent(), "MyCollectable");
+	if ( UDA_Collectable* Asset = GetAssetComponent()->GetAsset<UDA_Collectable>() )
+	{
+		UpdateCollisionComponent( 
+			GetRootComponent() , 
+			GetParentComponent() , 
+			GetCollisionComponent() , 
+			"MyCollectable" , 
+			Asset->GetCollisionType() , 
+			RootComponent->GetLocalBounds() , 
+			Asset->GetSize() );
+
+		if ( CollisionComponent && PickUpComponent )
+		{
+			FBoxSphereBounds Bounds = CollisionComponent->GetLocalBounds();
+			PickUpComponent->SetSphereRadius( Bounds.SphereRadius * 1.5f );
+		}
+	}
 }
 
 // Called every frame

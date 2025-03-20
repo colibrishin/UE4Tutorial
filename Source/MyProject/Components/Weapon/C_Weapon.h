@@ -87,6 +87,8 @@ public:
 
 	bool IsDummy() const;
 
+	bool IsFiring() const;
+
 	UC_Weapon* GetSiblingComponent() const;
 
 	void UpdateFrom( const UC_Weapon* InOtherComponent );

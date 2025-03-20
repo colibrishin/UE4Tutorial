@@ -333,6 +333,7 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 	DOREPLIFETIME(AMyGameState, AliveCT);
 	DOREPLIFETIME(AMyGameState, AliveT);
 	DOREPLIFETIME(AMyGameState, LastRoundInWorldTime);
+	DOREPLIFETIME( AMyGameState , StartTickInServerTime );
 	DOREPLIFETIME(AMyGameState, Winner);
 	DOREPLIFETIME(AMyGameState, CTWinCount);
 	DOREPLIFETIME(AMyGameState, TWinCount);
@@ -342,7 +343,11 @@ void AMyGameState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 void AMyGameState::Tick( const float DeltaTime )
 {
 	Super::Tick( DeltaTime );
-	StartTickInServerTime = GetServerWorldTimeSeconds();
+
+	if ( HasAuthority() )
+	{
+		StartTickInServerTime = GetServerWorldTimeSeconds();
+	}
 }
 
 void AMyGameState::UpdateC4( AActor* InNewActor )
@@ -498,7 +503,7 @@ void AMyGameState::RestartRound()
 	C4->GetCollisionComponent()->SetCollisionEnabled( ECollisionEnabled::QueryAndPhysics );
 
 	C4->SetPhysicsInClient( false );
-	C4->SetCollisionTypeInClient( ECollisionEnabled::NoCollision );
+	C4->SetCollisionTypeInClient( ECollisionEnabled::QueryAndProbe );
 
 	C4->SetDetonationTime( 35.f );
 	C4->SetDefusingTime( 10.f );

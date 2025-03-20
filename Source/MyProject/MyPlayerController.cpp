@@ -20,6 +20,7 @@
 
 #include "Interfaces/CharacterRequiredWidget.h"
 #include "Interfaces/MyPlayerStateRequiredWidget.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 #include "Kismet/GameplayStatics.h"
 
@@ -131,6 +132,23 @@ void AMyPlayerController::SetSpectator(AMySpectatorPawn* Spectator)
 {
 	UnPossess();
 	Possess(Spectator);
+}
+
+void AMyPlayerController::FreezePlayer()
+{
+	if ( GetCharacter() )
+	{
+		GetCharacter()->GetCharacterMovement()->StopMovementImmediately();
+		GetCharacter()->GetCharacterMovement()->SetMovementMode( MOVE_None );
+	}
+}
+
+void AMyPlayerController::UnfreezePlayer()
+{
+	if ( GetCharacter() )
+	{
+		GetCharacter()->GetCharacterMovement()->SetMovementMode( MOVE_Walking );
+	}
 }
 
 void AMyPlayerController::Client_ValidateUpdateRebroadcastC4_Implementation(

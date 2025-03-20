@@ -60,7 +60,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	virtual bool PredicateInteraction() override;
+	virtual bool PredicateInteraction( AA_Character* InInteractor ) override;
 
 	virtual void Interaction() override;
 
@@ -78,6 +78,10 @@ protected:
 	void SetState( const EMyBombState NewState );
 
 public:
+	virtual bool StartClientInteraction( AA_Character* InInteractor ) const override;
+
+	virtual bool StopClientInteraction() const override;
+	
 	virtual void StartInteraction() override;
 	
 	virtual void StopInteraction() override;
@@ -94,6 +98,18 @@ protected:
 	UFUNCTION()
 	void OnRep_BombState(const EMyBombState InOldBombState);
 
+	UFUNCTION()
+	virtual void OnBeginOverlap( AActor* OverlappedActor, AActor* OtherActor );
+	
+	UFUNCTION()
+	virtual void OnEndOverlap( AActor* OverlappedActor , AActor* OtherActor );
+
+	virtual void OnRep_CollisionComponent() override;
+
+	bool IsAfterPlant() const;
+	bool PredicateAfterPlant( AA_Character* InInteractor ) const;
+	bool PredicateBeforePlant( AA_Character* InInteractor ) const;
+
 private:
 	UPROPERTY(EditAnywhere, Replicated)
 	float DetonationTime;
@@ -106,6 +122,9 @@ private:
 
 	UPROPERTY(EditAnywhere, Replicated )
 	float DefusingTime;
+
+	UPROPERTY(VisibleAnywhere)
+	bool bOverlappingPlantableArea;
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	UC_Interactive* InteractiveComponent;
