@@ -157,11 +157,23 @@ void AA_Collectable::PostFetchAsset()
 
 	if ( PickUpComponent && CollisionComponent )
 	{
+		// todo: refactoring
 		// Since the collision component is disabled in the client side, the GetActorBounds returns
 		// zero. Sets the pick up range from the collision component bounds.
 		FBoxSphereBounds Bounds = CollisionComponent->GetLocalBounds();
 		PickUpComponent->AttachToComponent( SkeletalMeshComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
 		PickUpComponent->SetSphereRadius( Bounds.SphereRadius * 1.5f );
+		PickUpComponent->SetCollisionProfileName( "MyCollectable" );
+	}
+}
+
+void AA_Collectable::PostNetInit()
+{
+	Super::PostNetInit();
+
+	if ( PickUpComponent && CollisionComponent )
+	{
+		// todo: refactoring
 		PickUpComponent->SetCollisionProfileName( "MyCollectable" );
 	}
 }

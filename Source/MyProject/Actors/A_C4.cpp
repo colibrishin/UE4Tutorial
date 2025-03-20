@@ -258,6 +258,7 @@ void AA_C4::PostFetchAsset()
 
 	if ( InteractiveComponent && CollisionComponent )
 	{
+		// todo: refactoring
 		// Since the collision component is disabled in the client side, the GetActorBounds returns
 		// zero. Sets the interaction range from the collision component bounds.
 		FBoxSphereBounds Bounds = CollisionComponent->GetLocalBounds();
@@ -332,6 +333,16 @@ void AA_C4::SetState( const EMyBombState NewState )
 	LOG_FUNC_PRINTF( LogTemp , Log , "C4 State changes %s -> %s" , *EnumToString( OldBombState ) , *EnumToString( NewState ) );
 	BombState = NewState;
 	OnBombStateChanged.Broadcast( OldBombState , NewState , Planter , Defuser );
+}
+
+void AA_C4::PostNetInit()
+{
+	Super::PostNetInit();
+
+	if ( InteractiveComponent && CollisionComponent )
+	{
+		InteractiveComponent->SetCollisionProfileName( "MyC4" );
+	}
 }
 
 bool AA_C4::StartClientInteraction( AA_Character* InInteractor ) const

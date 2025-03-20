@@ -77,6 +77,8 @@ protected:
 
 	void SetState( const EMyBombState NewState );
 
+	virtual void PostNetInit() override;
+
 public:
 	virtual bool StartClientInteraction( AA_Character* InInteractor ) const override;
 
