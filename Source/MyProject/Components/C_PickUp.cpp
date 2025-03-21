@@ -21,8 +21,9 @@ UC_PickUp::UC_PickUp()
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = false;
-
+	
 	SetIsReplicatedByDefault(true);
+	DefaultSizeMultiplier = 2.f;
 }
 
 void UC_PickUp::AttachEventHandlers(const bool bEnable, const EPickUp PickUpOrDrop)
@@ -31,6 +32,8 @@ void UC_PickUp::AttachEventHandlers(const bool bEnable, const EPickUp PickUpOrDr
 	{
 		return;
 	}
+	
+	SetActive( bEnable );
 
 	if ( bEnable )
 	{
@@ -87,6 +90,11 @@ void UC_PickUp::AttachEventHandlers(const bool bEnable, const EPickUp PickUpOrDr
 void UC_PickUp::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SetGenerateOverlapEvents( true );
+	SetSimulatePhysics( false );
+	SetEnableGravity( false );
+	SetCollisionEnabled( ECollisionEnabled::QueryAndProbe );
 }
 
 void UC_PickUp::OnBeginOverlap(
@@ -119,7 +127,10 @@ void UC_PickUp::OnPickUpCallback(TScriptInterface<IPickingUp> InCaller, const bo
 	if (bCallPickUp)
 	{
 		LOG_FUNC_PRINTF( LogPickUp , Log , "Caught pickup : %s" , *InCaller->_getUObject()->GetName() );
-		InCaller->PickUp( this );
+		InCaller->PickUp( 
+			this , 
+			std::bind( &FOnObjectPickUpSpawned::Broadcast , OnObjectPickUpPreSpawned , std::placeholders::_1 ),
+			std::bind( &FOnObjectPickUpSpawned::Broadcast, OnObjectPickUpPostSpawned, std::placeholders::_1) );
 
 		// Assuming the object is cloned into child actor component or consumed etc;
 		GetOwner()->Destroy( true );
@@ -182,7 +193,7 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 				
 				// Disable the client side physics simulation
 				InCollectable->SetPhysicsInClient( false );
-				InCollectable->SetCollisionTypeInClient( ECollisionEnabled::NoCollision );
+				InCollectable->SetCollisionTypeInClient( ECollisionEnabled::QueryAndProbe );
 
 				// Enable the server side physics simulation
 				InCollectable->GetCollisionComponent()->SetSimulatePhysics( true );
@@ -200,10 +211,12 @@ void UC_PickUp::OnDropCallback(TScriptInterface<IPickingUp> InCaller, const bool
 					CollisionComponent->AddForce( ForwardVector * 50.f );
 				}
 
+				InCollectable->GetPickUpComponent()->AttachEventHandlers( true , EPickUp::PickUp );
 				OnObjectDropPreSpawned.Broadcast( InActor );
 			}
 		);
-		Cloned->GetComponentByClass<UC_PickUp>()->AttachEventHandlers( true , EPickUp::PickUp );
+
+		OnObjectDropPostSpawned.Broadcast( Cloned );
 
 		// Object destruction should be handled in InCaller's Drop;
 		InCaller->Drop( this );

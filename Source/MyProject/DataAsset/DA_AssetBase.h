@@ -17,7 +17,7 @@ class MYPROJECT_API UDA_AssetBase : public UPrimaryDataAsset
 	GENERATED_BODY()
 
 public:
-	TSubclassOf<IAssetFetchable> GetOverrideActorClass() const { return OverrideActorClass; }
+	TSubclassOf<AActor> GetOverrideActorClass() const { return OverrideActorClass; }
 	USkeletalMesh* GetSkeletalMesh() const { return SkeletalMesh; }
 	void        SetID(const int32 InID) { ID = InID; }
 	int32       GetID() const { return ID; }
@@ -48,6 +48,6 @@ private:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
 	USkeletalMesh* SkeletalMesh;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(AllowPrivateAccess))
-	TSubclassOf<IAssetFetchable> OverrideActorClass;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, meta=(MustImplement = "AssetFetchable", AllowPrivateAccess ))
+	TSubclassOf<AActor> OverrideActorClass;
 };

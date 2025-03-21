@@ -3,21 +3,20 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "MyPlayerState.h"
-
-#include "Actors/A_C4.h"
-
-#include "Private/Utilities.hpp"
-
 #include "GameFramework/GameState.h"
+#include "Public/CommonDelegate.h"
+#include "MyProject/Private/Utilities.hpp"
 
 #include "MyGameState.generated.h"
 
 enum class EMyTeam : uint8;
+enum class EMyRoundProgress : uint8;
+enum class EMyBombState : uint8;
 class AA_C4;
 class AA_Character;
 class UC_Weapon;
 class UC_Buy;
+class AMyPlayerState;
 class AMyPlayerController;
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FOnRoundProgressChanged , EMyRoundProgress)
@@ -38,6 +37,7 @@ class MYPROJECT_API AMyGameState : public AGameStateBase
 {
 	GENERATED_BODY()
 
+	friend class AMyPlayerController;
 public:
 
 	FOnBuyChanged OnBuyChanged;
@@ -74,6 +74,10 @@ public:
 	{
 		return MatchRoundTime - GetRoundTime();
 	}
+	float GetStartTickInServerTime() const 
+	{
+		return StartTickInServerTime;
+	}
 
 	int32        GetCTWins() const { return CTWinCount; }
 	int32        GetTWins() const { return TWinCount; }
@@ -98,10 +102,14 @@ protected:
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	virtual void Tick( const float DeltaTime ) override;
+
 private:
 	UFUNCTION()
-	void HandleBombStateChanged(const EMyBombState InOldState, const EMyBombState InNewState, const AA_Character* InPlanter, const AA_Character*
-	                            InDefuser);
+	void HandleBombStateChanged( const EMyBombState InOldState , const EMyBombState InNewState , const AA_Character* InPlanter , const AA_Character* InDefuser );
+
+	UFUNCTION()
+	void UpdateC4( AActor* InNewActor );
 
 	void SetRoundProgress(const EMyRoundProgress NewProgress);
 
@@ -131,9 +139,13 @@ private:
 	void SetWinner(const EMyTeam NewWinner);
 
 	UFUNCTION()
+	void OnRep_C4( AA_C4* PreviousC4 );
+
+	UFUNCTION()
 	void BuyTimeEnded();
 
-	void HandleOnBombPicked(AA_Character* Character) const;
+	UFUNCTION()
+	void HandleOnBombPicked( AActor* InC4Actor );
 
 	UFUNCTION()
 	void OnRep_WinnerSet() const;
@@ -156,9 +168,6 @@ private:
 	UFUNCTION(NetMulticast, Reliable)
 	void Multi_NotifyBombPicked(AA_Character* Character) const;
 
-	UFUNCTION(NetMulticast, Reliable)
-	void Multi_ResetBombIndicator();
-
 	UPROPERTY(EditAnywhere)
 	USoundWave* CTRoundWinSound;
 
@@ -173,6 +182,9 @@ private:
 
 	UPROPERTY(EditAnywhere)
 	USoundWave* BombDefusedSound;
+
+	UPROPERTY(VisibleAnywhere, Replicated, meta=(AllowPrivateAccess))
+	float StartTickInServerTime;
 
 	UPROPERTY(EditAnywhere, meta=(AllowPrivateAccess))
 	float MatchRoundTime;
@@ -195,7 +207,7 @@ private:
 	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_CanBuy)
 	bool bCanBuy;
 
-	UPROPERTY(VisibleAnywhere, Replicated)
+	UPROPERTY(VisibleAnywhere, ReplicatedUsing=OnRep_C4)
 	AA_C4* RoundC4;
 
 	UPROPERTY(VisibleAnywhere, Replicated)
@@ -215,6 +227,7 @@ private:
 		FTimerHandle&                     NextHandle
 	);
 
+	FDelegateHandle C4DelegateHandle;
 	FTimerHandle* CurrentHandle;
 	FTimerHandle FreezeTimerHandle;
 	FTimerHandle RoundTimerHandle;

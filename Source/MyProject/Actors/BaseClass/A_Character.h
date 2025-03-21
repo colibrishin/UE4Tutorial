@@ -5,8 +5,6 @@
 
 #include "MyProject/Interfaces/PickingUp.h"
 #include "GameFramework/Character.h"
-
-#include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Interfaces/AssetFetchable.h"
 
 #include "A_Character.generated.h"
@@ -23,7 +21,7 @@ class UC_Health;
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter , Log , All);
 
 // Non-dynamic delegate due to forwarding to player state;
-DECLARE_MULTICAST_DELEGATE_OneParam(FOnHandChanged, AA_Collectable*);
+DECLARE_MULTICAST_DELEGATE_OneParam( FOnHandChanged , AA_Collectable* );
 
 UCLASS()
 class MYPROJECT_API AA_Character : public ACharacter, public IPickingUp, public IAssetFetchable
@@ -53,7 +51,7 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	virtual void PickUp(UC_PickUp* InPickUp) override;
+	virtual void PickUp(UC_PickUp* InPickUp, const IPickingUp::PickUpSpawnedPredicate& InObjectPredicate, const PickUpSpawnedPredicate& InPostSpawnPredicate ) override;
 
 	virtual void Drop(UC_PickUp* InPickUp) override;
 
@@ -63,6 +61,7 @@ protected:
 	UFUNCTION()
 	void Look(const FInputActionValue& Value);
 
+	bool TestCollectable( TArray<UPrimitiveComponent*>& OutResults) const;
 
 public:
 	// Called every frame
@@ -80,14 +79,37 @@ private:
 	UFUNCTION()
 	void SyncHandProperties() const;
 
+	UFUNCTION()
+	void UpdateOnHandChangedTime( AA_Collectable* InHandActor );
+
 protected:
 	virtual void PostFetchAsset() override;
 
-	UFUNCTION(Server, Reliable)
-	void Server_PickUp();
+	// Client side pre-interactive process (e.g., predicate, prerequsites)
+	UFUNCTION()
+	virtual void Interactive();
 
-	UFUNCTION(Server, Reliable)
+	// Client side post-interactive process (e.g., predicate, cleanup)
+	UFUNCTION()
+	virtual void StopInteractive();
+
+	UFUNCTION()
+	virtual void Drop();
+
+	UFUNCTION()
+	virtual void PickUp();
+
+	UFUNCTION( Server , Reliable , WithValidation )
+	void Server_PickUp( AA_Collectable* InCollectable );
+
+	UFUNCTION(Server, Reliable, WithValidation )
 	void Server_Drop();
+
+	UFUNCTION( Server , Reliable , WithValidation )
+	void Server_Interactive( const TScriptInterface<IInteractiveObject>& InObject );
+
+	UFUNCTION( Server , Reliable , WithValidation )
+	void Server_StopInteractive( const TScriptInterface<IInteractiveObject>& Object );
 	
 	UPROPERTY(VisibleAnywhere, Replicated)
 	bool bHandBusy;
@@ -122,9 +144,22 @@ protected:
 	UPROPERTY(VisibleAnywhere, Replicated)
 	AA_Collectable* ArmHandActor;
 #pragma endregion
+
+	// variable that produce and consume the data between the pick up and interactive.
+	// It will be used to prevent the pick up and interactive in the same tick.
+	UPROPERTY( VisibleAnywhere )
+	float LastHandChangedInServerTime;
+
+	// variable that stores the latest successful pick up or drop.
+	// Note that this is not the hand actor but the template actor that has used for the cloning.
+	UPROPERTY( VisibleAnywhere )
+	AA_Collectable* LastSuccededPickOrDrop;
 	
-	UPROPERTY(EditAnywhere)
-	UInputMappingContext* InputMapping;
+	UPROPERTY( EditAnywhere )
+	UInputMappingContext* MovementInputMapping;
+
+	UPROPERTY( EditAnywhere )
+	UInputMappingContext* UtilityInputMapping;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UInputAction* MoveAction;
@@ -140,6 +175,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
 	UInputAction* DropAction;
+
+	UPROPERTY( VisibleAnywhere, BlueprintReadWrite )
+	UInputAction* InteractiveAction;
 
 	FDelegateHandle CharacterForwardHandle;
 	

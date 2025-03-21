@@ -6,6 +6,7 @@
 #include "UObject/Interface.h"
 #include "AssetFetchable.generated.h"
 
+enum class EMultiShapeType : uint8_t;
 class UC_Asset;
 class UC_CollectableAsset;
 // This class does not need to be modified.
@@ -37,7 +38,7 @@ public:
 		PostFetchAsset();
 	}
 
-	void UpdateCollisionComponent( USceneComponent* RootComponent, USceneComponent* ParentComponent, UShapeComponent* NewComponent, const FName& CollisionProfileName );
+	void UpdateCollisionComponent( USceneComponent* RootComponent , USceneComponent* ParentComponent , UShapeComponent* NewComponent , const FName& CollisionProfileName , const EMultiShapeType InCollisionType , const FBoxSphereBounds& Bounds , const FVector& CustomScale );
 
 protected:
 	virtual void PostFetchAsset();

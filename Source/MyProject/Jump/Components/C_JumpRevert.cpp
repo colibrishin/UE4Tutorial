@@ -20,15 +20,16 @@ UC_JumpRevert::UC_JumpRevert()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
+	static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Jump( TEXT( "/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Jump/Inputs/IMC_Jump.IMC_Jump'" ) );
+	static ConstructorHelpers::FObjectFinder<UInputAction> IA_JumpRevert( TEXT( "/Script/EnhancedInput.InputAction'/Game/Blueprints/Jump/Inputs/IA_JumpRevert.IA_JumpRevert'" ) );
+
 	// ...
-	if (static ConstructorHelpers::FObjectFinder<UInputMappingContext> IMC_Jump(TEXT("/Script/EnhancedInput.InputMappingContext'/Game/Blueprints/Jump/Inputs/IMC_Jump.IMC_Jump'"));
-		IMC_Jump.Succeeded())
+	if (IMC_Jump.Succeeded())
 	{
 		InputMappingContext = IMC_Jump.Object;
 	}
 
-	if (static ConstructorHelpers::FObjectFinder<UInputAction> IA_JumpRevert(TEXT("/Script/EnhancedInput.InputAction'/Game/Blueprints/Jump/Inputs/IA_JumpRevert.IA_JumpRevert'"));
-		IA_JumpRevert.Succeeded())
+	if (IA_JumpRevert.Succeeded())
 	{
 		RevertAction = IA_JumpRevert.Object;
 	}

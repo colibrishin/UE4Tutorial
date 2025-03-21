@@ -62,37 +62,30 @@ void UMyBombProgressWidget::OnBombStateChanged(const EMyBombState InOldState, co
 {
 	LOG_FUNC_PRINTF(LogTemp, Warning, "Bomb state changed to: %s", *EnumToString(InNewState));
 
-	if (InNewState == EMyBombState::Planting || InNewState == EMyBombState::Defusing)
-	{
-		if (InNewState == EMyBombState::Planting)
+	const auto& CheckLocalPlayer = [this]( const AA_Character* Character )
 		{
-			if (InPlanter == GetPlayerContext().GetPlayerController()->GetCharacter())
-			{
-				bNeedToShow = true;
-			}
-		}
-		else if (InNewState == EMyBombState::Defusing)
-		{
-			if (InDefuser == GetPlayerContext().GetPlayerController()->GetCharacter())
-			{
-				bNeedToShow = true;
-			}
-		}
-		// todo: Show regardless if player is spectator
-	}
-	else
+			return Character && Character->GetController() == GetPlayerContext().GetPlayerController();
+		};
+
+	switch (InNewState)
 	{
+	case EMyBombState::Defusing:
+		bNeedToShow = CheckLocalPlayer(InDefuser);
+		break;
+	case EMyBombState::Planting:
+		bNeedToShow = CheckLocalPlayer(InPlanter);
+		break;
+	default:
 		bNeedToShow = false;
 	}
 
+	// todo: Show regardless if player is spectator
 	if (bNeedToShow)
 	{
-		SetRenderOpacity(1.f);
-		AddToViewport();
+		SetRenderOpacity( 1.f );
 	}
 	else
 	{
-		SetRenderOpacity(0.f);
-		RemoveFromParent();
+		SetRenderOpacity( 0.f );
 	}
 }

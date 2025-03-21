@@ -61,7 +61,6 @@ enum class EMyRoundProgress : uint8
 UENUM()
 enum class EMyBombState : uint8
 {
-	Unknown,
 	Idle,
 	Planting,
 	Planted,

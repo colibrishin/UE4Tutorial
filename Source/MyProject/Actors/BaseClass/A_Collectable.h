@@ -6,7 +6,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "MyProject/Components/Asset/C_CollectableAsset.h"
 
 #include "MyProject/Interfaces/AssetFetchable.h"
 #include "A_Collectable.generated.h"
@@ -14,7 +13,9 @@
 class UC_ShapeProxy;
 class UCapsuleComponent;
 class USphereComponent;
-class UBoxComponent;DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, InPreviousDummy);
+class UBoxComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDummyFlagSet, AA_Collectable*, InPreviousDummy);
 DECLARE_LOG_CATEGORY_EXTERN(LogCollectable, Log, All);
 
 class UC_PickUp;
@@ -66,6 +67,8 @@ protected:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void PostFetchAsset() override;
+
+	virtual void PostNetInit() override;
 	
 	UFUNCTION()
 	void OnRep_Dummy(AA_Collectable* InPreviousDummy) const;
