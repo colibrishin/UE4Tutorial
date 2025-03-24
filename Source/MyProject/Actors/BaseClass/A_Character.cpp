@@ -299,8 +299,10 @@ bool AA_Character::TestCollectable( TArray<UPrimitiveComponent*>& OutResults ) c
 
 	if ( HandActor )
 	{
-		OutResults.Remove( HandActor->GetCollisionComponent() );
-		OutResults.Remove( ArmHandActor->GetCollisionComponent() );
+		OutResults.RemoveAll( [ this ]( const UPrimitiveComponent* Element )
+		{
+			return Element->GetAttachParentActor() == this;
+		});
 	}
 	
 	// Sort the objects in distance wise;
@@ -468,7 +470,7 @@ void AA_Character::Interactive()
 
 						if (InteractiveComponent->ClientInteraction( this ))
 						{
-							Server_Interactive( InteractiveObject );
+							Server_Interactive( Interface );
 							LastSuccededPickOrDrop = nullptr;
 							break;	
 						}
@@ -505,23 +507,25 @@ void AA_Character::StopInteractive()
 		{
 			for ( UPrimitiveComponent* Result : OutResults )
 			{
-				if ( UC_Interactive* InteractiveComponent = Cast<UC_Interactive>( Result ) )
-				// Condition where the pick up or drop and interactive both occurred.
-				// The execution order is affected by the registration order of the input action. (Stack)
-				if ( TScriptInterface<IInteractiveObject> Interface = InteractiveComponent->GetOwner();
-					 Interface && Interface != LastSuccededPickOrDrop )
+				if ( const UC_Interactive* InteractiveComponent = Cast<UC_Interactive>( Result ) )
 				{
-					if ( InteractiveComponent->CanInteract() &&
-						 InteractiveComponent->GetInteractor() != this )
+					// Condition where the pick up or drop and interactive both occurred.
+					// The execution order is affected by the registration order of the input action. (Stack)
+					if ( TScriptInterface<IInteractiveObject> Interface = InteractiveComponent->GetOwner();
+						 Interface && Interface != LastSuccededPickOrDrop )
 					{
-						continue;
-					}
+						if ( InteractiveComponent->CanInteract() &&
+							 InteractiveComponent->GetInteractor() != this )
+						{
+							continue;
+						}
 
-					if (InteractiveComponent->StopClientInteraction( ))
-					{
-						Server_StopInteractive( InteractiveObject );
-						LastSuccededPickOrDrop = nullptr;
-						break;	
+						if (InteractiveComponent->StopClientInteraction( ))
+						{
+							Server_StopInteractive( Interface );
+							LastSuccededPickOrDrop = nullptr;
+							break;	
+						}
 					}
 				}
 			}
@@ -551,7 +555,7 @@ void AA_Character::PickUp()
 				// todo: inventory;
 				if ( bHandBusy )
 				{
-					LOG_FUNC_PRINTF( LogCharacter , Log , "Client side hand is busy, ignore pick up request" , *Collectable->GetOwner()->GetName() );
+					LOG_FUNC_PRINTF( LogCharacter , Log , "Client side hand is busy, ignore pick up request" , *Collectable->GetName() );
 					return;
 				}
 
@@ -658,25 +662,29 @@ bool AA_Character::Server_Interactive_Validate( const TScriptInterface<IInteract
 	// Invalid: received nullptr
 	if ( !InObject )
 	{
+		LOG_FUNC( LogCharacter , Error , "Invalid object interaction" );
 		return false;
 	}
 
 	// Invalid: object does not have interactive component
 	if ( !InObject->GetInteractiveComponent() )
 	{
+		LOG_FUNC_PRINTF( LogCharacter , Error , "No Interaction component %s", *InObject.GetObject()->GetName() );
 		return false;
 	}
 
 	// Immediate Interaction
-	if ( float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
+	if ( const float ServerTime = GetWorld()->GetGameState<AMyGameState>()->GetStartTickInServerTime();
 		 InObject == HandActor && LastHandChangedInServerTime == ServerTime ) 
 	{
+		LOG_FUNC( LogCharacter , Error , "Immediate interaction" );
 		return false;
 	}
 
 	// Immediate interaction
 	if ( InObject == LastSuccededPickOrDrop )
 	{
+		LOG_FUNC( LogCharacter , Error , "Immediate interaction" );
 		return false;
 	}
 
@@ -684,6 +692,7 @@ bool AA_Character::Server_Interactive_Validate( const TScriptInterface<IInteract
 	// todo: what if the client is lagging?
 	if ( InObject->DoesHavePredication() && !InObject->PredicateInteraction( this ) )
 	{
+		LOG_FUNC( LogCharacter , Error , "Predication failed" );
 		return false;
 	}
 

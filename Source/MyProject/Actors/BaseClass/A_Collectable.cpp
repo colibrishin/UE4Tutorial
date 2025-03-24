@@ -209,11 +209,11 @@ void AA_Collectable::OnRep_CollisionComponent()
 			Asset->GetCollisionType() , 
 			RootComponent->GetLocalBounds() , 
 			Asset->GetSize() );
+	}
 
-		if ( PickUpComponent )
-		{
-			PickUpComponent->RefreshCollision( "MyCollectable" );
-		}
+	if ( PickUpComponent )
+	{
+		PickUpComponent->RefreshCollision( "MyCollectable" );
 	}
 }
 

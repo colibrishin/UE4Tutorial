@@ -69,26 +69,6 @@ EMyBombState AA_C4::GetBombState() const
 	return BombState;
 }
 
-void AA_C4::ControlPickUpState(
-	EMyBombState /*OldBombState*/,
-	EMyBombState NewBombState,
-	const AA_Character* /*InPlanter*/,
-	const AA_Character* /*InDefuser*/ )
-{
-	switch ( NewBombState )
-	{
-		case EMyBombState::Planted:
-			PickUpComponent->AttachEventHandlers( false , EPickUp::Drop );
-			break;
-		case EMyBombState::Idle:
-		case EMyBombState::Planting:
-		case EMyBombState::Defusing:
-		case EMyBombState::Defused:
-		case EMyBombState::Exploded:
-		default: break;
-	}
-}
-
 // Called when the game starts or when spawned
 void  AA_C4::BeginPlay()
 {
@@ -104,7 +84,6 @@ void  AA_C4::BeginPlay()
 		GetPickUpComponent()->OnObjectPickUpPostSpawned.AddUniqueDynamic( this , &AA_C4::MutateCloned );
 	}
 
-	OnBombStateChanged.AddUObject( this , &AA_C4::ControlPickUpState );
 	OnActorBeginOverlap.AddUniqueDynamic( this , &AA_C4::OnBeginOverlap );
 	OnActorEndOverlap.AddUniqueDynamic( this , &AA_C4::OnEndOverlap );
 }
@@ -279,8 +258,6 @@ void AA_C4::PostFetchAsset()
 
 	if ( InteractiveComponent )
 	{
-		// Since the collision component is disabled in the client side, the GetActorBounds returns
-		// zero. Sets the interaction range from the collision component bounds.
 		InteractiveComponent->AttachToComponent( SkeletalMeshComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
 		InteractiveComponent->RefreshCollision( "MyC4" );
 	}
@@ -297,10 +274,6 @@ void AA_C4::HandlePlanted(AActor* InSpawnedActor)
 			// Disable the pick up component to block the pick up the bomb by defuser.
 			Cloned->GetPickUpComponent()->AttachEventHandlers( false , EPickUp::Drop );
 			Cloned->SetState( BombState );
-
-			// Disable the server side collision
-			Cloned->GetCollisionComponent()->SetSimulatePhysics( false );
-			Cloned->GetCollisionComponent()->SetCollisionEnabled( ECollisionEnabled::NoCollision );
 		}
 	}
 }
@@ -426,6 +399,11 @@ void AA_C4::OnRep_CollisionComponent()
 {
 	Super::OnRep_CollisionComponent();
 
+	if ( CollisionComponent )
+	{
+		CollisionComponent->SetCollisionProfileName( "MyC4" );
+	}
+
 	if ( InteractiveComponent )
 	{
 		InteractiveComponent->RefreshCollision( "MyC4" );
@@ -455,12 +433,22 @@ bool AA_C4::PredicateAfterPlant( AA_Character* InInteractor ) const
 		return false;
 	}
 
+	const AMyPlayerController* PlayerController = Cast<AMyPlayerController>( InInteractor->GetController() );
+	const ULocalPlayer* LocalPlayer = PlayerController->GetLocalPlayer();
+
 	// Bomb should be in the player screen
-	if ( FVector2D ScreenPosition;
-		 !Cast<AMyPlayerController>( InInteractor->GetController() )->ProjectWorldLocationToScreen(GetActorLocation(), ScreenPosition ) )
+	// todo: can be bypassed
+	if (GetNetMode() == NM_Client)
 	{
-		LOG_FUNC( LogTemp , Log , "Out of the player viewport" );
-		return false;
+		int32 X , Y;
+		PlayerController->GetViewportSize( X , Y );
+
+		if ( FVector2D ScreenPosition;
+			!PlayerController->ProjectWorldLocationToScreen(GetActorLocation(), ScreenPosition ) || (ScreenPosition.X < 0 || ScreenPosition. Y < 0 || ScreenPosition.X > X || ScreenPosition.Y > Y) )
+		{
+			LOG_FUNC( LogTemp , Log , "Out of the player viewport" );
+			return false;
+		}
 	}
 
 	// Player should stay still while planting the bomb

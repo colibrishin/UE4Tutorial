@@ -58,9 +58,6 @@ public:
 
 protected:
 
-	UFUNCTION()
-	void ControlPickUpState( EMyBombState OldBombState , EMyBombState NewBombState , const AA_Character* InPlanter , const  AA_Character* InDefuser );
-
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 

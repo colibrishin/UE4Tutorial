@@ -12,7 +12,7 @@
 // Add default functionality here for any IShapeAdjust functions that are not pure virtual.
 void IShapeAdjust::RefreshCollision( const FName& CollisionProfileName )
 {
-	if ( const USceneComponent* ThisComponent = Cast<USceneComponent>(this) )
+	if ( UPrimitiveComponent* ThisComponent = Cast<UPrimitiveComponent>(this) )
 	{
 		const FBoxSphereBounds Bounds = ThisComponent->GetAttachmentRoot()->GetLocalBounds();
 
@@ -30,6 +30,9 @@ void IShapeAdjust::RefreshCollision( const FName& CollisionProfileName )
 		{
 			CapsuleComponent->SetCapsuleSize( Bounds.SphereRadius * DefaultSizeMultiplier , Bounds.BoxExtent.Z * DefaultSizeMultiplier );
 		}
+
+		ThisComponent->SetSimulatePhysics( false );
+		ThisComponent->SetCollisionEnabled( ECollisionEnabled::QueryAndProbe );
 	}
 	else
 	{
