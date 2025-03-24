@@ -67,7 +67,7 @@ void AMyProjectGameModeBase::PostLogin(APlayerController* NewPlayer)
 
 	PlayerState->OnStateChanged.AddUniqueDynamic(MyGameState, &AMyGameState::HandlePlayerStateChanged);
 	PlayerState->SetState(EMyCharacterState::Alive);
-	PlayerState->OnKillOccurred.AddUniqueDynamic(MyGameState, &AMyGameState::HandleKillOccurred);
+	PlayerState->OnKillOccurred.AddUObject(MyGameState, &AMyGameState::HandleKillOccurred);
 	MyGameState->HandleNewPlayer(PlayerState);
 
 	if (!IsValid(MyGameState))

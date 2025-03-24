@@ -25,7 +25,9 @@ class MYPROJECT_API IPickingUp
 
 	// Add interface functions to this class. This is the class that will be inherited to implement this interface.
 public:
-	virtual void PickUp(UC_PickUp* InPickUp);
+	using PickUpSpawnedPredicate = TFunction<void( AActor* )>;
+
+	virtual void PickUp(UC_PickUp* InPickUp, const PickUpSpawnedPredicate& InPreSpawnPredicate , const PickUpSpawnedPredicate& InPostSpawnPredicate );
 
 	virtual void Drop(UC_PickUp* InPickUp);
 

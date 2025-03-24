@@ -56,12 +56,14 @@ void UC_CollectableAsset::ApplyAsset()
 	check(Collectable);
 	
 	if ( AA_Collectable* TargetActor = Cast<AA_Collectable>(Actor);
-		TargetActor )
+		 TargetActor )
 	{
 		if (GetNetMode() != NM_Client)
 		{
 			const USkeletalMeshComponent* MeshComponent = TargetActor->GetComponentByClass<USkeletalMeshComponent>();
 			const FBoxSphereBounds Bounds = MeshComponent->GetLocalBounds();
+			const FVector CustomScale = GetAsset<UDA_Collectable>()->GetSize();
+			const float ScaleDistanced = FVector::Distance( FVector::ZeroVector , CustomScale );
 
 			if ( TargetActor->CollisionComponent )
 			{
@@ -74,33 +76,36 @@ void UC_CollectableAsset::ApplyAsset()
 			case EMultiShapeType::Box:
 				{
 					TargetActor->CollisionComponent = NewObject<UBoxComponent>(TargetActor, TEXT("CollisionComponent"));
-					Cast<UBoxComponent>(TargetActor->CollisionComponent)->SetBoxExtent(Bounds.BoxExtent);
 					break;
 				}
 			case EMultiShapeType::Sphere:
 				{
 					TargetActor->CollisionComponent = NewObject<USphereComponent>(TargetActor, TEXT("CollisionComponent"));
-					Cast<USphereComponent>(TargetActor->CollisionComponent)->SetSphereRadius(Bounds.BoxExtent.GetMax());
 					break;
 				}
 			case EMultiShapeType::Capsule:
 				{
-					// todo: accurate estimation
 					TargetActor->CollisionComponent = NewObject<UCapsuleComponent>(TargetActor, TEXT("CollisionComponent"));
-					Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleRadius(Bounds.SphereRadius);
-					Cast<UCapsuleComponent>(TargetActor->CollisionComponent)->SetCapsuleHalfHeight(Bounds.BoxExtent.Z);
 					break;
 				}
 			default: check(false);
 			}
-		
-			TargetActor->CollisionComponent->SetIsReplicated(true);
+
+			TargetActor->CollisionComponent->SetActive( true );
+			TargetActor->CollisionComponent->SetIsReplicated( true );
 			TargetActor->CollisionComponent->RegisterComponent();
 
 			USceneComponent* PreviousRootComponent = Actor->GetRootComponent();
 			USceneComponent* ParentComponent = Actor->GetParentComponent();
 
-			TargetActor->UpdateCollisionComponent( PreviousRootComponent, ParentComponent, TargetActor->GetCollisionComponent(), "MyCollectable");
+			TargetActor->UpdateCollisionComponent( 
+				PreviousRootComponent , 
+				ParentComponent , 
+				TargetActor->GetCollisionComponent() , 
+				"MyCollectable" , 
+				Collectable->GetCollisionType() , 
+				Bounds , 
+				Collectable->GetSize() );
 		}
 	}
 }

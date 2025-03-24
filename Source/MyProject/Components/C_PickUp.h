@@ -3,6 +3,10 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Components/SphereComponent.h"
+
+#include "MyProject/Interfaces/ShapeAdjust.h"
+
 #include "C_PickUp.generated.h"
 
 class UInputMappingContext;
@@ -12,7 +16,8 @@ class AMyCharacter;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectPickUp, TScriptInterface<IPickingUp>, InCaller, const bool, bCallPickUp);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnObjectDrop, TScriptInterface<IPickingUp>, InCaller, const bool, bCallDrop);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectDropSpawned, AActor*, InSpawnedActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam( FOnObjectPickUpSpawned , AActor* , InSpawnedActor );
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam( FOnObjectDropSpawned , AActor* , InSpawnedActor );
 DECLARE_LOG_CATEGORY_EXTERN(LogPickUp, Log, All);
 
 enum class EPickUp : uint8_t 
@@ -22,7 +27,7 @@ enum class EPickUp : uint8_t
 };
 
 UCLASS(ClassGroup=(Custom) , meta=(BlueprintSpawnableComponent))
-class MYPROJECT_API UC_PickUp : public UActorComponent
+class MYPROJECT_API UC_PickUp : public USphereComponent, public IShapeAdjust
 {
 	GENERATED_BODY()
 
@@ -34,16 +39,22 @@ public:
 
 	FOnObjectDrop OnObjectDrop;
 
+	FOnObjectPickUpSpawned OnObjectPickUpPreSpawned;
+
+	FOnObjectPickUpSpawned OnObjectPickUpPostSpawned;
+
 	FOnObjectDropSpawned OnObjectDropPreSpawned;
+
+	FOnObjectDropSpawned OnObjectDropPostSpawned;
 
 	void AttachEventHandlers( const bool bEnable , const EPickUp bPickUpOrDrop );
 
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-	
+
 	UFUNCTION()
-	void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	virtual void OnBeginOverlap( UPrimitiveComponent* OverlappedComponent , AActor* OtherActor , UPrimitiveComponent* OtherComp , int32 OtherBodyIndex , bool bFromSweep , const FHitResult& SweepResult );
 
 	UFUNCTION()
 	void OnPickUpCallback(TScriptInterface<IPickingUp> InCaller, const bool bCallPickUp);

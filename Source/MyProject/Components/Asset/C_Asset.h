@@ -27,6 +27,11 @@ public:
 
 	void SetID(const uint32 InID)
 	{
+		if ( GetNetMode() == NM_Client )
+		{
+			return;
+		}
+
 		ID = InID;
 		OnAssetIDSet.Broadcast();
 	}

@@ -18,7 +18,7 @@ void UMyKillFeedWidget::NativeConstruct()
 
 	if (const auto& GameState = GetPlayerContext().GetGameState<AMyGameState>())
 	{
-		GameState->OnKillOccurred.AddUniqueDynamic(this, &UMyKillFeedWidget::HandleKillOccurred);
+		GameState->OnKillOccurred.AddUObject(this, &UMyKillFeedWidget::HandleKillOccurred);
 	}
 }
 

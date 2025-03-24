@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "MyPlayerController.generated.h"
 
+struct FBombStateContext;
+class AA_C4;
 class AMyPlayerState;
 class AA_Character;
 class UC_Buy;
@@ -38,5 +40,16 @@ public:
 	
 	UFUNCTION(Client, Reliable)
 	void Client_SetSpectator(AMySpectatorPawn* Spectator);
+
+	UFUNCTION(Server, Reliable, WithValidation)
+	void Server_ValidateUpdateRebroadcastC4( AA_C4* InC4, const FBombStateContext& InContext );
+
+	void FreezePlayer();
+	void UnfreezePlayer();
+
+private:
+
+	UFUNCTION(Client, Reliable)
+	void Client_ValidateUpdateRebroadcastC4( AA_C4* InC4, const FBombStateContext& InContext );
 
 };

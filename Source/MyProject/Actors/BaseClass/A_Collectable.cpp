@@ -9,6 +9,7 @@
 #include "MyProject/Components/C_PickUp.h"
 #include "MyProject/Components/Asset/C_CollectableAsset.h"
 #include "MyProject/Private/Utilities.hpp"
+#include "MyProject/DataAsset/DA_Collectable.h"
 
 #include "Net/UnrealNetwork.h"
 
@@ -84,9 +85,10 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	AssetComponent = CreateDefaultSubobject<UC_CollectableAsset>(AssetComponentName);
 	PickUpComponent = CreateDefaultSubobject<UC_PickUp>(TEXT("PickUpComponent"));
 
+	SetRootComponent( SkeletalMeshComponent );
 	SkeletalMeshComponent->SetSimulatePhysics(false);
 	SkeletalMeshComponent->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
+
 	PickUpComponent->SetNetAddressable();
 	PickUpComponent->SetIsReplicated(true);
 
@@ -97,9 +99,11 @@ AA_Collectable::AA_Collectable(const FObjectInitializer& ObjectInitializer) :
 	AActor::SetReplicateMovement(true);
 	bNetLoadOnClient = true;
 	bDummy = false;
-	bPhysicsInClient = false;
 
-	AssetComponent->OnAssetIDSet.AddUObject(this, &AA_Collectable::FetchAsset);
+	bPhysicsInClient = false;
+	CollisionTypeInClient = ECollisionEnabled::QueryAndProbe;
+
+	AssetComponent->OnAssetIDSet.AddUObject( this , &AA_Collectable::FetchAsset );
 }
 
 void AA_Collectable::SetDummy(const bool InFlag, AA_Collectable* InSibling)
@@ -150,6 +154,22 @@ void AA_Collectable::GetLifetimeReplicatedProps( TArray<FLifetimeProperty>& OutL
 void AA_Collectable::PostFetchAsset()
 {
 	IAssetFetchable::PostFetchAsset();
+
+	if ( PickUpComponent )
+	{
+		PickUpComponent->AttachToComponent( SkeletalMeshComponent , FAttachmentTransformRules::SnapToTargetNotIncludingScale );
+		PickUpComponent->RefreshCollision( "MyCollectable" );
+	}
+}
+
+void AA_Collectable::PostNetInit()
+{
+	Super::PostNetInit();
+
+	if ( PickUpComponent )
+	{
+		PickUpComponent->RefreshCollision( "MyCollectable" );
+	}
 }
 
 void AA_Collectable::OnRep_Dummy(AA_Collectable* InPreviousDummy) const
@@ -179,7 +199,22 @@ void AA_Collectable::OnRep_CollisionTypeInClient() const
 
 void AA_Collectable::OnRep_CollisionComponent()
 {
-	UpdateCollisionComponent( GetRootComponent(), GetParentComponent(), GetCollisionComponent(), "MyCollectable");
+	if ( const UDA_Collectable* Asset = GetAssetComponent()->GetAsset<UDA_Collectable>() )
+	{
+		UpdateCollisionComponent( 
+			GetRootComponent() , 
+			GetParentComponent() , 
+			GetCollisionComponent() , 
+			"MyCollectable" , 
+			Asset->GetCollisionType() , 
+			RootComponent->GetLocalBounds() , 
+			Asset->GetSize() );
+	}
+
+	if ( PickUpComponent )
+	{
+		PickUpComponent->RefreshCollision( "MyCollectable" );
+	}
 }
 
 // Called every frame
