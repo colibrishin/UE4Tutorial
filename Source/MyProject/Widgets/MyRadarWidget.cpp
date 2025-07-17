@@ -67,7 +67,7 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			}
 
 			const FVector LocalPlayer3DLocation = PlayerController->GetPawn()->GetActorLocation();
-			const auto& PlayerYaw = PlayerController->GetControlRotation().Yaw;
+			const auto& PlayerYaw = PlayerController->GetControlRotation().Vector();
 			const auto& PlayerState = Cast<AMyPlayerState>(GetPlayerContext().GetPlayerState());
 
 			if (!IsValid(PlayerState))
@@ -110,19 +110,17 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 				// Endpoint - StartPoint
 				const auto& RelativePosition = LocalPlayer3DLocation - OtherPlayerState->GetPawn()->GetActorLocation();
-				const auto& Relative2DPosition = FVector2D(RelativePosition);
+				const auto& Relative2DPosition = FVector2D(RelativePosition); // Drop up-and-down element (z)
 
-				// Gets the angle between the two points in degrees 
-				const auto& DirAngle = FMath::RadiansToDegrees(FMath::Atan2(Relative2DPosition.Y, Relative2DPosition.X));
+				// Gets the angle between the two points in radian ( |1| * |1| * cos )
+				// Gets the radian value from the acos
+				const auto& Dot = RelativePosition.GetSafeNormal().Dot( PlayerYaw );
+				const auto& AcosD = FMath::Acos( Dot );
 
-				// Radian moves counter-clockwise and starts from "East" (0 degree).
-				constexpr float EastToNorth = 90.f;
-
-				// DirAngle - PlayerYaw = 0 if the player is facing the enemy.
-				const auto& Angle = DirAngle - PlayerYaw + EastToNorth;
-
+				// Radian moves counter-clockwise and starts from "East" (0 degree)
 				// Creates a direction vector from the angle.
-				const auto& Dir = FVector2D(FMath::Cos(FMath::DegreesToRadians(Angle)), FMath::Sin(FMath::DegreesToRadians(Angle)));
+				constexpr float EastToNorth = PI / 2;
+				const auto& Dir = FVector2D(FMath::Cos( AcosD + EastToNorth ), FMath::Sin( AcosD + EastToNorth ));
 
 				// Recreates a rotated vector by multiplying the direction vector by the distance between the two points.
 				const auto& RotatedVector = Dir * Relative2DPosition.Size();
