@@ -67,7 +67,8 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			}
 
 			const FVector LocalPlayer3DLocation = PlayerController->GetPawn()->GetActorLocation();
-			const auto& PlayerYaw = PlayerController->GetControlRotation().Yaw;
+			// Project the Control Rotation normal vector to the xy plane (Yaw Only)
+			const auto& PlayerForward = FVector2D(FVector::VectorPlaneProject( PlayerController->GetControlRotation().Vector(), {1.f, 1.f, 0.f} )).GetSafeNormal();
 			const auto& PlayerState = Cast<AMyPlayerState>(GetPlayerContext().GetPlayerState());
 
 			if (!IsValid(PlayerState))
@@ -110,19 +111,24 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 				// Endpoint - StartPoint
 				const auto& RelativePosition = LocalPlayer3DLocation - OtherPlayerState->GetPawn()->GetActorLocation();
-				const auto& Relative2DPosition = FVector2D(RelativePosition);
+				// Projection
+				const auto& Relative2DPosition = FVector2D( FVector::VectorPlaneProject( RelativePosition , { 1.f, 1.f, 0.f } ) );
 
-				// Gets the angle between the two points in degrees 
-				const auto& DirAngle = FMath::RadiansToDegrees(FMath::Atan2(Relative2DPosition.Y, Relative2DPosition.X));
+				// Gets the x-axis point ( |1| * |1| * cos ) and acos it to get the radian value.
+				// acos = [0, pi], the sign will be lost.
+				const auto& RelativeNormal = Relative2DPosition.GetSafeNormal();
 
-				// Radian moves counter-clockwise and starts from "East" (0 degree).
-				constexpr float EastToNorth = 90.f;
+				// Use the atan2 to cover the [-pi, pi], Need the dot and the cross product
+				const auto& Dot = RelativeNormal.Dot( PlayerForward );
+				const float Cross = FVector2D::CrossProduct( RelativeNormal, PlayerForward ); // ax*by - bx*ay
 
-				// DirAngle - PlayerYaw = 0 if the player is facing the enemy.
-				const auto& Angle = DirAngle - PlayerYaw + EastToNorth;
+				// https://en.wikipedia.org/wiki/Atan2#East-counterclockwise,_north-clockwise_and_south-clockwise_conventions,_etc.
+				// (Cross, Dot) = East-CCW
+				// (Dot, Cross) = North-CW
+				// (Dot, -Cross) = North-CCW
+				const auto& ATanD = FMath::Atan2( Dot, -Cross ); 
 
-				// Creates a direction vector from the angle.
-				const auto& Dir = FVector2D(FMath::Cos(FMath::DegreesToRadians(Angle)), FMath::Sin(FMath::DegreesToRadians(Angle)));
+				FVector2D Dir = { FMath::Cos( ATanD ), FMath::Sin( ATanD ) }; // Radar forward
 
 				// Recreates a rotated vector by multiplying the direction vector by the distance between the two points.
 				const auto& RotatedVector = Dir * Relative2DPosition.Size();
