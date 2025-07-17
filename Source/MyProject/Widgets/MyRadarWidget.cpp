@@ -67,7 +67,7 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			}
 
 			const FVector LocalPlayer3DLocation = PlayerController->GetPawn()->GetActorLocation();
-			const auto& PlayerYaw = PlayerController->GetControlRotation().Vector();
+			const auto& PlayerForward = FVector2D(FVector::VectorPlaneProject( PlayerController->GetControlRotation().Vector(), {1.f, 1.f, 0.f} )).GetSafeNormal();
 			const auto& PlayerState = Cast<AMyPlayerState>(GetPlayerContext().GetPlayerState());
 
 			if (!IsValid(PlayerState))
@@ -109,18 +109,18 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 				}
 
 				// Endpoint - StartPoint
-				const auto& RelativePosition = LocalPlayer3DLocation - OtherPlayerState->GetPawn()->GetActorLocation();
+				const auto& RelativePosition = OtherPlayerState->GetPawn()->GetActorLocation() - LocalPlayer3DLocation;
 				const auto& Relative2DPosition = FVector2D(RelativePosition); // Drop up-and-down element (z)
 
-				// Gets the angle between the two points in radian ( |1| * |1| * cos )
-				// Gets the radian value from the acos
-				const auto& Dot = RelativePosition.GetSafeNormal().Dot( PlayerYaw );
-				const auto& AcosD = FMath::Acos( Dot );
+				// Gets the x-axis point ( |1| * |1| * cos ) and acos it to get the radian value.
+				// due to the acos = [0, pi], the sign will be lost.
+				const auto& RelativeNormal = Relative2DPosition.GetSafeNormal();
+				const auto& Dot = RelativeNormal.Dot( PlayerForward );
+				const float Cross = FVector2D::CrossProduct( RelativeNormal, PlayerForward ); // ax*by - bx*ay
+				const auto& ATanD = FMath::Atan2( Cross , Dot );
 
-				// Radian moves counter-clockwise and starts from "East" (0 degree)
-				// Creates a direction vector from the angle.
-				constexpr float EastToNorth = PI / 2;
-				const auto& Dir = FVector2D(FMath::Cos( AcosD + EastToNorth ), FMath::Sin( AcosD + EastToNorth ));
+				float EastToNorth = PI / 2;
+				FVector2D Dir = { FMath::Cos( ATanD ), FMath::Sin( ATanD ) }; // Radar forward
 
 				// Recreates a rotated vector by multiplying the direction vector by the distance between the two points.
 				const auto& RotatedVector = Dir * Relative2DPosition.Size();
