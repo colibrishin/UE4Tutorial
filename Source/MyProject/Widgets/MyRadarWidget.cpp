@@ -67,8 +67,12 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 			}
 
 			const FVector LocalPlayer3DLocation = PlayerController->GetPawn()->GetActorLocation();
-			// Project the Control Rotation normal vector to the xy plane (Yaw Only)
-			const auto& PlayerForward = FVector2D(FVector::VectorPlaneProject( PlayerController->GetControlRotation().Vector(), {1.f, 1.f, 0.f} )).GetSafeNormal();
+
+			// Local axes of the player on the XY plane (Z dropped). Forward is normalized so that
+			// dot products against it return a distance, not a cosine.
+			// UE top-down: X = forward, Y = right, so rotating (x, y) by +90 degrees gives (-y, x).
+			const FVector2D PlayerForward = FVector2D(PlayerController->GetControlRotation().Vector()).GetSafeNormal();
+			const FVector2D PlayerRight   = { -PlayerForward.Y, PlayerForward.X };
 			const auto& PlayerState = Cast<AMyPlayerState>(GetPlayerContext().GetPlayerState());
 
 			if (!IsValid(PlayerState))
@@ -109,31 +113,16 @@ void UMyRadarWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 					return;
 				}
 
-				// Endpoint - StartPoint
-				const auto& RelativePosition = LocalPlayer3DLocation - OtherPlayerState->GetPawn()->GetActorLocation();
-				// Projection
-				const auto& Relative2DPosition = FVector2D( FVector::VectorPlaneProject( RelativePosition , { 1.f, 1.f, 0.f } ) );
+				// From the local player to the other player, Z dropped (not normalized: keeps the distance).
+				const FVector2D ToOther = FVector2D(OtherPlayerState->GetPawn()->GetActorLocation() - LocalPlayer3DLocation);
 
-				// Gets the x-axis point ( |1| * |1| * cos ) and acos it to get the radian value.
-				// acos = [0, pi], the sign will be lost.
-				const auto& RelativeNormal = Relative2DPosition.GetSafeNormal();
+				// Projecting onto the player's axes gives the position in the player's frame:
+				// |ToOther| * cos(theta) along each unit axis, i.e. "how far right" and "how far ahead".
+				const float Right   = ToOther.Dot( PlayerRight );
+				const float Forward = ToOther.Dot( PlayerForward );
 
-				// Use the atan2 to cover the [-pi, pi], Need the dot and the cross product
-				const auto& Dot = RelativeNormal.Dot( PlayerForward );
-				const float Cross = FVector2D::CrossProduct( RelativeNormal, PlayerForward ); // ax*by - bx*ay
-
-				// https://en.wikipedia.org/wiki/Atan2#East-counterclockwise,_north-clockwise_and_south-clockwise_conventions,_etc.
-				// (Cross, Dot) = East-CCW
-				// (Dot, Cross) = North-CW
-				// (Dot, -Cross) = North-CCW
-				const auto& ATanD = FMath::Atan2( Dot, -Cross ); 
-
-				FVector2D Dir = { FMath::Cos( ATanD ), FMath::Sin( ATanD ) }; // Radar forward
-
-				// Recreates a rotated vector by multiplying the direction vector by the distance between the two points.
-				const auto& RotatedVector = Dir * Relative2DPosition.Size();
-
-				const auto& RadarPosition = RotatedVector / 10.f;
+				// Widget space: +X = right, +Y = down, so "ahead" maps to -Y.
+				const FVector2D RadarPosition = FVector2D( Right, -Forward ) / 10.f;
 				const auto& PositionFromCenter = RadarPosition + RadarCenter;
 
 				const auto& Distance = FVector2D(RadarPosition.X, RadarPosition.Y).Size();
